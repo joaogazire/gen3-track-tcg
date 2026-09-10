@@ -533,6 +533,7 @@ h1 {
 }
 
 .preview-stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -573,6 +574,46 @@ h1 {
   background: rgba(244, 201, 93, 0.12);
   color: var(--gold-500);
   font-weight: 800;
+}
+
+.summary-pill.no-image-pill {
+  background: rgba(217, 87, 87, 0.16);
+  color: var(--danger);
+  text-transform: lowercase;
+  letter-spacing: 0.06em;
+}
+
+.preview-stage.no-image .preview-image {
+  filter: brightness(0.55) saturate(0.6);
+}
+
+.no-image-badge {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(12, 18, 18, 0.88);
+  border: 1px solid rgba(217, 87, 87, 0.6);
+  color: var(--danger);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.variant-label .variant-no-image {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--danger);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.56rem;
 }
 
 .field-label {

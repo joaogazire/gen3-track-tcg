@@ -236,6 +236,20 @@ function normalizeCardNumber(value) {
   return match ? match[1] : raw || "unknown";
 }
 
+// As 4 promos ex5.5 (Pok\u00e9 Card Creator Pack) n\u00e3o t\u00eam imagem publicada em nenhuma fonte.
+const NO_IMAGE_VARIANTS = new Set([
+  "treecko|ex5.5|1",
+  "wurmple|ex5.5|2",
+  "torchic|ex5.5|3",
+  "mudkip|ex5.5|4"
+]);
+
+function isNoImageVariant(asset) {
+  if (!asset) return false;
+  const key = `${normalizePokemonKey(asset.pokemon || asset.name)}|${normalizePokemonKey(asset.set)}|${normalizeCardNumber(asset.number)}`;
+  return NO_IMAGE_VARIANTS.has(key);
+}
+
 function getCardVariants(cardName) {
   const normalized = normalizePokemonKey(cardName);
 
@@ -441,17 +455,34 @@ async function runCardSyncCheck() {
       }
     }
 
-    const totalMissingLocal = issues.reduce((sum, issue) => sum + (issue.missingLocal || 0), 0);
-    const totalMissingRemote = issues.reduce((sum, issue) => sum + (issue.missingRemote || 0), 0);
+    // As 4 promos ex5.5 (Poké Card Creator Pack) não têm imagem publicada em nenhuma
+    // fonte — não é falha do catálogo local, então ficam de fora da contagem de divergências.
+    const knownIssues = [];
+    const realIssues = [];
 
-    if (!issues.length) {
+    issues.forEach((issue) => {
+      if (issue.missingRemote > 0 && issue.missingLocal === 0) {
+        knownIssues.push(issue);
+        return;
+      }
+      realIssues.push(issue);
+    });
+
+    const totalMissingLocal = realIssues.reduce((sum, issue) => sum + (issue.missingLocal || 0), 0);
+    const totalMissingRemote = realIssues.reduce((sum, issue) => sum + (issue.missingRemote || 0), 0);
+
+    if (!realIssues.length) {
       saveLastSync();
-      updateSyncNotification(100, "Sincronização concluída", "Tudo está alinhado com a database.");
+      const suffix = knownIssues.length
+        ? ` ${knownIssues.length} promo(s) ex5.5 sem imagem na fonte (esperado).`
+        : "";
+      updateSyncNotification(100, "Sincronização concluída", `Tudo está alinhado com a database.${suffix}`);
       console.log("Sincronização concluída: todas as cartas estão alinhadas.");
+      if (knownIssues.length) console.info("Promos ex5.5 sem imagem na fonte (esperado):", knownIssues);
     } else {
       saveLastSync();
       updateSyncNotification(100, "Sincronização concluída", `Há divergências: ${totalMissingLocal} ausentes e ${totalMissingRemote} extras.`);
-      console.warn("Sincronização com divergências:", issues);
+      console.warn("Sincronização com divergências:", realIssues);
     }
 
     syncCloseBtn.hidden = false;
@@ -543,21 +574,24 @@ function changeSelectedVariant(step) {
 function renderSelectedPreview(asset) {
   if (!modalSummary) return;
 
-  const imageSrc = getAssetPath(asset?.file || "");
+  const hasNoImage = isNoImageVariant(asset);
+  const imageSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
   const variantLabel = asset?.number ? `#${asset.number}` : (asset?.set ? asset.set.toUpperCase() : "Versão");
 
   modalSummary.innerHTML = `
     <div class="preview-shell">
       <button type="button" class="preview-nav prev" data-nav="prev" aria-label="Carta anterior">&#8249;</button>
-      <div class="preview-stage" aria-label="Pré-visualização da carta">
+      <div class="preview-stage${hasNoImage ? " no-image" : ""}" aria-label="Pré-visualização da carta">
         <img class="preview-image" src="${imageSrc}" alt="${escapeHtml(card.name)}" />
+        ${hasNoImage ? '<span class="no-image-badge">Sem imagem disponível</span>' : ""}
       </div>
       <button type="button" class="preview-nav next" data-nav="next" aria-label="Próxima carta">&#8250;</button>
     </div>
     <div class="summary-meta">
       <span class="summary-pill">${variantLabel}</span>
       <strong>${card.name}</strong>
+      ${hasNoImage ? '<span class="summary-pill no-image-pill">promo ex5.5</span>' : ""}
     </div>
   `;
 
@@ -614,13 +648,14 @@ function renderVariantList(defaultAsset = null) {
 
   options.forEach((asset) => {
     const button = document.createElement("button");
+    const noImage = isNoImageVariant(asset);
     button.type = "button";
     button.className = `variant-option ${selectedAsset && selectedAsset.file === asset.file ? "selected" : ""}`;
     const variantText = formatVariantLabel(asset);
 
     button.innerHTML = `
       <img class="variant-thumb" src="${getAssetPath(asset.file)}" alt="${escapeHtml(asset.name)}" />
-      <span class="variant-label">${variantText}</span>
+      <span class="variant-label">${variantText}${noImage ? '<em class="variant-no-image">· sem imagem</em>' : ""}</span>
     `;
 
     button.addEventListener("click", () => {
