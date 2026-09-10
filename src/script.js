@@ -229,6 +229,13 @@ function normalizePokemonKey(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+// Compara "007", "7" e "0007" como o mesmo n\u00famero de carta.
+function normalizeCardNumber(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  const match = raw.match(/^0*(\d+)/);
+  return match ? match[1] : raw || "unknown";
+}
+
 function getCardVariants(cardName) {
   const normalized = normalizePokemonKey(cardName);
 
@@ -371,8 +378,20 @@ async function runCardSyncCheck() {
     const localCards = await localResponse.json();
     const localMap = new Map();
 
+    // O tracker cobre a série EX (Geração 3): ignora pastas fora do roster e
+    // sets de outras eras que porventura existam no catálogo.
+    const nonHoennFolders = new Set(["abra", "kadabra", "alakazam", "wobbuffet"]);
+    const isGen3Set = (setId) => {
+      const value = String(setId || "").trim().toLowerCase();
+      return /^ex\d+(\.\d+)?$/.test(value) || value === "exu";
+    };
+
     localCards.forEach((card) => {
-      const key = `${normalizePokemonKey(card.pokemon || card.folder || card.name)}|${normalizePokemonKey(String(card.set || card.collection || "unknown"))}|${normalizePokemonKey(String(card.number || ""))}`;
+      const folder = normalizePokemonKey(card.folder || "");
+      if (nonHoennFolders.has(folder)) return;
+      if (!isGen3Set(card.set)) return;
+
+      const key = `${normalizePokemonKey(card.pokemon || card.folder || card.name)}|${normalizePokemonKey(String(card.set || "unknown"))}|${normalizeCardNumber(card.number)}`;
       localMap.set(key, true);
     });
 
@@ -394,9 +413,16 @@ async function runCardSyncCheck() {
       const remoteSet = new Set();
 
       (Array.isArray(remoteCards) ? remoteCards : []).forEach((card) => {
-        const setValue = card?.set?.id || card?.set || "unknown";
-        const numberValue = card?.localId || card?.number || "unknown";
-        const key = `${normalizePokemonKey(pokemonName)}|${normalizePokemonKey(String(setValue))}|${normalizePokemonKey(String(numberValue))}`;
+        // A listagem da API não traz o objeto "set": o id é "setid-localid".
+        const cardId = String(card?.id || "");
+        const separator = cardId.indexOf("-");
+        if (separator < 0) return;
+
+        const setValue = cardId.slice(0, separator);
+        const numberValue = cardId.slice(separator + 1);
+        if (!isGen3Set(setValue)) return;
+
+        const key = `${normalizePokemonKey(pokemonName)}|${normalizePokemonKey(setValue)}|${normalizeCardNumber(numberValue)}`;
         remoteSet.add(key);
       });
 
