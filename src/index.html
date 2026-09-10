@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokémon Emerald TCG</title>
+    <meta name="description" content="Tracker pessoal de coleção de cartas Pokémon TCG da geração 3, inspirada em Pokémon Emerald." />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="header-inner">
+        <div class="brand-group" aria-label="Pokémon Emerald TCG">
+          <a id="rayquazaLink" class="brand-badge" href="https://github.com/joaogazire" target="_blank" rel="noopener noreferrer" title="DO NOT CLICK" aria-label="DO NOT CLICK — GitHub do autor">
+            <img id="rayquazaImg" src="../assets/site/png-transparent-pixel-art-rayquaza-groudon-kyogre-sprite-kyogre-et-groudon-dragon-swampert-leaf.png?v=20260909" alt="Rayquaza" />
+          </a>
+          <div class="brand-copy">
+            <h1>Pokémon Emerald TCG</h1>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="top-actions" aria-label="Navegação rápida">
+            <button type="button" class="pill-btn active">See all</button>
+            <button type="button" class="pill-btn">Mega Evolution</button>
+            <button type="button" class="pill-btn">Special Art</button>
+          </div>
+
+          <button id="syncCheckBtn" class="header-refresh-btn" type="button" aria-label="Verificar sincronização das cartas" title="Verificar sincronização com o banco de dados">
+            <img src="../assets/site/refresh-icon.png?v=20260909" alt="Atualizar" />
+          </button>
+          <span id="syncLastUpdated" class="sync-last-updated" aria-live="polite">Última atualização: nunca</span>
+        </div>
+      </div>
+
+      <div class="progress-band" id="progresso">
+        <div class="progress-wrap" aria-label="Progresso da coleção">
+          <div class="progress-meta">
+            <span class="progress-text" id="progressText">0 / 135 cartas</span>
+            <span class="progress-percent" id="progressPercent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+            <span class="progress-percent-center" id="progressPercentCenter">0%</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section id="catalogo" class="collection-panel">
+        <div class="panel-header">
+          <span class="section-tag">Checklist</span>
+        </div>
+
+        <section id="cardGrid" class="card-grid" aria-live="polite"></section>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="cardModal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <h2 id="modalTitle">Adicionar carta</h2>
+
+        <div class="modal-summary" id="modalSummary"></div>
+
+        <div class="field-label">Selecione a carta disponível</div>
+        <div id="variantList" class="variant-list" aria-label="Lista de cartas disponíveis"></div>
+
+        <div class="modal-actions">
+          <button id="cancelBtn" class="btn btn-secondary" type="button">Cancelar</button>
+          <button id="confirmBtn" class="btn btn-primary" type="button">Salvar</button>
+          <button id="removeBtn" class="btn btn-danger hidden" type="button">Desmarcar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="syncNotification" class="sync-notification hidden" role="status" aria-live="polite" aria-atomic="true">
+      <div class="sync-notification-header">
+        <strong>Sincronização de cartas</strong>
+        <button id="syncCloseBtn" class="sync-close-btn" type="button" aria-label="Fechar notificação">×</button>
+      </div>
+
+      <div class="sync-progress-meta">
+        <span id="syncProgressLabel">Iniciando verificação...</span>
+        <span id="syncProgressPercent">0%</span>
+      </div>
+
+      <div class="sync-progress-bar" aria-hidden="true">
+        <div id="syncProgressFill" class="sync-progress-fill"></div>
+      </div>
+
+      <div id="syncStatusText" class="sync-status-text">Conectando com a database...</div>
+      <div id="syncLastUpdatedStatus" class="sync-last-updated-status">Última atualização: nunca</div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
