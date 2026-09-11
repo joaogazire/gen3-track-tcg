@@ -335,13 +335,10 @@ function formatSyncTimestamp(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return "";
 
-  return date.toLocaleString("pt-BR", {
+  return date.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
+    year: "2-digit"
   });
 }
 
@@ -531,10 +528,39 @@ function formatCardFinish(value) {
 
 function formatVariantLabel(asset) {
   const collectionLabel = asset?.collection || asset?.set || "Coleção";
-  const finishLabel = formatCardFinish(asset?.finish || asset?.cardType || "normal");
+  const finishLabel = formatCardFinish(asset?.finish || "normal");
   const numberLabel = asset?.number ? ` · #${asset.number}` : "";
 
   return `${collectionLabel} · ${finishLabel}${numberLabel}`;
+}
+
+// Opções de acabamento do select do modal (valores no mesmo formato do catálogo).
+const FINISH_OPTIONS = [
+  { value: "normal", label: "Normal" },
+  { value: "holo", label: "Foil (Holo)" },
+  { value: "reverse", label: "Reverse" },
+  { value: "reverse holo", label: "Reverse Foil" },
+  { value: "full art", label: "Full Art" },
+  { value: "secret", label: "Secret" },
+  { value: "shiny", label: "Shiny" }
+];
+
+function getCurrentFinish() {
+  const card = cards.find((item) => item.id === currentCardId);
+  return card?.finish || selectedAsset?.finish || "normal";
+}
+
+function createFinishSelectMarkup(currentFinish) {
+  const options = FINISH_OPTIONS.map((option) => `
+    <option value="${option.value}"${option.value === currentFinish ? " selected" : ""}>${option.label}</option>
+  `).join("");
+
+  return `
+    <label class="finish-field">
+      <span class="field-label finish-label">Raridade da carta</span>
+      <select id="finishSelect" class="finish-select" aria-label="Raridade da carta">${options}</select>
+    </label>
+  `;
 }
 
 function createCardMarkup(card) {
@@ -577,7 +603,9 @@ function renderSelectedPreview(asset) {
   const hasNoImage = isNoImageVariant(asset);
   const imageSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
-  const variantLabel = asset?.number ? `#${asset.number}` : (asset?.set ? asset.set.toUpperCase() : "Versão");
+  const collectionLabel = asset?.collection || asset?.set || "Coleção";
+  const variantLabel = asset?.number ? `#${asset.number}` : "Versão";
+  const rarityLabel = formatCardFinish(asset?.finish || getCurrentFinish());
 
   modalSummary.innerHTML = `
     <div class="preview-shell">
@@ -590,7 +618,8 @@ function renderSelectedPreview(asset) {
     </div>
     <div class="summary-meta">
       <span class="summary-pill">${variantLabel}</span>
-      <strong>${card.name}</strong>
+      <strong>${escapeHtml(collectionLabel)}</strong>
+      <span class="summary-pill rarity-pill">${escapeHtml(rarityLabel)}</span>
       ${hasNoImage ? '<span class="summary-pill no-image-pill">promo ex5.5</span>' : ""}
     </div>
   `;
@@ -645,6 +674,22 @@ function renderVariantList(defaultAsset = null) {
 
   variantList.innerHTML = "";
   renderSelectedPreview(selectedAsset);
+
+  // Select de raridade — persiste a escolha por carta no card coletado.
+  const existingFinish = cards.find((item) => item.id === currentCardId)?.finish
+    || selectedAsset?.finish
+    || "normal";
+  const finishHost = document.getElementById("finishFieldHost");
+  if (finishHost) {
+    finishHost.innerHTML = createFinishSelectMarkup(existingFinish);
+    const finishSelect = finishHost.querySelector("#finishSelect");
+    if (finishSelect) {
+      finishSelect.value = existingFinish;
+      finishSelect.addEventListener("change", () => {
+        if (selectedAsset) selectedAsset.finish = finishSelect.value;
+      });
+    }
+  }
 
   options.forEach((asset) => {
     const button = document.createElement("button");
@@ -705,9 +750,15 @@ function markCardAsCollected(cardId, assetInfo = null) {
   const card = cards.find((item) => item.id === cardId);
   if (!card) return;
 
+  const finishValue = assetInfo?.finish || getCurrentFinish() || "normal";
+
   card.collected = true;
   card.variant = assetInfo ? `${assetInfo.set}` : "";
-  card.label = assetInfo ? `${assetInfo.set.toUpperCase()} · #${assetInfo.number}` : "Carta oficial";
+  card.finish = finishValue;
+  card.collection = assetInfo?.collection || assetInfo?.set || "";
+  card.label = assetInfo
+    ? `${assetInfo.collection || assetInfo.set} · ${formatCardFinish(finishValue)} · #${assetInfo.number}`
+    : "Carta oficial";
   card.artPath = assetInfo && assetInfo.file ? getAssetPath(assetInfo.file) : "";
 
   const cardElement = document.querySelector(`.card[data-id="${cardId}"]`);
@@ -734,6 +785,8 @@ function unmarkCard(cardId) {
   card.collected = false;
   card.variant = "";
   card.label = "";
+  card.finish = "";
+  card.collection = "";
   card.artPath = "";
   renderCards();
   saveCards();

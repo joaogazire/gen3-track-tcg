@@ -616,6 +616,53 @@ h1 {
   font-size: 0.56rem;
 }
 
+.summary-pill.rarity-pill {
+  background: rgba(43, 185, 119, 0.16);
+  color: var(--emerald-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+}
+
+.finish-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.finish-field .finish-label {
+  margin: 12px 0 8px;
+}
+
+.finish-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 18, 18, 0.6);
+  color: var(--slate-50);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold-500) 50%),
+    linear-gradient(135deg, var(--gold-500) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.finish-select:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 1px;
+}
+
+.finish-select option {
+  background: var(--ink-900);
+  color: var(--slate-50);
+}
+
 .field-label {
   display: block;
   margin: 12px 0 8px;

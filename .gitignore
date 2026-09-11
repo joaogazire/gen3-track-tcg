@@ -13,3 +13,4 @@ Thumbs.db
 
 # Local scratch
 *.log
+.tcgdex_cache.json
