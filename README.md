@@ -14,12 +14,7 @@ python3 -m http.server 8765
 E abra `http://localhost:8765/src/`.
 
 > Abrir o `index.html` diretamente via `file://` não funciona: o app busca o catálogo
-> `/assets/cards/index.json` via `fetch`, que exige HTTP.
-
-## GitHub Pages
-
-O app está publicado em `https://joaogazire.github.io/gen3-track-tcg/src/` — aponte a
-página do Pages para a pasta `/ (root)` do branch `main` e a URL acima funciona direto.
+> `assets/cards/index.json` via `fetch`, que exige HTTP.
 
 ## Arquitetura
 
@@ -45,9 +40,8 @@ gen3-track-tcg/
   máquina para atualizar o catálogo; não fazem parte do app. A separação evita que alguém
   confunda ferramenta de manutenção com parte do site.
 - **Zero build tools** — para um projeto de página única hospedado no GitHub Pages, um bundler
-  (Vite/webpack) só adicionaria complexidade sem ganho real. Vanilla JS + paths absolutos
-  (`/assets/...`) funcionam em qualquer servidor estático — incluindo o Pages, onde o app
-  vive em `/src/` e os assets em `/assets/` na raiz do site.
+  (Vite/webpack) só adicionaria complexidade sem ganho real. Vanilla JS + paths relativos
+  funcionam em qualquer servidor estático, incluindo o Pages.
 - **Catálogo como JSON indexado (`assets/cards/index.json`)** — a UI não lista diretórios
   (impossível em um site estático); um único JSON pré-construído resolve isso de forma
   determinística e versionável.
