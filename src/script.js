@@ -192,7 +192,7 @@ function setupCardTilt(cardElement) {
 }
 
 async function loadCardAssets() {
-  const candidate = "../assets/cards/index.json";
+  const candidate = "/assets/cards/index.json";
 
   try {
     const response = await fetch(candidate);
@@ -207,16 +207,11 @@ async function loadCardAssets() {
 }
 
 function getAssetPath(fileName) {
-  if (!fileName) return "../assets/site/pokemon-tcg-card-back.png";
+  if (!fileName) return "/assets/site/pokemon-tcg-card-back.png";
 
   const normalized = String(fileName).trim().replace(/^\.?\//, "").replace(/^\/+/, "");
-  const candidates = [
-    `../assets/cards/${normalized}`,
-    `assets/cards/${normalized}`,
-    "../assets/site/pokemon-tcg-card-back.png"
-  ];
 
-  return candidates.find((candidate) => candidate && candidate.length > 0) || "../assets/site/pokemon-tcg-card-back.png";
+  return `/assets/cards/${normalized}`;
 }
 
 function normalizePokemonKey(value) {
@@ -381,7 +376,7 @@ async function runCardSyncCheck() {
   try {
     updateSyncNotification(0, "Carregando catálogo local...", "Conectando com a database...");
 
-    const localResponse = await fetch("../assets/cards/index.json");
+    const localResponse = await fetch("/assets/cards/index.json");
     if (!localResponse.ok) {
       throw new Error("Não foi possível carregar o catálogo local.");
     }
@@ -601,7 +596,7 @@ function renderSelectedPreview(asset) {
   if (!modalSummary) return;
 
   const hasNoImage = isNoImageVariant(asset);
-  const imageSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
+  const imageSrc = hasNoImage ? "/assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
   const collectionLabel = asset?.collection || asset?.set || "Coleção";
   const variantLabel = asset?.number ? `#${asset.number}` : "Versão";
@@ -864,7 +859,7 @@ if (syncCloseBtn) {
   rayquazaLink.addEventListener("click", () => {
     try {
       if (!cryAudio) {
-        cryAudio = new Audio("../assets/site/rayquaza-cry.mp3");
+        cryAudio = new Audio("/assets/site/rayquaza-cry.mp3");
         cryAudio.preload = "auto";
       }
       cryAudio.currentTime = 0;
