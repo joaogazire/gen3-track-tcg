@@ -343,7 +343,7 @@ function formatSyncTimestamp(isoString) {
 }
 
 function updateLastSyncDisplay(isoString) {
-  const label = isoString ? `Última atualização: ${formatSyncTimestamp(isoString)}` : "Última atualização: nunca";
+  const label = isoString ? formatSyncTimestamp(isoString) : "nunca";
 
   if (syncCheckBtn) syncCheckBtn.title = `Verificar sincronização com o banco de dados\n${label}`;
   if (syncLastUpdated) syncLastUpdated.textContent = label;
