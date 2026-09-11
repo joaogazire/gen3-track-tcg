@@ -1,139 +1,206 @@
 const hoennPokemon = [
-  { id: 252, number: 252, name: "Treecko" },
-  { id: 253, number: 253, name: "Grovyle" },
-  { id: 254, number: 254, name: "Sceptile" },
-  { id: 255, number: 255, name: "Torchic" },
-  { id: 256, number: 256, name: "Combusken" },
-  { id: 257, number: 257, name: "Blaziken" },
-  { id: 258, number: 258, name: "Mudkip" },
-  { id: 259, number: 259, name: "Marshtomp" },
-  { id: 260, number: 260, name: "Swampert" },
-  { id: 261, number: 261, name: "Poochyena" },
-  { id: 262, number: 262, name: "Mightyena" },
-  { id: 263, number: 263, name: "Zigzagoon" },
-  { id: 264, number: 264, name: "Linoone" },
-  { id: 265, number: 265, name: "Wurmple" },
-  { id: 266, number: 266, name: "Silcoon" },
-  { id: 267, number: 267, name: "Beautifly" },
-  { id: 268, number: 268, name: "Cascoon" },
-  { id: 269, number: 269, name: "Dustox" },
-  { id: 270, number: 270, name: "Lotad" },
-  { id: 271, number: 271, name: "Lombre" },
-  { id: 272, number: 272, name: "Ludicolo" },
-  { id: 273, number: 273, name: "Seedot" },
-  { id: 274, number: 274, name: "Nuzleaf" },
-  { id: 275, number: 275, name: "Shiftry" },
-  { id: 276, number: 276, name: "Taillow" },
-  { id: 277, number: 277, name: "Swellow" },
-  { id: 278, number: 278, name: "Wingull" },
-  { id: 279, number: 279, name: "Pelipper" },
-  { id: 280, number: 280, name: "Ralts" },
-  { id: 281, number: 281, name: "Kirlia" },
-  { id: 282, number: 282, name: "Gardevoir" },
-  { id: 283, number: 283, name: "Surskit" },
-  { id: 284, number: 284, name: "Masquerain" },
-  { id: 285, number: 285, name: "Shroomish" },
-  { id: 286, number: 286, name: "Breloom" },
-  { id: 287, number: 287, name: "Slakoth" },
-  { id: 288, number: 288, name: "Vigoroth" },
-  { id: 289, number: 289, name: "Slaking" },
-  { id: 290, number: 290, name: "Nincada" },
-  { id: 291, number: 291, name: "Ninjask" },
-  { id: 292, number: 292, name: "Shedinja" },
-  { id: 293, number: 293, name: "Whismur" },
-  { id: 294, number: 294, name: "Loudred" },
-  { id: 295, number: 295, name: "Exploud" },
-  { id: 296, number: 296, name: "Makuhita" },
-  { id: 297, number: 297, name: "Hariyama" },
-  { id: 298, number: 298, name: "Azurill" },
-  { id: 299, number: 299, name: "Nosepass" },
-  { id: 300, number: 300, name: "Skitty" },
-  { id: 301, number: 301, name: "Delcatty" },
-  { id: 302, number: 302, name: "Sableye" },
-  { id: 303, number: 303, name: "Mawile" },
-  { id: 304, number: 304, name: "Aron" },
-  { id: 305, number: 305, name: "Lairon" },
-  { id: 306, number: 306, name: "Aggron" },
-  { id: 307, number: 307, name: "Meditite" },
-  { id: 308, number: 308, name: "Medicham" },
-  { id: 309, number: 309, name: "Electrike" },
-  { id: 310, number: 310, name: "Manectric" },
-  { id: 311, number: 311, name: "Plusle" },
-  { id: 312, number: 312, name: "Minun" },
-  { id: 313, number: 313, name: "Volbeat" },
-  { id: 314, number: 314, name: "Illumise" },
-  { id: 315, number: 315, name: "Roselia" },
-  { id: 316, number: 316, name: "Gulpin" },
-  { id: 317, number: 317, name: "Swalot" },
-  { id: 318, number: 318, name: "Carvanha" },
-  { id: 319, number: 319, name: "Sharpedo" },
-  { id: 320, number: 320, name: "Wailmer" },
-  { id: 321, number: 321, name: "Wailord" },
-  { id: 322, number: 322, name: "Numel" },
-  { id: 323, number: 323, name: "Camerupt" },
-  { id: 324, number: 324, name: "Torkoal" },
-  { id: 325, number: 325, name: "Spoink" },
-  { id: 326, number: 326, name: "Grumpig" },
-  { id: 327, number: 327, name: "Spinda" },
-  { id: 328, number: 328, name: "Trapinch" },
-  { id: 329, number: 329, name: "Vibrava" },
-  { id: 330, number: 330, name: "Flygon" },
-  { id: 331, number: 331, name: "Cacnea" },
-  { id: 332, number: 332, name: "Cacturne" },
-  { id: 333, number: 333, name: "Swablu" },
-  { id: 334, number: 334, name: "Altaria" },
-  { id: 335, number: 335, name: "Zangoose" },
-  { id: 336, number: 336, name: "Seviper" },
-  { id: 337, number: 337, name: "Lunatone" },
-  { id: 338, number: 338, name: "Solrock" },
-  { id: 339, number: 339, name: "Barboach" },
-  { id: 340, number: 340, name: "Whiscash" },
-  { id: 341, number: 341, name: "Corphish" },
-  { id: 342, number: 342, name: "Crawdaunt" },
-  { id: 343, number: 343, name: "Baltoy" },
-  { id: 344, number: 344, name: "Claydol" },
-  { id: 345, number: 345, name: "Lileep" },
-  { id: 346, number: 346, name: "Cradily" },
-  { id: 347, number: 347, name: "Anorith" },
-  { id: 348, number: 348, name: "Armaldo" },
-  { id: 349, number: 349, name: "Feebas" },
-  { id: 350, number: 350, name: "Milotic" },
-  { id: 351, number: 351, name: "Castform" },
-  { id: 352, number: 352, name: "Kecleon" },
-  { id: 353, number: 353, name: "Shuppet" },
-  { id: 354, number: 354, name: "Banette" },
-  { id: 355, number: 355, name: "Duskull" },
-  { id: 356, number: 356, name: "Dusclops" },
-  { id: 357, number: 357, name: "Tropius" },
-  { id: 358, number: 358, name: "Chimecho" },
-  { id: 359, number: 359, name: "Absol" },
-  { id: 360, number: 360, name: "Wynaut" },
-  { id: 361, number: 361, name: "Snorunt" },
-  { id: 362, number: 362, name: "Glalie" },
-  { id: 363, number: 363, name: "Spheal" },
-  { id: 364, number: 364, name: "Sealeo" },
-  { id: 365, number: 365, name: "Walrein" },
-  { id: 366, number: 366, name: "Clamperl" },
-  { id: 367, number: 367, name: "Huntail" },
-  { id: 368, number: 368, name: "Gorebyss" },
-  { id: 369, number: 369, name: "Relicanth" },
-  { id: 370, number: 370, name: "Luvdisc" },
-  { id: 371, number: 371, name: "Bagon" },
-  { id: 372, number: 372, name: "Shelgon" },
-  { id: 373, number: 373, name: "Salamence" },
-  { id: 374, number: 374, name: "Beldum" },
-  { id: 375, number: 375, name: "Metang" },
-  { id: 376, number: 376, name: "Metagross" },
-  { id: 377, number: 377, name: "Regirock" },
-  { id: 378, number: 378, name: "Regice" },
-  { id: 379, number: 379, name: "Registeel" },
-  { id: 380, number: 380, name: "Latias" },
-  { id: 381, number: 381, name: "Latios" },
-  { id: 382, number: 382, name: "Kyogre" },
-  { id: 383, number: 383, name: "Groudon" },
-  { id: 384, number: 384, name: "Rayquaza" },
-  { id: 385, number: 385, name: "Jirachi" },
-  { id: 386, number: 386, name: "Deoxys" }
+  { id: 252, number: 1, name: "Treecko" },
+  { id: 253, number: 2, name: "Grovyle" },
+  { id: 254, number: 3, name: "Sceptile" },
+  { id: 255, number: 4, name: "Torchic" },
+  { id: 256, number: 5, name: "Combusken" },
+  { id: 257, number: 6, name: "Blaziken" },
+  { id: 258, number: 7, name: "Mudkip" },
+  { id: 259, number: 8, name: "Marshtomp" },
+  { id: 260, number: 9, name: "Swampert" },
+  { id: 261, number: 10, name: "Poochyena" },
+  { id: 262, number: 11, name: "Mightyena" },
+  { id: 263, number: 12, name: "Zigzagoon" },
+  { id: 264, number: 13, name: "Linoone" },
+  { id: 265, number: 14, name: "Wurmple" },
+  { id: 266, number: 15, name: "Silcoon" },
+  { id: 267, number: 16, name: "Beautifly" },
+  { id: 268, number: 17, name: "Cascoon" },
+  { id: 269, number: 18, name: "Dustox" },
+  { id: 270, number: 19, name: "Lotad" },
+  { id: 271, number: 20, name: "Lombre" },
+  { id: 272, number: 21, name: "Ludicolo" },
+  { id: 273, number: 22, name: "Seedot" },
+  { id: 274, number: 23, name: "Nuzleaf" },
+  { id: 275, number: 24, name: "Shiftry" },
+  { id: 276, number: 25, name: "Taillow" },
+  { id: 277, number: 26, name: "Swellow" },
+  { id: 278, number: 27, name: "Wingull" },
+  { id: 279, number: 28, name: "Pelipper" },
+  { id: 280, number: 29, name: "Ralts" },
+  { id: 281, number: 30, name: "Kirlia" },
+  { id: 282, number: 31, name: "Gardevoir" },
+  { id: 283, number: 32, name: "Surskit" },
+  { id: 284, number: 33, name: "Masquerain" },
+  { id: 285, number: 34, name: "Shroomish" },
+  { id: 286, number: 35, name: "Breloom" },
+  { id: 287, number: 36, name: "Slakoth" },
+  { id: 288, number: 37, name: "Vigoroth" },
+  { id: 289, number: 38, name: "Slaking" },
+  { id: 63, number: 39, name: "Abra" },
+  { id: 64, number: 40, name: "Kadabra" },
+  { id: 65, number: 41, name: "Alakazam" },
+  { id: 290, number: 42, name: "Nincada" },
+  { id: 291, number: 43, name: "Ninjask" },
+  { id: 292, number: 44, name: "Shedinja" },
+  { id: 293, number: 45, name: "Whismur" },
+  { id: 294, number: 46, name: "Loudred" },
+  { id: 295, number: 47, name: "Exploud" },
+  { id: 296, number: 48, name: "Makuhita" },
+  { id: 297, number: 49, name: "Hariyama" },
+  { id: 118, number: 50, name: "Goldeen" },
+  { id: 119, number: 51, name: "Seaking" },
+  { id: 129, number: 52, name: "Magikarp" },
+  { id: 130, number: 53, name: "Gyarados" },
+  { id: 298, number: 54, name: "Azurill" },
+  { id: 183, number: 55, name: "Marill" },
+  { id: 184, number: 56, name: "Azumarill" },
+  { id: 74, number: 57, name: "Geodude" },
+  { id: 75, number: 58, name: "Graveler" },
+  { id: 76, number: 59, name: "Golem" },
+  { id: 299, number: 60, name: "Nosepass" },
+  { id: 300, number: 61, name: "Skitty" },
+  { id: 301, number: 62, name: "Delcatty" },
+  { id: 41, number: 63, name: "Zubat" },
+  { id: 42, number: 64, name: "Golbat" },
+  { id: 169, number: 65, name: "Crobat" },
+  { id: 72, number: 66, name: "Tentacool" },
+  { id: 73, number: 67, name: "Tentacruel" },
+  { id: 302, number: 68, name: "Sableye" },
+  { id: 303, number: 69, name: "Mawile" },
+  { id: 304, number: 70, name: "Aron" },
+  { id: 305, number: 71, name: "Lairon" },
+  { id: 306, number: 72, name: "Aggron" },
+  { id: 66, number: 73, name: "Machop" },
+  { id: 67, number: 74, name: "Machoke" },
+  { id: 68, number: 75, name: "Machamp" },
+  { id: 307, number: 76, name: "Meditite" },
+  { id: 308, number: 77, name: "Medicham" },
+  { id: 309, number: 78, name: "Electrike" },
+  { id: 310, number: 79, name: "Manectric" },
+  { id: 311, number: 80, name: "Plusle" },
+  { id: 312, number: 81, name: "Minun" },
+  { id: 81, number: 82, name: "Magnemite" },
+  { id: 82, number: 83, name: "Magneton" },
+  { id: 100, number: 84, name: "Voltorb" },
+  { id: 101, number: 85, name: "Electrode" },
+  { id: 313, number: 86, name: "Volbeat" },
+  { id: 314, number: 87, name: "Illumise" },
+  { id: 43, number: 88, name: "Oddish" },
+  { id: 44, number: 89, name: "Gloom" },
+  { id: 45, number: 90, name: "Vileplume" },
+  { id: 182, number: 91, name: "Bellossom" },
+  { id: 84, number: 92, name: "Doduo" },
+  { id: 85, number: 93, name: "Dodrio" },
+  { id: 315, number: 94, name: "Roselia" },
+  { id: 316, number: 95, name: "Gulpin" },
+  { id: 317, number: 96, name: "Swalot" },
+  { id: 318, number: 97, name: "Carvanha" },
+  { id: 319, number: 98, name: "Sharpedo" },
+  { id: 320, number: 99, name: "Wailmer" },
+  { id: 321, number: 100, name: "Wailord" },
+  { id: 322, number: 101, name: "Numel" },
+  { id: 323, number: 102, name: "Camerupt" },
+  { id: 218, number: 103, name: "Slugma" },
+  { id: 219, number: 104, name: "Magcargo" },
+  { id: 324, number: 105, name: "Torkoal" },
+  { id: 88, number: 106, name: "Grimer" },
+  { id: 89, number: 107, name: "Muk" },
+  { id: 109, number: 108, name: "Koffing" },
+  { id: 110, number: 109, name: "Weezing" },
+  { id: 325, number: 110, name: "Spoink" },
+  { id: 326, number: 111, name: "Grumpig" },
+  { id: 27, number: 112, name: "Sandshrew" },
+  { id: 28, number: 113, name: "Sandslash" },
+  { id: 327, number: 114, name: "Spinda" },
+  { id: 227, number: 115, name: "Skarmory" },
+  { id: 328, number: 116, name: "Trapinch" },
+  { id: 329, number: 117, name: "Vibrava" },
+  { id: 330, number: 118, name: "Flygon" },
+  { id: 331, number: 119, name: "Cacnea" },
+  { id: 332, number: 120, name: "Cacturne" },
+  { id: 333, number: 121, name: "Swablu" },
+  { id: 334, number: 122, name: "Altaria" },
+  { id: 335, number: 123, name: "Zangoose" },
+  { id: 336, number: 124, name: "Seviper" },
+  { id: 337, number: 125, name: "Lunatone" },
+  { id: 338, number: 126, name: "Solrock" },
+  { id: 339, number: 127, name: "Barboach" },
+  { id: 340, number: 128, name: "Whiscash" },
+  { id: 341, number: 129, name: "Corphish" },
+  { id: 342, number: 130, name: "Crawdaunt" },
+  { id: 343, number: 131, name: "Baltoy" },
+  { id: 344, number: 132, name: "Claydol" },
+  { id: 345, number: 133, name: "Lileep" },
+  { id: 346, number: 134, name: "Cradily" },
+  { id: 347, number: 135, name: "Anorith" },
+  { id: 348, number: 136, name: "Armaldo" },
+  { id: 174, number: 137, name: "Igglybuff" },
+  { id: 39, number: 138, name: "Jigglypuff" },
+  { id: 40, number: 139, name: "Wigglytuff" },
+  { id: 349, number: 140, name: "Feebas" },
+  { id: 350, number: 141, name: "Milotic" },
+  { id: 351, number: 142, name: "Castform" },
+  { id: 120, number: 143, name: "Staryu" },
+  { id: 121, number: 144, name: "Starmie" },
+  { id: 352, number: 145, name: "Kecleon" },
+  { id: 353, number: 146, name: "Shuppet" },
+  { id: 354, number: 147, name: "Banette" },
+  { id: 355, number: 148, name: "Duskull" },
+  { id: 356, number: 149, name: "Dusclops" },
+  { id: 357, number: 150, name: "Tropius" },
+  { id: 358, number: 151, name: "Chimecho" },
+  { id: 359, number: 152, name: "Absol" },
+  { id: 37, number: 153, name: "Vulpix" },
+  { id: 38, number: 154, name: "Ninetales" },
+  { id: 172, number: 155, name: "Pichu" },
+  { id: 25, number: 156, name: "Pikachu" },
+  { id: 26, number: 157, name: "Raichu" },
+  { id: 54, number: 158, name: "Psyduck" },
+  { id: 55, number: 159, name: "Golduck" },
+  { id: 360, number: 160, name: "Wynaut" },
+  { id: 202, number: 161, name: "Wobbuffet" },
+  { id: 177, number: 162, name: "Natu" },
+  { id: 178, number: 163, name: "Xatu" },
+  { id: 203, number: 164, name: "Girafarig" },
+  { id: 231, number: 165, name: "Phanpy" },
+  { id: 232, number: 166, name: "Donphan" },
+  { id: 127, number: 167, name: "Pinsir" },
+  { id: 214, number: 168, name: "Heracross" },
+  { id: 111, number: 169, name: "Rhyhorn" },
+  { id: 112, number: 170, name: "Rhydon" },
+  { id: 361, number: 171, name: "Snorunt" },
+  { id: 362, number: 172, name: "Glalie" },
+  { id: 363, number: 173, name: "Spheal" },
+  { id: 364, number: 174, name: "Sealeo" },
+  { id: 365, number: 175, name: "Walrein" },
+  { id: 366, number: 176, name: "Clamperl" },
+  { id: 367, number: 177, name: "Huntail" },
+  { id: 368, number: 178, name: "Gorebyss" },
+  { id: 369, number: 179, name: "Relicanth" },
+  { id: 222, number: 180, name: "Corsola" },
+  { id: 170, number: 181, name: "Chinchou" },
+  { id: 171, number: 182, name: "Lanturn" },
+  { id: 370, number: 183, name: "Luvdisc" },
+  { id: 116, number: 184, name: "Horsea" },
+  { id: 117, number: 185, name: "Seadra" },
+  { id: 230, number: 186, name: "Kingdra" },
+  { id: 371, number: 187, name: "Bagon" },
+  { id: 372, number: 188, name: "Shelgon" },
+  { id: 373, number: 189, name: "Salamence" },
+  { id: 374, number: 190, name: "Beldum" },
+  { id: 375, number: 191, name: "Metang" },
+  { id: 376, number: 192, name: "Metagross" },
+  { id: 377, number: 193, name: "Regirock" },
+  { id: 378, number: 194, name: "Regice" },
+  { id: 379, number: 195, name: "Registeel" },
+  { id: 380, number: 196, name: "Latias" },
+  { id: 381, number: 197, name: "Latios" },
+  { id: 382, number: 198, name: "Kyogre" },
+  { id: 383, number: 199, name: "Groudon" },
+  { id: 384, number: 200, name: "Rayquaza" },
+  { id: 385, number: 201, name: "Jirachi" },
+  { id: 386, number: 202, name: "Deoxys" }
 ];
 
 const TOTAL_CARDS = hoennPokemon.length;
@@ -154,6 +221,7 @@ const syncStatusText = document.getElementById("syncStatusText");
 const syncCloseBtn = document.getElementById("syncCloseBtn");
 const syncLastUpdated = document.getElementById("syncLastUpdated");
 const syncLastUpdatedStatus = document.getElementById("syncLastUpdatedStatus");
+const syncDetailsLink = document.getElementById("syncDetailsLink");
 const modal = document.getElementById("cardModal");
 const modalTitle = document.getElementById("modalTitle");
 const modalSummary = document.getElementById("modalSummary");
@@ -170,6 +238,23 @@ let currentVariantOptions = [];
 let currentVariantIndex = 0;
 let touchStartX = 0;
 let touchStartY = 0;
+
+// Promise do catálogo (iniciada no <head> pelo early fetch; o fallback aqui
+// cobre execuções em páginas antigas/cacheado).
+let catalogReady = window.__catalogPromise || null;
+
+// Índice de variantes por Pokémon (construído uma vez quando o catálogo chega).
+const variantsCache = new Map();
+let catalogAssetsPrepared = false;
+
+// Filtro ativo da grade ("all" | "mega" | "special"), controlado pelos pills do header.
+let activeFilter = "all";
+
+// Busca por nome (input do painel): qualquer digitação já restringe a grade.
+let searchQuery = "";
+
+// Linhas de divergência da última sincronização (para o relatório "Detalhes").
+let syncReportRows = [];
 
 function setupCardTilt(cardElement) {
   if (!cardElement) return;
@@ -192,17 +277,38 @@ function setupCardTilt(cardElement) {
 }
 
 async function loadCardAssets() {
-  const candidate = "../assets/cards/index.json";
-
   try {
-    const response = await fetch(candidate);
-    if (!response.ok) {
-      cardAssets = [];
-      return;
+    // Payload null = early fetch falhou (404/rede); refaz o fetch aqui.
+    const payload = await catalogReady;
+    if (payload) {
+      cardAssets = Array.isArray(payload.cards) ? payload.cards : [];
+    } else {
+      const response = await fetch("../assets/data/catalog.min.json");
+      cardAssets = response.ok ? await response.json().then((data) => (Array.isArray(data?.cards) ? data.cards : [])) : [];
     }
-    cardAssets = await response.json();
   } catch (error) {
     cardAssets = [];
+  }
+
+  // Repõe folder (derivável) e pré-computa candidatos normalizados uma única
+  // vez — getCardVariants deixa de normalizar 5 campos por entrada a cada call.
+  cardAssets.forEach((asset) => {
+    asset.folder = String(asset.file || "").split("/")[0];
+    asset.__candidates = [
+      asset.pokemon,
+      asset.folder,
+      asset.printedPokemon,
+      asset.file
+    ].map((candidate) => normalizePokemonKey(candidate));
+  });
+  catalogAssetsPrepared = true;
+
+  // Se o usuário abriu um modal antes do catálogo chegar, re-renderiza. O mesmo
+  // vale para filtro != all: sem catálogo os predicates não acham variantes.
+  if (currentCardId !== null || activeFilter !== "all") {
+    renderCards();
+    const card = cards.find((item) => item.id === currentCardId);
+    if (card) renderVariantList(selectedAsset);
   }
 }
 
@@ -253,17 +359,55 @@ function isNoImageVariant(asset) {
 function getCardVariants(cardName) {
   const normalized = normalizePokemonKey(cardName);
 
-  return cardAssets.filter((asset) => {
-    const candidates = [
-      asset?.name,
-      asset?.pokemon,
-      asset?.folder,
-      asset?.standardName,
-      asset?.file
+  // Índice O(1) após o load do catálogo (só 135 nomes possíveis na grade).
+  if (catalogAssetsPrepared && variantsCache.has(normalized)) {
+    return variantsCache.get(normalized);
+  }
+
+  const variants = cardAssets.filter((asset) => {
+    const candidates = asset.__candidates || [
+      normalizePokemonKey(asset?.pokemon),
+      normalizePokemonKey(asset?.folder),
+      normalizePokemonKey(asset?.file)
     ];
 
-    return candidates.some((candidate) => normalizePokemonKey(candidate).includes(normalized));
+    return candidates.some((candidate) => candidate.includes(normalized));
   });
+
+  if (catalogAssetsPrepared) {
+    variantsCache.set(normalized, variants);
+  }
+  return variants;
+}
+
+// Predicados dos filtros do header. Qualificam pelo POKÉMON (qualquer variante
+// dele casa), não pela variante coletada — o filtro organiza a grade, não o estado.
+const MEGA_PREFIXES = ["mega-", "m-"];
+const SPECIAL_ART_RARITIES = new Set([
+  "illustration rare",
+  "special illustration rare",
+  "secret rare",
+  "shiny rare",
+  "shiny ultra rare",
+  "mega hyper rare",
+  "amazing rare"
+]);
+
+function pokemonHasMegaVariant(cardName) {
+  return getCardVariants(cardName).some((asset) =>
+    MEGA_PREFIXES.some((prefix) => String(asset.printedPokemon || "").toLowerCase().startsWith(prefix)));
+}
+
+function pokemonHasSpecialArtVariant(cardName) {
+  return getCardVariants(cardName).some((asset) =>
+    SPECIAL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase()));
+}
+
+function cardMatchesFilter(card) {
+  if (activeFilter === "mega" && !pokemonHasMegaVariant(card.name)) return false;
+  if (activeFilter === "special" && !pokemonHasSpecialArtVariant(card.name)) return false;
+  if (searchQuery && !normalizePokemonKey(card.name).includes(searchQuery)) return false;
+  return true;
 }
 
 function loadCards() {
@@ -331,6 +475,68 @@ function closeSyncNotification() {
   syncNotification.classList.add("hidden");
 }
 
+// Relatório de divergências da sincronização: página HTML gerada na hora,
+// aberta em Blob URL (fecha quando a guia fecha; não precisa de servidor).
+const STATUS_LABELS = {
+  novo: "Novo na database",
+  extra: "Extra local"
+};
+
+function openSyncDetailsReport() {
+  const rows = syncReportRows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.pokemon)}</td>
+        <td>${escapeHtml(row.setId)}</td>
+        <td>${escapeHtml(row.number)}</td>
+        <td class="status-${escapeHtml(row.status)}">${STATUS_LABELS[row.status] || escapeHtml(row.status)}</td>
+      </tr>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatório de sincronização — Pokémon Emerald TCG</title>
+  <style>
+    body { margin: 0; padding: 32px 24px; font-family: "Segoe UI", Tahoma, sans-serif; background: #f5f4f0; color: #0d1114; }
+    h1 { font-size: 1.15rem; margin: 0 0 4px; }
+    p { font-size: 0.8rem; color: #556; margin: 0 0 20px; }
+    table { border-collapse: collapse; width: 100%; max-width: 720px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    th, td { text-align: left; padding: 9px 14px; font-size: 0.82rem; border-bottom: 1px solid #eee; }
+    th { background: #0f4b3c; color: #edf7ee; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .status-novo { color: #1b6a4a; font-weight: 700; }
+    .status-extra { color: #b98a22; font-weight: 700; }
+    .empty { padding: 24px; text-align: center; color: #556; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>Relatório de sincronização</h1>
+  <p>Gerado em ${new Date().toLocaleString("pt-BR")} — comparação entre o catálogo local e a série EX da TCGdex.</p>
+  <table>
+    <thead><tr><th>Pokémon</th><th>Set</th><th>Número</th><th>Status</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="4" class="empty">Nenhuma divergência registrada.</td></tr>'}</tbody>
+  </table>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const reportWindow = window.open(url, "_blank", "noopener");
+  if (reportWindow) {
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+}
+
+function updateSyncDetailsLink() {
+  if (!syncDetailsLink) return;
+  if (syncReportRows.length) {
+    syncDetailsLink.href = "#";
+    syncDetailsLink.classList.remove("hidden");
+  } else {
+    syncDetailsLink.classList.add("hidden");
+  }
+}
+
 function formatSyncTimestamp(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return "";
@@ -379,27 +585,26 @@ async function runCardSyncCheck() {
   syncCloseBtn.hidden = true;
 
   try {
-    updateSyncNotification(0, "Carregando catálogo local...", "Conectando com a database...");
-
-    const localResponse = await fetch("../assets/cards/index.json");
-    if (!localResponse.ok) {
-      throw new Error("Não foi possível carregar o catálogo local.");
+    // Reusa o catálogo já carregado no boot (sem segundo download). Se o early
+    // fetch do <head> falhou (payload null), recarrega — base vazia geraria
+    // divergências falsas na comparação.
+    if (cardAssets.length === 0) {
+      catalogReady = loadCardAssets();
     }
+    await catalogReady;
 
-    const localCards = await localResponse.json();
+    updateSyncNotification(0, "Catálogo local carregado", `${cardAssets.length} cartas na base`);
     const localMap = new Map();
 
-    // O tracker cobre a série EX (Geração 3): ignora pastas fora do roster e
-    // sets de outras eras que porventura existam no catálogo.
-    const nonHoennFolders = new Set(["abra", "kadabra", "alakazam", "wobbuffet"]);
+    // O tracker cobre a série EX (Geração 3): ignora sets de outras eras que
+    // porventura existam no catálogo. Abra/Kadabra/Alakazam/Wobbuffet agora são
+    // do roster (dex regional do Emerald), então nada de pasta é excluído.
     const isGen3Set = (setId) => {
       const value = String(setId || "").trim().toLowerCase();
       return /^ex\d+(\.\d+)?$/.test(value) || value === "exu";
     };
 
-    localCards.forEach((card) => {
-      const folder = normalizePokemonKey(card.folder || "");
-      if (nonHoennFolders.has(folder)) return;
+    cardAssets.forEach((card) => {
       if (!isGen3Set(card.set)) return;
 
       const key = `${normalizePokemonKey(card.pokemon || card.folder || card.name)}|${normalizePokemonKey(String(card.set || "unknown"))}|${normalizeCardNumber(card.number)}`;
@@ -440,26 +645,34 @@ async function runCardSyncCheck() {
       const missingLocal = [...localMap.keys()].filter((key) => {
         const [pokemon, ,] = key.split("|");
         return pokemon === normalizePokemonKey(pokemonName) && !remoteSet.has(key);
-      }).length;
+      });
 
       const missingRemote = [...remoteSet].filter((key) => {
         const [pokemon, ,] = key.split("|");
         return pokemon === normalizePokemonKey(pokemonName) && !localMap.has(key);
-      }).length;
+      });
 
-      if (missingLocal || missingRemote) {
-        issues.push({ pokemon: pokemonName, missingLocal, missingRemote });
+      if (missingLocal.length || missingRemote.length) {
+        issues.push({
+          pokemon: pokemonName,
+          missingLocal: missingLocal.length,
+          missingRemote: missingRemote.length,
+          // Divergências individuais para a tabela do relatório: "novo" = existe
+          // na API e falta no catálogo local; "extra" = só existe no local.
+          details: [
+            ...missingRemote.map((key) => ({ key, status: "novo" })),
+            ...missingLocal.map((key) => ({ key, status: "extra" }))
+          ]
+        });
       }
     }
 
     // As 4 promos ex5.5 (Poké Card Creator Pack) não têm imagem publicada em nenhuma
     // fonte — não é falha do catálogo local, então ficam de fora da contagem de divergências.
-    const knownIssues = [];
     const realIssues = [];
 
     issues.forEach((issue) => {
       if (issue.missingRemote > 0 && issue.missingLocal === 0) {
-        knownIssues.push(issue);
         return;
       }
       realIssues.push(issue);
@@ -468,19 +681,25 @@ async function runCardSyncCheck() {
     const totalMissingLocal = realIssues.reduce((sum, issue) => sum + (issue.missingLocal || 0), 0);
     const totalMissingRemote = realIssues.reduce((sum, issue) => sum + (issue.missingRemote || 0), 0);
 
+    // Divergências reais viram tabela no relatório (link "Detalhes").
+    const reportDetails = [];
+    realIssues.forEach((issue) => {
+      (issue.details || []).forEach((detail) => {
+        const [pokemon, setId, number] = detail.key.split("|");
+        reportDetails.push({ pokemon, setId, number, status: detail.status });
+      });
+    });
+    syncReportRows = reportDetails;
+
     if (!realIssues.length) {
       saveLastSync();
-      const suffix = knownIssues.length
-        ? ` ${knownIssues.length} promo(s) ex5.5 sem imagem na fonte (esperado).`
-        : "";
-      updateSyncNotification(100, "Sincronização concluída", `Tudo está alinhado com a database.${suffix}`);
-      console.log("Sincronização concluída: todas as cartas estão alinhadas.");
-      if (knownIssues.length) console.info("Promos ex5.5 sem imagem na fonte (esperado):", knownIssues);
+      updateSyncNotification(100, "Sincronização concluída", "Tudo alinhado com a database.");
     } else {
       saveLastSync();
-      updateSyncNotification(100, "Sincronização concluída", `Há divergências: ${totalMissingLocal} ausentes e ${totalMissingRemote} extras.`);
+      updateSyncNotification(100, "Sincronização concluída", `Divergências: ${totalMissingLocal} extras · ${totalMissingRemote} novas.`);
       console.warn("Sincronização com divergências:", realIssues);
     }
+    updateSyncDetailsLink();
 
     syncCloseBtn.hidden = false;
   } catch (error) {
@@ -584,10 +803,56 @@ function createCardMarkup(card) {
 }
 
 function renderCards() {
-  cardGrid.innerHTML = cards.map(createCardMarkup).join("");
+  cardGrid.innerHTML = cards.filter(cardMatchesFilter).map(createCardMarkup).join("");
   document.querySelectorAll(".card").forEach(setupCardTilt);
   updateProgressBar();
 }
+
+(function initSearchInput() {
+  const searchInput = document.getElementById("searchInput");
+  if (!searchInput) return;
+
+  searchInput.addEventListener("input", () => {
+    searchQuery = normalizePokemonKey(searchInput.value);
+    renderCards();
+  });
+
+  // Digitar em qualquer lugar da tela foca a busca e roteia a tecla para o
+  // input. Escape limpa; Backspace também esvazia quando o campo está vazio
+  // (volta a grade completa em vez de saltar a página).
+  document.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+    const target = event.target;
+    const typingElsewhere = target instanceof HTMLElement
+      && (target.isContentEditable
+        || target.tagName === "INPUT"
+        || target.tagName === "TEXTAREA"
+        || target.tagName === "SELECT");
+
+    // O modal intercepta Escape/setas no handler dedicado; não duplicar aqui.
+    if (currentCardId !== null) return;
+
+    if (event.key === "Escape" && document.activeElement === searchInput) {
+      searchInput.value = "";
+      searchQuery = "";
+      searchInput.blur();
+      renderCards();
+      return;
+    }
+
+    if (typingElsewhere) return;
+
+    if (event.key === "Backspace" && searchInput.value === "") {
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key.length === 1) {
+      searchInput.focus();
+    }
+  });
+})();
 
 function changeSelectedVariant(step) {
   if (!currentVariantOptions.length) return;
@@ -699,7 +964,7 @@ function renderVariantList(defaultAsset = null) {
     const variantText = formatVariantLabel(asset);
 
     button.innerHTML = `
-      <img class="variant-thumb" src="${getAssetPath(asset.file)}" alt="${escapeHtml(asset.name)}" />
+      <img class="variant-thumb" loading="lazy" decoding="async" src="${getAssetPath(asset.file)}" alt="${escapeHtml(asset.name)}" />
       <span class="variant-label">${variantText}${noImage ? '<em class="variant-no-image">· sem imagem</em>' : ""}</span>
     `;
 
@@ -851,6 +1116,13 @@ if (syncCloseBtn) {
   syncCloseBtn.addEventListener("click", closeSyncNotification);
 }
 
+if (syncDetailsLink) {
+  syncDetailsLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    openSyncDetailsReport();
+  });
+}
+
 (function initSyncInfo() {
   loadLastSync();
 })();
@@ -875,8 +1147,28 @@ if (syncCloseBtn) {
   });
 })();
 
-(async function init() {
+(function initFilterPills() {
+  const pills = document.querySelectorAll(".top-actions .pill-btn");
+
+  pills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      const filter = pill.dataset.filter;
+      if (!filter || filter === activeFilter) return;
+
+      activeFilter = filter;
+      pills.forEach((item) => {
+        const isActive = item === pill;
+        item.classList.toggle("active", isActive);
+        item.setAttribute("aria-pressed", String(isActive));
+      });
+      renderCards();
+    });
+  });
+})();
+
+(function init() {
   loadCards();
-  await loadCardAssets();
+  // A grade não depende do catálogo: pinta já; a base chega em background.
   renderCards();
+  loadCardAssets();
 })();

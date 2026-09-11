@@ -13,19 +13,22 @@ python3 -m http.server 8765
 
 E abra `http://localhost:8765/src/`.
 
-> Abrir o `index.html` diretamente via `file://` não funciona: o app busca o catálogo
-> `assets/cards/index.json` via `fetch`, que exige HTTP.
+> Abrir o `index.html` diretamente via `file://` não funciona: o app busca a base de
+> dados `assets/data/catalog.min.json` via `fetch`, que exige HTTP.
 
 ## Arquitetura
 
 ```
 gen3-track-tcg/
 ├── src/                  # Aplicação (o que o navegador carrega)
-│   ├── index.html        # Página única (SPA)
+│   ├── index.html        # Página única (SPA) — early-fetch da base no <head>
 │   ├── style.css         # Estilos (tema Emerald)
 │   └── script.js         # Estado, renderização, modal e sync
 ├── assets/
-│   ├── cards/            # 139 pastas (1 por Pokémon) + index.json (catálogo)
+│   ├── cards/            # 139 pastas (1 por Pokémon) + index.json (inventário de arquivos)
+│   ├── data/             # Base de dados do app (gerada por build_card_database.py)
+│   │   ├── catalog.min.json    # Tier 1 — catálogo leve usado pela UI
+│   │   └── details/<pk>.json   # Tier 2 — detalhes pesados (fetch sob demanda)
 │   └── site/             # Background, verso de carta, ícones, cry do Rayquaza
 ├── scripts/              # Ferramentas Python (manutenção do catálogo)
 └── docs/                 # Referências de design
@@ -42,9 +45,12 @@ gen3-track-tcg/
 - **Zero build tools** — para um projeto de página única hospedado no GitHub Pages, um bundler
   (Vite/webpack) só adicionaria complexidade sem ganho real. Vanilla JS + paths relativos
   funcionam em qualquer servidor estático, incluindo o Pages.
-- **Catálogo como JSON indexado (`assets/cards/index.json`)** — a UI não lista diretórios
-  (impossível em um site estático); um único JSON pré-construído resolve isso de forma
-  determinística e versionável.
+- **Catálogo como JSON indexado (`assets/data/catalog.min.json`)** — a UI não lista
+  diretórios (impossível em um site estático); um único JSON pré-construído resolve isso
+  de forma determinística e versionável. É gerado por `build_card_database.py` a partir
+  do inventário de arquivos (`assets/cards/index.json`) + metadados da API TCGdex,
+  dividido em duas camadas: Tier 1 (leve, carregado no boot com early-fetch no `<head>`)
+  e Tier 2 (`assets/data/details/`, fetch sob demanda quando um card abre).
 
 ## Funcionalidades
 
@@ -62,6 +68,7 @@ gen3-track-tcg/
 
 | Script | Função |
 | --- | --- |
+| `build_card_database.py` | Gera a base do app (`assets/data/`) a partir do catálogo local + TCGdex |
 | `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
 | `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
 | `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |

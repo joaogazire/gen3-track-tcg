@@ -6,6 +6,13 @@
     <title>Pokémon Emerald TCG</title>
     <meta name="description" content="Tracker pessoal de coleção de cartas Pokémon TCG da geração 3, inspirada em Pokémon Emerald." />
     <link rel="stylesheet" href="style.css" />
+    <script>
+      // Early fetch da base de dados: começa no parse do head, antes do script.js.
+      // O init() pinta a grade sem esperar; o catálogo chega em background.
+      window.__catalogPromise = fetch("../assets/data/catalog.min.json")
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .catch(function () { return null; });
+    </script>
   </head>
   <body>
     <header class="topbar">
@@ -21,9 +28,9 @@
 
         <div class="header-right">
           <div class="top-actions" aria-label="Navegação rápida">
-            <button type="button" class="pill-btn active">See all</button>
-            <button type="button" class="pill-btn">Mega Evolution</button>
-            <button type="button" class="pill-btn">Special Art</button>
+            <button type="button" class="pill-btn active" data-filter="all" aria-pressed="true">See all</button>
+            <button type="button" class="pill-btn" data-filter="mega" aria-pressed="false">Mega Evolution</button>
+            <button type="button" class="pill-btn" data-filter="special" aria-pressed="false">Special Art</button>
           </div>
 
           <button id="syncCheckBtn" class="header-refresh-btn" type="button" aria-label="Verificar sincronização das cartas" title="Verificar sincronização com o banco de dados">
@@ -36,7 +43,7 @@
       <div class="progress-band" id="progresso">
         <div class="progress-wrap" aria-label="Progresso da coleção">
           <div class="progress-meta">
-            <span class="progress-text" id="progressText">0 / 135 cartas</span>
+            <span class="progress-text" id="progressText">0 / 202 cartas</span>
             <span class="progress-percent" id="progressPercent">0%</span>
           </div>
           <div class="progress-bar">
@@ -51,6 +58,15 @@
       <section id="catalogo" class="collection-panel">
         <div class="panel-header">
           <span class="section-tag">Checklist</span>
+          <input
+            id="searchInput"
+            class="search-input"
+            type="search"
+            placeholder="Buscar Pokémon..."
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Buscar Pokémon por nome"
+          />
         </div>
 
         <section id="cardGrid" class="card-grid" aria-live="polite"></section>
@@ -92,7 +108,10 @@
       </div>
 
       <div id="syncStatusText" class="sync-status-text">Conectando com a database...</div>
-      <div id="syncLastUpdatedStatus" class="sync-last-updated-status">nunca</div>
+      <div class="sync-footer">
+        <span id="syncLastUpdatedStatus" class="sync-last-updated-status">nunca</span>
+        <a id="syncDetailsLink" class="sync-details-link hidden" href="#" target="_blank" rel="noopener noreferrer">Detalhes</a>
+      </div>
     </div>
 
     <script src="script.js"></script>
