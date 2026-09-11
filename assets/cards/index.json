@@ -5962,26 +5962,6 @@
   {
     "name": "Beldum",
     "pokemon": "Beldum",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "beldum/beldum_ex5_common_normal.png",
-    "source": "local",
-    "folder": "beldum",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "beldum_ex5_common_normal_local"
-  },
-  {
-    "name": "Beldum",
-    "pokemon": "Beldum",
     "set": "ex8",
     "number": "55",
     "file": "beldum/beldum_ex8-55.png",
@@ -12284,26 +12264,6 @@
     "pokemon": "Deoxys",
     "set": "ex8",
     "number": "97",
-    "file": "deoxys/deoxys-ex_ex8-97.png",
-    "source": "local",
-    "folder": "deoxys",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "deoxys_ex8_97"
-  },
-  {
-    "name": "Deoxys",
-    "pokemon": "Deoxys",
-    "set": "ex8",
-    "number": "97",
     "file": "deoxys/deoxys_ex8-97.png",
     "source": "local",
     "folder": "deoxys",
@@ -12318,26 +12278,6 @@
     ],
     "rarity": "common",
     "standardName": "deoxys_ex8_97"
-  },
-  {
-    "name": "Deoxys",
-    "pokemon": "Deoxys",
-    "set": "ex8",
-    "number": "98",
-    "file": "deoxys/deoxys-ex_ex8-98.png",
-    "source": "local",
-    "folder": "deoxys",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "deoxys_ex8_98"
   },
   {
     "name": "Deoxys",
@@ -12364,26 +12304,6 @@
     "pokemon": "Deoxys",
     "set": "ex8",
     "number": "99",
-    "file": "deoxys/deoxys-ex_ex8-99.png",
-    "source": "local",
-    "folder": "deoxys",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "deoxys_ex8_99"
-  },
-  {
-    "name": "Deoxys",
-    "pokemon": "Deoxys",
-    "set": "ex8",
-    "number": "99",
     "file": "deoxys/deoxys_ex8-99.png",
     "source": "local",
     "folder": "deoxys",
@@ -12398,26 +12318,6 @@
     ],
     "rarity": "common",
     "standardName": "deoxys_ex8_99"
-  },
-  {
-    "name": "Deoxys",
-    "pokemon": "Deoxys",
-    "set": "ex8_common_normal",
-    "number": "",
-    "file": "deoxys/deoxys_ex8_common_normal.png",
-    "source": "local",
-    "folder": "deoxys",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "deoxys_ex8_common_normal_local"
   },
   {
     "name": "Deoxys",
@@ -12438,26 +12338,6 @@
     ],
     "rarity": "common",
     "standardName": "deoxys_ex9_2"
-  },
-  {
-    "name": "Deoxys",
-    "pokemon": "Deoxys",
-    "set": "ex9",
-    "number": "93",
-    "file": "deoxys/deoxys-ex_ex9-93.png",
-    "source": "local",
-    "folder": "deoxys",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "deoxys_ex9_93"
   },
   {
     "name": "Deoxys",
@@ -17422,26 +17302,6 @@
   {
     "name": "Groudon",
     "pokemon": "Groudon",
-    "set": "col1_common_normal",
-    "number": "",
-    "file": "groudon/groudon_col1_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_col1_common_normal_local"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
     "set": "dc1",
     "number": "15",
     "file": "groudon/groudon_dc1-15.png",
@@ -17504,26 +17364,6 @@
     "pokemon": "Groudon",
     "set": "ex11",
     "number": "111",
-    "file": "groudon/groudon-star_ex11-111.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex11_111"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex11",
-    "number": "111",
     "file": "groudon/groudon_ex11-111.png",
     "source": "local",
     "folder": "groudon",
@@ -17538,46 +17378,6 @@
     ],
     "rarity": "common",
     "standardName": "groudon_ex11_111"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex11_common_normal",
-    "number": "",
-    "file": "groudon/groudon-star_ex11_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex11_common_normal_local"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex14",
-    "number": "93",
-    "file": "groudon/groudon-ex_ex14-93.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex14_93"
   },
   {
     "name": "Groudon",
@@ -17602,26 +17402,6 @@
   {
     "name": "Groudon",
     "pokemon": "Groudon",
-    "set": "ex14_common_normal",
-    "number": "",
-    "file": "groudon/groudon-ex_ex14_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex14_common_normal_local"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
     "set": "ex4",
     "number": "9",
     "file": "groudon/groudon_ex4-9.png",
@@ -17638,46 +17418,6 @@
     ],
     "rarity": "common",
     "standardName": "groudon_ex4_9"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex4",
-    "number": "9",
-    "file": "groudon/team-magma-s-groudon_ex4-9.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex4_9"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex4_common_normal",
-    "number": "",
-    "file": "groudon/team-magma-s-groudon_ex4_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex4_common_normal_local"
   },
   {
     "name": "Groudon",
@@ -17704,26 +17444,6 @@
     "pokemon": "Groudon",
     "set": "ex5",
     "number": "93",
-    "file": "groudon/groudon-ex_ex5-93.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex5_93"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex5",
-    "number": "93",
     "file": "groudon/groudon_ex5-93.png",
     "source": "local",
     "folder": "groudon",
@@ -17738,46 +17458,6 @@
     ],
     "rarity": "common",
     "standardName": "groudon_ex5_93"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "groudon/groudon-ex_ex5_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex5_common_normal_local"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "groudon/groudon_ex5_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex5_common_normal_local"
   },
   {
     "name": "Groudon",
@@ -17818,26 +17498,6 @@
     ],
     "rarity": "common",
     "standardName": "groudon_ex9_5"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "ex9_common_normal",
-    "number": "",
-    "file": "groudon/groudon_ex9_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_ex9_common_normal_local"
   },
   {
     "name": "Groudon",
@@ -18018,26 +17678,6 @@
     ],
     "rarity": "common",
     "standardName": "groudon_np_38"
-  },
-  {
-    "name": "Groudon",
-    "pokemon": "Groudon",
-    "set": "np_common_normal",
-    "number": "",
-    "file": "groudon/groudon-ex_np_common_normal.png",
-    "source": "local",
-    "folder": "groudon",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "groudon_np_common_normal_local"
   },
   {
     "name": "Groudon",
@@ -19804,26 +19444,6 @@
     "pokemon": "Jirachi",
     "set": "ex14",
     "number": "94",
-    "file": "jirachi/jirachi-ex_ex14-94.png",
-    "source": "local",
-    "folder": "jirachi",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "jirachi_ex14_94"
-  },
-  {
-    "name": "Jirachi",
-    "pokemon": "Jirachi",
-    "set": "ex14",
-    "number": "94",
     "file": "jirachi/jirachi_ex14-94.png",
     "source": "local",
     "folder": "jirachi",
@@ -19858,26 +19478,6 @@
     ],
     "rarity": "common",
     "standardName": "jirachi_ex4_97"
-  },
-  {
-    "name": "Jirachi",
-    "pokemon": "Jirachi",
-    "set": "ex4_common_normal",
-    "number": "",
-    "file": "jirachi/jirachi_ex4_common_normal.png",
-    "source": "local",
-    "folder": "jirachi",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "jirachi_ex4_common_normal_local"
   },
   {
     "name": "Jirachi",
@@ -21684,26 +21284,6 @@
     "pokemon": "Kyogre",
     "set": "ex11",
     "number": "112",
-    "file": "kyogre/kyogre-star_ex11-112.png",
-    "source": "local",
-    "folder": "kyogre",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "kyogre_ex11_112"
-  },
-  {
-    "name": "Kyogre",
-    "pokemon": "Kyogre",
-    "set": "ex11",
-    "number": "112",
     "file": "kyogre/kyogre_ex11-112.png",
     "source": "local",
     "folder": "kyogre",
@@ -21718,26 +21298,6 @@
     ],
     "rarity": "common",
     "standardName": "kyogre_ex11_112"
-  },
-  {
-    "name": "Kyogre",
-    "pokemon": "Kyogre",
-    "set": "ex14",
-    "number": "95",
-    "file": "kyogre/kyogre-ex_ex14-95.png",
-    "source": "local",
-    "folder": "kyogre",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "kyogre_ex14_95"
   },
   {
     "name": "Kyogre",
@@ -21778,46 +21338,6 @@
     ],
     "rarity": "common",
     "standardName": "kyogre_ex4_3"
-  },
-  {
-    "name": "Kyogre",
-    "pokemon": "Kyogre",
-    "set": "ex4",
-    "number": "3",
-    "file": "kyogre/team-aqua-s-kyogre_ex4-3.png",
-    "source": "local",
-    "folder": "kyogre",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "kyogre_ex4_3"
-  },
-  {
-    "name": "Kyogre",
-    "pokemon": "Kyogre",
-    "set": "ex5",
-    "number": "94",
-    "file": "kyogre/kyogre-ex_ex5-94.png",
-    "source": "local",
-    "folder": "kyogre",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "kyogre_ex5_94"
   },
   {
     "name": "Kyogre",
@@ -21878,26 +21398,6 @@
     ],
     "rarity": "common",
     "standardName": "kyogre_ex9_6"
-  },
-  {
-    "name": "Kyogre",
-    "pokemon": "Kyogre",
-    "set": "ex9_common_normal",
-    "number": "",
-    "file": "kyogre/kyogre_ex9_common_normal.png",
-    "source": "local",
-    "folder": "kyogre",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "kyogre_ex9_common_normal_local"
   },
   {
     "name": "Kyogre",
@@ -22942,26 +22442,6 @@
   {
     "name": "Latias",
     "pokemon": "Latias",
-    "set": "ex11_common_normal",
-    "number": "",
-    "file": "latias/latias_ex11_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex11_common_normal_local"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
     "set": "ex13",
     "number": "11",
     "file": "latias/latias_ex13-11.png",
@@ -23002,46 +22482,6 @@
   {
     "name": "Latias",
     "pokemon": "Latias",
-    "set": "ex13_common_normal",
-    "number": "",
-    "file": "latias/latias_ex13_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex13_common_normal_local"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
-    "set": "ex15",
-    "number": "95",
-    "file": "latias/latias-ex_ex15-95.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex15_95"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
     "set": "ex15",
     "number": "95",
     "file": "latias/latias_ex15-95.png",
@@ -23058,46 +22498,6 @@
     ],
     "rarity": "common",
     "standardName": "latias_ex15_95"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
-    "set": "ex15_common_normal",
-    "number": "",
-    "file": "latias/latias-ex_ex15_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex15_common_normal_local"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
-    "set": "ex3",
-    "number": "93",
-    "file": "latias/latias-ex_ex3-93.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex3_93"
   },
   {
     "name": "Latias",
@@ -23122,26 +22522,6 @@
   {
     "name": "Latias",
     "pokemon": "Latias",
-    "set": "ex3_common_normal",
-    "number": "",
-    "file": "latias/latias-ex_ex3_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex3_common_normal_local"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
     "set": "ex8",
     "number": "105",
     "file": "latias/latias_ex8-105.png",
@@ -23158,26 +22538,6 @@
     ],
     "rarity": "common",
     "standardName": "latias_ex8_105"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
-    "set": "ex8_common_normal",
-    "number": "",
-    "file": "latias/latias_ex8_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_ex8_common_normal_local"
   },
   {
     "name": "Latias",
@@ -23342,26 +22702,6 @@
   {
     "name": "Latias",
     "pokemon": "Latias",
-    "set": "np_common_normal",
-    "number": "",
-    "file": "latias/latias_np_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_np_common_normal_local"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
     "set": "pop7",
     "number": "3",
     "file": "latias/latias_pop7-3.png",
@@ -23378,26 +22718,6 @@
     ],
     "rarity": "common",
     "standardName": "latias_pop7_3"
-  },
-  {
-    "name": "Latias",
-    "pokemon": "Latias",
-    "set": "pop7_common_normal",
-    "number": "",
-    "file": "latias/latias_pop7_common_normal.png",
-    "source": "local",
-    "folder": "latias",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latias_pop7_common_normal_local"
   },
   {
     "name": "Latias",
@@ -24042,26 +23362,6 @@
   {
     "name": "Latios",
     "pokemon": "Latios",
-    "set": "ex11_common_normal",
-    "number": "",
-    "file": "latios/latios_ex11_common_normal.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex11_common_normal_local"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
     "set": "ex13",
     "number": "12",
     "file": "latios/latios_ex13-12.png",
@@ -24102,46 +23402,6 @@
   {
     "name": "Latios",
     "pokemon": "Latios",
-    "set": "ex13_common_normal",
-    "number": "",
-    "file": "latios/latios_ex13_common_normal.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex13_common_normal_local"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
-    "set": "ex15",
-    "number": "96",
-    "file": "latios/latios-ex_ex15-96.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex15_96"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
     "set": "ex15",
     "number": "96",
     "file": "latios/latios_ex15-96.png",
@@ -24158,46 +23418,6 @@
     ],
     "rarity": "common",
     "standardName": "latios_ex15_96"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
-    "set": "ex15_common_normal",
-    "number": "",
-    "file": "latios/latios-ex_ex15_common_normal.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex15_common_normal_local"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
-    "set": "ex3",
-    "number": "94",
-    "file": "latios/latios-ex_ex3-94.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex3_94"
   },
   {
     "name": "Latios",
@@ -24222,26 +23442,6 @@
   {
     "name": "Latios",
     "pokemon": "Latios",
-    "set": "ex3_common_normal",
-    "number": "",
-    "file": "latios/latios-ex_ex3_common_normal.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex3_common_normal_local"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
     "set": "ex8",
     "number": "106",
     "file": "latios/latios_ex8-106.png",
@@ -24258,26 +23458,6 @@
     ],
     "rarity": "common",
     "standardName": "latios_ex8_106"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
-    "set": "ex8_common_normal",
-    "number": "",
-    "file": "latios/latios_ex8_common_normal.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_ex8_common_normal_local"
   },
   {
     "name": "Latios",
@@ -24338,26 +23518,6 @@
     ],
     "rarity": "common",
     "standardName": "latios_pop7_4"
-  },
-  {
-    "name": "Latios",
-    "pokemon": "Latios",
-    "set": "pop7_common_normal",
-    "number": "",
-    "file": "latios/latios_pop7_common_normal.png",
-    "source": "local",
-    "folder": "latios",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "latios_pop7_common_normal_local"
   },
   {
     "name": "Latios",
@@ -29764,26 +28924,6 @@
     "pokemon": "Metagross",
     "set": "ex11",
     "number": "113",
-    "file": "metagross/metagross-star_ex11-113.png",
-    "source": "local",
-    "folder": "metagross",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "metagross_ex11_113"
-  },
-  {
-    "name": "Metagross",
-    "pokemon": "Metagross",
-    "set": "ex11",
-    "number": "113",
     "file": "metagross/metagross_ex11-113.png",
     "source": "local",
     "folder": "metagross",
@@ -29798,26 +28938,6 @@
     ],
     "rarity": "common",
     "standardName": "metagross_ex11_113"
-  },
-  {
-    "name": "Metagross",
-    "pokemon": "Metagross",
-    "set": "ex16",
-    "number": "95",
-    "file": "metagross/metagross-ex_ex16-95.png",
-    "source": "local",
-    "folder": "metagross",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "metagross_ex16_95"
   },
   {
     "name": "Metagross",
@@ -29864,26 +28984,6 @@
     "pokemon": "Metagross",
     "set": "ex5",
     "number": "95",
-    "file": "metagross/metagross-ex_ex5-95.png",
-    "source": "local",
-    "folder": "metagross",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "metagross_ex5_95"
-  },
-  {
-    "name": "Metagross",
-    "pokemon": "Metagross",
-    "set": "ex5",
-    "number": "95",
     "file": "metagross/metagross_ex5-95.png",
     "source": "local",
     "folder": "metagross",
@@ -29898,26 +28998,6 @@
     ],
     "rarity": "common",
     "standardName": "metagross_ex5_95"
-  },
-  {
-    "name": "Metagross",
-    "pokemon": "Metagross",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "metagross/metagross_ex5_common_normal.png",
-    "source": "local",
-    "folder": "metagross",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "metagross_ex5_common_normal_local"
   },
   {
     "name": "Metagross",
@@ -30798,26 +29878,6 @@
     ],
     "rarity": "common",
     "standardName": "metang_ex5_44"
-  },
-  {
-    "name": "Metang",
-    "pokemon": "Metang",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "metang/metang_ex5_common_normal.png",
-    "source": "local",
-    "folder": "metang",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "metang_ex5_common_normal_local"
   },
   {
     "name": "Metang",
@@ -36202,26 +35262,6 @@
   {
     "name": "Rayquaza",
     "pokemon": "Rayquaza",
-    "set": "ex8_common_normal",
-    "number": "",
-    "file": "rayquaza/rayquaza_ex8_common_normal.png",
-    "source": "local",
-    "folder": "rayquaza",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "rayquaza_ex8_common_normal_local"
-  },
-  {
-    "name": "Rayquaza",
-    "pokemon": "Rayquaza",
     "set": "ex9",
     "number": "9",
     "file": "rayquaza/rayquaza_ex9-9.png",
@@ -36982,26 +36022,6 @@
   {
     "name": "Regice",
     "pokemon": "Regice",
-    "set": "ex12_common_normal",
-    "number": "",
-    "file": "regice/regice_ex12_common_normal.png",
-    "source": "local",
-    "folder": "regice",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regice_ex12_common_normal_local"
-  },
-  {
-    "name": "Regice",
-    "pokemon": "Regice",
     "set": "ex13",
     "number": "27",
     "file": "regice/regice_ex13-27.png",
@@ -37018,46 +36038,6 @@
     ],
     "rarity": "common",
     "standardName": "regice_ex13_27"
-  },
-  {
-    "name": "Regice",
-    "pokemon": "Regice",
-    "set": "ex13_common_normal",
-    "number": "",
-    "file": "regice/regice_ex13_common_normal.png",
-    "source": "local",
-    "folder": "regice",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regice_ex13_common_normal_local"
-  },
-  {
-    "name": "Regice",
-    "pokemon": "Regice",
-    "set": "ex5",
-    "number": "97",
-    "file": "regice/regice-ex_ex5-97.png",
-    "source": "local",
-    "folder": "regice",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regice_ex5_97"
   },
   {
     "name": "Regice",
@@ -37082,46 +36062,6 @@
   {
     "name": "Regice",
     "pokemon": "Regice",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "regice/regice-ex_ex5_common_normal.png",
-    "source": "local",
-    "folder": "regice",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regice_ex5_common_normal_local"
-  },
-  {
-    "name": "Regice",
-    "pokemon": "Regice",
-    "set": "ex9",
-    "number": "98",
-    "file": "regice/regice-ex_ex9-98.png",
-    "source": "local",
-    "folder": "regice",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regice_ex9_98"
-  },
-  {
-    "name": "Regice",
-    "pokemon": "Regice",
     "set": "ex9",
     "number": "98",
     "file": "regice/regice_ex9-98.png",
@@ -37138,26 +36078,6 @@
     ],
     "rarity": "common",
     "standardName": "regice_ex9_98"
-  },
-  {
-    "name": "Regice",
-    "pokemon": "Regice",
-    "set": "ex9_common_normal",
-    "number": "",
-    "file": "regice/regice-ex_ex9_common_normal.png",
-    "source": "local",
-    "folder": "regice",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regice_ex9_common_normal_local"
   },
   {
     "name": "Regice",
@@ -37362,26 +36282,6 @@
   {
     "name": "Regirock",
     "pokemon": "Regirock",
-    "set": "ex12_common_normal",
-    "number": "",
-    "file": "regirock/regirock_ex12_common_normal.png",
-    "source": "local",
-    "folder": "regirock",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regirock_ex12_common_normal_local"
-  },
-  {
-    "name": "Regirock",
-    "pokemon": "Regirock",
     "set": "ex13",
     "number": "28",
     "file": "regirock/regirock_ex13-28.png",
@@ -37398,46 +36298,6 @@
     ],
     "rarity": "common",
     "standardName": "regirock_ex13_28"
-  },
-  {
-    "name": "Regirock",
-    "pokemon": "Regirock",
-    "set": "ex13_common_normal",
-    "number": "",
-    "file": "regirock/regirock_ex13_common_normal.png",
-    "source": "local",
-    "folder": "regirock",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regirock_ex13_common_normal_local"
-  },
-  {
-    "name": "Regirock",
-    "pokemon": "Regirock",
-    "set": "ex5",
-    "number": "98",
-    "file": "regirock/regirock-ex_ex5-98.png",
-    "source": "local",
-    "folder": "regirock",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regirock_ex5_98"
   },
   {
     "name": "Regirock",
@@ -37462,46 +36322,6 @@
   {
     "name": "Regirock",
     "pokemon": "Regirock",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "regirock/regirock-ex_ex5_common_normal.png",
-    "source": "local",
-    "folder": "regirock",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regirock_ex5_common_normal_local"
-  },
-  {
-    "name": "Regirock",
-    "pokemon": "Regirock",
-    "set": "ex9",
-    "number": "99",
-    "file": "regirock/regirock-ex_ex9-99.png",
-    "source": "local",
-    "folder": "regirock",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regirock_ex9_99"
-  },
-  {
-    "name": "Regirock",
-    "pokemon": "Regirock",
     "set": "ex9",
     "number": "99",
     "file": "regirock/regirock_ex9-99.png",
@@ -37518,26 +36338,6 @@
     ],
     "rarity": "common",
     "standardName": "regirock_ex9_99"
-  },
-  {
-    "name": "Regirock",
-    "pokemon": "Regirock",
-    "set": "ex9_common_normal",
-    "number": "",
-    "file": "regirock/regirock-ex_ex9_common_normal.png",
-    "source": "local",
-    "folder": "regirock",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "regirock_ex9_common_normal_local"
   },
   {
     "name": "Regirock",
@@ -38062,26 +36862,6 @@
   {
     "name": "Registeel",
     "pokemon": "Registeel",
-    "set": "ex12_common_normal",
-    "number": "",
-    "file": "registeel/registeel_ex12_common_normal.png",
-    "source": "local",
-    "folder": "registeel",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "registeel_ex12_common_normal_local"
-  },
-  {
-    "name": "Registeel",
-    "pokemon": "Registeel",
     "set": "ex13",
     "number": "29",
     "file": "registeel/registeel_ex13-29.png",
@@ -38098,46 +36878,6 @@
     ],
     "rarity": "common",
     "standardName": "registeel_ex13_29"
-  },
-  {
-    "name": "Registeel",
-    "pokemon": "Registeel",
-    "set": "ex13_common_normal",
-    "number": "",
-    "file": "registeel/registeel_ex13_common_normal.png",
-    "source": "local",
-    "folder": "registeel",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "registeel_ex13_common_normal_local"
-  },
-  {
-    "name": "Registeel",
-    "pokemon": "Registeel",
-    "set": "ex5",
-    "number": "99",
-    "file": "registeel/registeel-ex_ex5-99.png",
-    "source": "local",
-    "folder": "registeel",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "registeel_ex5_99"
   },
   {
     "name": "Registeel",
@@ -38162,46 +36902,6 @@
   {
     "name": "Registeel",
     "pokemon": "Registeel",
-    "set": "ex5_common_normal",
-    "number": "",
-    "file": "registeel/registeel-ex_ex5_common_normal.png",
-    "source": "local",
-    "folder": "registeel",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "registeel_ex5_common_normal_local"
-  },
-  {
-    "name": "Registeel",
-    "pokemon": "Registeel",
-    "set": "ex9",
-    "number": "100",
-    "file": "registeel/registeel-ex_ex9-100.png",
-    "source": "local",
-    "folder": "registeel",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "registeel_ex9_100"
-  },
-  {
-    "name": "Registeel",
-    "pokemon": "Registeel",
     "set": "ex9",
     "number": "100",
     "file": "registeel/registeel_ex9-100.png",
@@ -38218,26 +36918,6 @@
     ],
     "rarity": "common",
     "standardName": "registeel_ex9_100"
-  },
-  {
-    "name": "Registeel",
-    "pokemon": "Registeel",
-    "set": "ex9_common_normal",
-    "number": "",
-    "file": "registeel/registeel-ex_ex9_common_normal.png",
-    "source": "local",
-    "folder": "registeel",
-    "collection": "Hoenn / Generation 3",
-    "finish": "normal",
-    "cardType": "Pokemon",
-    "subtype": "Pokemon",
-    "category": "Standard",
-    "tags": [
-      "hoenn",
-      "generation-3"
-    ],
-    "rarity": "common",
-    "standardName": "registeel_ex9_common_normal_local"
   },
   {
     "name": "Registeel",
