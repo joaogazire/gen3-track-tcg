@@ -266,7 +266,6 @@ h1 {
   text-transform: uppercase;
   line-height: 1.1;
   white-space: nowrap;
-  pointer-events: none;
 }
 
 .page-shell {
@@ -309,12 +308,21 @@ h1 {
   font-size: 0.82rem;
   color: #0d1114;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-input:focus,
+.search-input.has-text {
+  opacity: 1;
+  pointer-events: auto;
+  border-color: var(--emerald-600);
+  box-shadow: 0 0 0 3px rgba(42, 185, 119, 0.18);
 }
 
 .search-input:focus {
-  border-color: var(--emerald-600);
-  box-shadow: 0 0 0 3px rgba(42, 185, 119, 0.18);
+  pointer-events: auto;
 }
 
 .search-input::placeholder {

@@ -448,8 +448,15 @@ function updateProgressBar() {
   const percent = Math.round((collectedCountValue / TOTAL_CARDS) * 100);
 
   if (progressText) progressText.textContent = `${collectedCountValue} / ${TOTAL_CARDS} cartas`;
-  if (progressPercent) progressPercent.textContent = `${percent}%`;
-  if (progressPercentCenter) progressPercentCenter.textContent = `${percent}%`;
+  if (progressPercent) {
+    progressPercent.textContent = `${percent}%`;
+    // Tooltip nativo com o resumo completo.
+    progressPercent.title = `${collectedCountValue}/${TOTAL_CARDS} completas · ${TOTAL_CARDS - collectedCountValue} faltando`;
+  }
+  if (progressPercentCenter) {
+    progressPercentCenter.textContent = `${percent}%`;
+    progressPercentCenter.title = progressPercent ? progressPercent.title : "";
+  }
   if (progressFill) progressFill.style.width = `${percent}%`;
 
   if (progressFill && progressPercentCenter) {
@@ -812,10 +819,13 @@ function renderCards() {
   const searchInput = document.getElementById("searchInput");
   if (!searchInput) return;
 
-  searchInput.addEventListener("input", () => {
+  const applySearch = () => {
     searchQuery = normalizePokemonKey(searchInput.value);
+    searchInput.classList.toggle("has-text", Boolean(searchQuery));
     renderCards();
-  });
+  };
+
+  searchInput.addEventListener("input", applySearch);
 
   // Digitar em qualquer lugar da tela foca a busca e roteia a tecla para o
   // input. Escape limpa; Backspace também esvazia quando o campo está vazio
@@ -835,9 +845,8 @@ function renderCards() {
 
     if (event.key === "Escape" && document.activeElement === searchInput) {
       searchInput.value = "";
-      searchQuery = "";
+      applySearch();
       searchInput.blur();
-      renderCards();
       return;
     }
 
