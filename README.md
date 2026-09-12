@@ -59,6 +59,9 @@ gen3-track-tcg/
 - Modal de seleção de variante: pré-visualização grande, navegação por setas/swipe e lista
   de todas as versões (coleção, acabamento, número)
 - Barra de progresso animada da coleção
+- **Link de compartilhamento** — botão "Compartilhar" gera uma URL com a coleção
+  codificada no hash (LZString, sem servidor); quem abre vê as cartas marcadas
+  com variante e acabamento, em modo somente-leitura
 - **Verificação de sincronização** contra a API [TCGdex](https://tcgdex.dev/) com barra de
   progresso e registro de data/hora da última atualização
 - Easter egg no Rayquaza do header 👀

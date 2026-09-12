@@ -33,6 +33,8 @@
             <button type="button" class="pill-btn" data-filter="special" aria-pressed="false">Special Art</button>
           </div>
 
+          <button id="shareBtn" class="pill-btn share-btn" type="button" title="Gerar um link para mostrar sua coleção">Compartilhar</button>
+
           <button id="syncCheckBtn" class="header-refresh-btn" type="button" aria-label="Verificar sincronização das cartas" title="Verificar sincronização com o banco de dados">
             <img src="../assets/site/refresh-icon.png?v=20260909" alt="Atualizar" />
           </button>
@@ -92,6 +94,24 @@
       </div>
     </div>
 
+    <div class="modal-backdrop hidden" id="shareModal" aria-hidden="true">
+      <div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+        <h2 id="shareModalTitle">Compartilhar coleção</h2>
+        <p class="share-hint">
+          O link carrega o site com <strong>exatamente as cartas que você marcou</strong> —
+          quem abrir vê sua coleção, mas nada muda por aqui. Suas marcações continuam
+          salvas só neste navegador.
+        </p>
+        <textarea id="shareLinkOutput" class="share-link-output" readonly spellcheck="false"
+          aria-label="Link da coleção para copiar"></textarea>
+        <p id="shareWarn" class="share-warn hidden">Link bem longo — alguns apps de chat podem cortá-lo. Se não abrir, tente colar no navegador direto.</p>
+        <div class="modal-actions">
+          <button id="shareCloseBtn" class="btn btn-secondary" type="button">Fechar</button>
+          <button id="shareCopyBtn" class="btn btn-primary" type="button">Copiar link</button>
+        </div>
+      </div>
+    </div>
+
     <div id="syncNotification" class="sync-notification hidden" role="status" aria-live="polite" aria-atomic="true">
       <div class="sync-notification-header">
         <strong>Sincronização de cartas</strong>
@@ -114,6 +134,7 @@
       </div>
     </div>
 
+    <script src="vendor/lz-string.min.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

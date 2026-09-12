@@ -229,6 +229,12 @@ const variantList = document.getElementById("variantList");
 const confirmBtn = document.getElementById("confirmBtn");
 const cancelBtn = document.getElementById("cancelBtn");
 const removeBtn = document.getElementById("removeBtn");
+const shareBtn = document.getElementById("shareBtn");
+const shareModal = document.getElementById("shareModal");
+const shareLinkOutput = document.getElementById("shareLinkOutput");
+const shareWarn = document.getElementById("shareWarn");
+const shareCopyBtn = document.getElementById("shareCopyBtn");
+const shareCloseBtn = document.getElementById("shareCloseBtn");
 
 let cards = [];
 let currentCardId = null;
@@ -256,6 +262,232 @@ let searchQuery = "";
 // Linhas de divergência da última sincronização (para o relatório "Detalhes").
 let syncReportRows = [];
 
+// ---- Compartilhamento de coleção via link (hash na URL) --------------------
+// O estado viaja na URL comprimido com LZString (vendor) — site 100% estático,
+// sem backend. Formato por carta: [índice-na-roster] (só coletada),
+// [roster, índice-da-variante-no-catálogo] ou [roster, variante, acabamento]
+// quando o acabamento escolhido difere o registrado na variante. Os índices
+// são do MESMO catalog.min.json versionado que os dois lados carregam; a
+// estampa `g` (generatedAt do build) denuncia links antigos após um rebuild —
+// aí as coletadas ainda aparecem (roster é código), mas sem variante.
+const SHARE_HASH_PREFIX = "c=";
+const SHARE_FINISH_CODES = ["normal", "holo", "reverse", "reverse holo", "full art", "secret", "shiny"];
+
+let sharedMode = false;          // renderizando coleção de um link
+let sharedMap = null;            // índice na roster -> { asset, finish }
+let sharedPayloadStamp = "";     // estampa de catálogo embutida no link
+let sharedIgnored = false;       // #c= presente mas ilegível → avisar
+let catalogStamp = "";           // "generatedAt" do catálogo (impressão do build)
+let assetIndexByFile = null;     // file -> posição no catálogo (montado no load)
+
+function parseSharedState() {
+  const raw = (window.location.hash || "").slice(1);
+  if (!raw.startsWith(SHARE_HASH_PREFIX)) return false;
+
+  const compact = raw.slice(SHARE_HASH_PREFIX.length);
+  let state = null;
+  try {
+    // Sem LZString (vendor não carregou), aceita JSON puro como fallback.
+    const json = typeof LZString !== "undefined"
+      ? LZString.decompressFromEncodedURIComponent(compact)
+      : decodeURIComponent(compact);
+    state = JSON.parse(json || "");
+  } catch (error) {
+    state = null;
+  }
+
+  if (!state || state.v !== 1 || !Array.isArray(state.c)) {
+    sharedIgnored = true;
+    return false;
+  }
+
+  const map = new Map();
+  state.c.forEach((entry) => {
+    if (!Array.isArray(entry) || !Number.isInteger(entry[0])) return;
+    map.set(entry[0], {
+      asset: Number.isInteger(entry[1]) ? entry[1] : -1,
+      finish: entry.length >= 3 ? SHARE_FINISH_CODES[entry[2]] || "" : ""
+    });
+  });
+
+  if (!map.size) {
+    sharedIgnored = true;
+    return false;
+  }
+
+  sharedMap = map;
+  sharedPayloadStamp = String(state.g || "");
+  return true;
+}
+
+function cardAssetFile(card) {
+  // Estado antigo do localStorage pode não ter `file` — deriva do artPath,
+  // que tem a forma "../assets/cards/<file>".
+  if (card.file) return card.file;
+  if (!card.artPath) return "";
+  const match = String(card.artPath).match(/assets\/cards\/(.+)$/);
+  return match ? match[1] : "";
+}
+
+function buildShareState() {
+  const entries = [];
+  cards.forEach((card, rosterIndex) => {
+    if (!card.collected) return;
+
+    const entry = [rosterIndex];
+    const file = cardAssetFile(card);
+    const assetIndex = file && assetIndexByFile ? assetIndexByFile.get(file) : undefined;
+    if (assetIndex !== undefined) {
+      entry.push(assetIndex);
+      const assetFinish = String(cardAssets[assetIndex].finish || "normal").toLowerCase();
+      if (card.finish && card.finish !== assetFinish) {
+        const code = SHARE_FINISH_CODES.indexOf(card.finish);
+        if (code > 0) entry.push(code);
+      }
+    }
+    entries.push(entry);
+  });
+  return entries.length ? { v: 1, g: catalogStamp, c: entries } : null;
+}
+
+function createShareUrl() {
+  const state = buildShareState();
+  if (!state) return null;
+
+  const json = JSON.stringify(state);
+  // compressToEncodedURIComponent usa alfabeto URL-safe; sem a lib, JSON
+  // percent-encoded funciona (link maior, mesma semântica).
+  const encoded = typeof LZString !== "undefined"
+    ? LZString.compressToEncodedURIComponent(json)
+    : encodeURIComponent(json);
+
+  const url = new URL(window.location.href);
+  url.hash = `${SHARE_HASH_PREFIX}${encoded}`;
+  return url.toString();
+}
+
+// Resolve variantes do link após o catálogo chegar (índices → arquivos).
+function applySharedAssets() {
+  if (!sharedMode || !sharedMap) return;
+
+  // Estampa diferente = catálogo reconstruído desde que o link nasceu; os
+  // índices de variante não valem mais, mas as coletadas sim (roster é código).
+  if (sharedPayloadStamp && sharedPayloadStamp !== catalogStamp) {
+    sharedMap.forEach((state) => {
+      state.asset = -1;
+      state.finish = "";
+    });
+    return;
+  }
+
+  cards.forEach((card, rosterIndex) => {
+    const state = sharedMap.get(rosterIndex);
+    if (!card.collected || !state || state.asset < 0) return;
+
+    const asset = cardAssets[state.asset];
+    if (!asset) return;
+
+    card.file = asset.file;
+    card.variant = asset.collection || asset.set || "";
+    card.collection = asset.collection || asset.set || "";
+    card.finish = state.finish || asset.finish || "normal";
+    card.label = `${card.collection} · ${formatCardFinish(card.finish)} · #${asset.number}`;
+    card.artPath = getAssetPath(asset.file);
+  });
+}
+
+function renderSharedBanner() {
+  if (!sharedMode && !sharedIgnored) return;
+
+  const panel = document.querySelector(".page-shell");
+  if (!panel) return;
+
+  const banner = document.createElement("div");
+  banner.className = "shared-banner";
+
+  if (sharedIgnored) {
+    banner.innerHTML = `
+      <span>Este link não pôde ser lido (versão antiga do site?) — mostrando a sua coleção.</span>
+      <button type="button" class="shared-banner-clear">Entendi</button>
+    `;
+    banner.querySelector(".shared-banner-clear").addEventListener("click", clearSharedHash);
+  } else {
+    banner.innerHTML = `
+      <span>Você está vendo a coleção compartilhada por um link — edição bloqueada.</span>
+      <button type="button" class="shared-banner-clear">Ver minha coleção</button>
+    `;
+    banner.querySelector(".shared-banner-clear").addEventListener("click", clearSharedHash);
+  }
+
+  panel.prepend(banner);
+}
+
+function clearSharedHash() {
+  // replaceState limpa a URL; o reload reconstrói o estado a partir do
+  // localStorage do visitante (o hash sai do histórico junto).
+  try {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  } catch (error) {
+    /* ignore */
+  }
+  window.location.reload();
+}
+
+// ---- Modal "Compartilhar" ----------------------------------------------------
+
+function openShareModal() {
+  if (!shareModal) return;
+
+  const url = createShareUrl();
+  shareModal.classList.remove("hidden");
+  shareModal.setAttribute("aria-hidden", "false");
+
+  if (shareLinkOutput) {
+    shareLinkOutput.value = url || "";
+    shareLinkOutput.placeholder = url ? "" : "Marque pelo menos uma carta para gerar um link.";
+  }
+  if (shareWarn) shareWarn.classList.toggle("hidden", !url || url.length <= 2000);
+  if (shareCopyBtn) shareCopyBtn.disabled = !url;
+}
+
+function closeShareModal() {
+  if (!shareModal) return;
+  shareModal.classList.add("hidden");
+  shareModal.setAttribute("aria-hidden", "true");
+}
+
+async function copyShareLink() {
+  if (!shareLinkOutput || !shareLinkOutput.value) return;
+
+  try {
+    await navigator.clipboard.writeText(shareLinkOutput.value);
+    flashShareCopied();
+    return;
+  } catch (error) {
+    /* clipboard API bloqueada (http sem localhost) — cai no fallback */
+  }
+
+  shareLinkOutput.removeAttribute("readonly");
+  shareLinkOutput.select();
+  shareLinkOutput.setSelectionRange(0, shareLinkOutput.value.length);
+  try {
+    document.execCommand("copy");
+    flashShareCopied();
+  } catch (error) {
+    /* se até aqui falhar, o texto está selecionado: copiar manualmente */
+  }
+  shareLinkOutput.setAttribute("readonly", "");
+}
+
+function flashShareCopied() {
+  if (!shareCopyBtn) return;
+  shareCopyBtn.textContent = "Copiado!";
+  clearTimeout(flashShareCopied.timer);
+  flashShareCopied.timer = setTimeout(() => {
+    shareCopyBtn.textContent = "Copiar link";
+  }, 1800);
+}
+
 function setupCardTilt(cardElement) {
   if (!cardElement) return;
 
@@ -282,9 +514,12 @@ async function loadCardAssets() {
     const payload = await catalogReady;
     if (payload) {
       cardAssets = Array.isArray(payload.cards) ? payload.cards : [];
+      catalogStamp = String(payload.generatedAt || "");
     } else {
       const response = await fetch("../assets/data/catalog.min.json");
-      cardAssets = response.ok ? await response.json().then((data) => (Array.isArray(data?.cards) ? data.cards : [])) : [];
+      const data = response.ok ? await response.json() : null;
+      cardAssets = Array.isArray(data?.cards) ? data.cards : [];
+      catalogStamp = String(data?.generatedAt || "");
     }
   } catch (error) {
     cardAssets = [];
@@ -292,7 +527,8 @@ async function loadCardAssets() {
 
   // Repõe folder (derivável) e pré-computa candidatos normalizados uma única
   // vez — getCardVariants deixa de normalizar 5 campos por entrada a cada call.
-  cardAssets.forEach((asset) => {
+  assetIndexByFile = new Map();
+  cardAssets.forEach((asset, index) => {
     asset.folder = String(asset.file || "").split("/")[0];
     asset.__candidates = [
       asset.pokemon,
@@ -300,8 +536,17 @@ async function loadCardAssets() {
       asset.printedPokemon,
       asset.file
     ].map((candidate) => normalizePokemonKey(candidate));
+    assetIndexByFile.set(asset.file, index);
   });
   catalogAssetsPrepared = true;
+
+  // Link compartilhado: agora que o catálogo chegou, resolve as variantes
+  // escolhidas por quem criou o link e repinta a grade com as artes.
+  if (sharedMode) {
+    applySharedAssets();
+    renderCards();
+    return;
+  }
 
   // Se o usuário abriu um modal antes do catálogo chegar, re-renderiza. O mesmo
   // vale para filtro != all: sem catálogo os predicates não acham variantes.
@@ -411,6 +656,24 @@ function cardMatchesFilter(card) {
 }
 
 function loadCards() {
+  if (parseSharedState()) {
+    // A coleção veio de um link de compartilhamento: ela manda na tela, mas o
+    // localStorage do visitante fica intocado (saveCards é bloqueado no modo
+    // compartilhado — nada sobrescreve a coleção local de quem abriu o link).
+    sharedMode = true;
+    cards = hoennPokemon.map((card, index) => ({
+      ...card,
+      collected: sharedMap.has(index),
+      variant: "",
+      finish: "",
+      collection: "",
+      label: "",
+      file: "",
+      artPath: ""
+    }));
+    return;
+  }
+
   const saved = localStorage.getItem(STORAGE_KEY);
 
   if (!saved) {
@@ -429,7 +692,10 @@ function loadCards() {
         ...card,
         collected: Boolean(match?.collected),
         variant: match?.variant || "",
+        finish: match?.finish || "",
+        collection: match?.collection || "",
         label: match?.label || "",
+        file: match?.file || "",
         artPath: match?.artPath || ""
       };
     });
@@ -440,6 +706,9 @@ function loadCards() {
 }
 
 function saveCards() {
+  // No modo compartilhado a grade é de outra pessoa — o localStorage local
+  // não pode ser sobrescrito por engano (visitar um link ≠ perder a coleção).
+  if (sharedMode) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
 
@@ -1030,6 +1299,7 @@ function markCardAsCollected(cardId, assetInfo = null) {
   card.variant = assetInfo ? `${assetInfo.set}` : "";
   card.finish = finishValue;
   card.collection = assetInfo?.collection || assetInfo?.set || "";
+  card.file = assetInfo?.file || "";
   card.label = assetInfo
     ? `${assetInfo.collection || assetInfo.set} · ${formatCardFinish(finishValue)} · #${assetInfo.number}`
     : "Carta oficial";
@@ -1061,6 +1331,7 @@ function unmarkCard(cardId) {
   card.label = "";
   card.finish = "";
   card.collection = "";
+  card.file = "";
   card.artPath = "";
   renderCards();
   saveCards();
@@ -1068,6 +1339,9 @@ function unmarkCard(cardId) {
 }
 
 document.addEventListener("click", (event) => {
+  // Coleção de link compartilhado é vitrine: clicar em carta não abre modal.
+  if (sharedMode) return;
+
   const cardElement = event.target.closest(".card");
   if (!cardElement) return;
 
@@ -1100,13 +1374,37 @@ modal.addEventListener("click", (event) => {
   if (event.target === modal) closeModal();
 });
 
-document.addEventListener("keydown", (event) => {
-  if (!modal || modal.classList.contains("hidden")) return;
+// ---- Ligações do modal de compartilhamento ----------------------------------
 
+if (shareBtn) {
+  shareBtn.addEventListener("click", openShareModal);
+}
+
+if (shareCloseBtn) {
+  shareCloseBtn.addEventListener("click", closeShareModal);
+}
+
+if (shareCopyBtn) {
+  shareCopyBtn.addEventListener("click", copyShareLink);
+}
+
+if (shareModal) {
+  shareModal.addEventListener("click", (event) => {
+    if (event.target === shareModal) closeShareModal();
+  });
+}
+
+document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    closeModal();
+    if (shareModal && !shareModal.classList.contains("hidden")) {
+      closeShareModal();
+      return;
+    }
+    if (modal && !modal.classList.contains("hidden")) closeModal();
     return;
   }
+
+  if (!modal || modal.classList.contains("hidden")) return;
 
   if (event.key === "ArrowLeft") {
     changeSelectedVariant(-1);
@@ -1177,6 +1475,7 @@ if (syncDetailsLink) {
 
 (function init() {
   loadCards();
+  renderSharedBanner();
   // A grade não depende do catálogo: pinta já; a base chega em background.
   renderCards();
   loadCardAssets();
