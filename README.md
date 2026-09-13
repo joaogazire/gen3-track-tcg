@@ -1,4 +1,4 @@
-# Pokémon Emerald TCG — Tracker
+# Emerald TCG — Tracker
 
 Tracker pessoal de coleção de cartas Pokémon TCG da Geração 3 (Hoenn), inspirado em **Pokémon Emerald**.
 Aplicação 100% estática (HTML + CSS + Vanilla JS) — sem build, sem framework, sem dependências de runtime.
@@ -28,6 +28,7 @@ gen3-track-tcg/
 │   ├── cards/            # 139 pastas (1 por Pokémon) + index.json (inventário de arquivos)
 │   ├── data/             # Base de dados do app (gerada por build_card_database.py)
 │   │   ├── catalog.min.json    # Tier 1 — catálogo leve usado pela UI
+│   │   ├── prices.min.json     # Preços compactos por carta (USD/EUR, por foil)
 │   │   └── details/<pk>.json   # Tier 2 — detalhes pesados (fetch sob demanda)
 │   └── site/             # Background, verso de carta, ícones, cry do Rayquaza
 ├── scripts/              # Ferramentas Python (manutenção do catálogo)
@@ -37,8 +38,8 @@ gen3-track-tcg/
 **Por que essa estrutura?**
 
 - **`src/` separado de `assets/`** — deixa explícito o que é código de aplicação e o que é
-  conteúdo/dados. O catálogo de 2.7k cartas é *dado*, não código; misturar os dois na raiz
-  escondia isso.
+  conteúdo/dados. O catálogo de ~4.5 mil cartas (todas as eras do TCG) é *dado*, não
+  código; misturar os dois na raiz escondia isso.
 - **`scripts/` para as ferramentas Python** — os downloaders e o indexador só rodam na sua
   máquina para atualizar o catálogo; não fazem parte do app. A separação evita que alguém
   confunda ferramenta de manutenção com parte do site.
@@ -54,12 +55,27 @@ gen3-track-tcg/
 
 ## Funcionalidades
 
-- Checklist das 135 cartas da dex nacional 252–386 (Geração 3 completa)
+- Checklist das 202 cartas da dex do Emerald (Hoenn + Abra/Kadabra/Alakazam/Wobbuffet),
+  com variantes de **todas as eras do Pokémon TCG** no catálogo (base → Scarlet & Violet)
 - Grade responsiva (5 → 4 → 3 colunas) no estilo da galeria oficial do TCG
 - Modal de seleção de variante: pré-visualização grande, navegação por setas/swipe e lista
   de todas as versões (coleção, acabamento, número)
-- Barra de progresso animada da coleção
-- **Link de compartilhamento** — botão "Compartilhar" gera uma URL com a coleção
+- **Preços** — badge no canto da carta coletada, pill no preview e preço em cada variante
+  do seletor; fonte TCGplayer (US$)/Cardmarket (€) via TCGdex, convertidos para R$ com o
+  câmbio do dia (AwesomeAPI, cache de 12h no navegador); sem câmbio, exibe a moeda original.
+  Clicar em qualquer preço abre a página da carta na loja (TCGplayer/Cardmarket) em nova aba
+- **Modo planejamento** — botão "Plan" no header (à esquerda do Rayquaza): marque/solte
+  cartas à vontade sem salvar (nada toca o `localStorage`, a porcentagem continua mostrando
+  o checklist salvo e as artes ficam translúcidas); sair do modo descarta o rascunho. Em
+  Plan, o botão de compartilhar gera o link do **rascunho** da sessão (com aviso no modal)
+- Barra de progresso animada — passe o mouse ou clique na porcentagem para alternar entre
+  percentual e "cartas coletadas / total"
+- **Filtro por dropdown** — "See all" no header abre, no hover ou clique, as opções
+  Mega Evolution e Special Art
+- **Idioma PT-BR / EN-US** — bandeiras no canto superior direito trocam todo o texto da
+  interface (nome das cartas do catálogo permanecem em EN, fonte TCGdex); escolha persiste
+- **Busca mobile** — lupa ao lado do "CHECKLIST" abre o campo de busca só em telas pequenas
+- **Link de compartilhamento** — botão de ícone (link) gera uma URL com a coleção
   codificada no hash (LZString, sem servidor); quem abre vê as cartas marcadas
   com variante e acabamento, em modo somente-leitura
 - **Verificação de sincronização** contra a API [TCGdex](https://tcgdex.dev/) com barra de
@@ -71,7 +87,7 @@ gen3-track-tcg/
 
 | Script | Função |
 | --- | --- |
-| `build_card_database.py` | Gera a base do app (`assets/data/`) a partir do catálogo local + TCGdex |
+| `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
 | `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
 | `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
 | `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |

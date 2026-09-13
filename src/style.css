@@ -35,7 +35,7 @@ body {
   color: var(--slate-50);
   background:
     linear-gradient(180deg, rgba(10, 19, 16, 0.58), rgba(10, 19, 16, 0.7)),
-    url("../assets/site/background.jpg") center/cover no-repeat fixed;
+    url("../assets/site/background.jpg?v=20260913") center/cover no-repeat fixed;
 }
 
 body::before {
@@ -156,6 +156,111 @@ h1 {
   gap: 14px;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+/* ---- Dropdown de filtro (See all ▾) --------------------------------------- */
+.filter-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.filter-menu-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 220px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 14px;
+  background: rgba(12, 18, 18, 0.96);
+  border: 1px solid rgba(244, 201, 93, 0.45);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.filter-menu:hover .filter-menu-list,
+.filter-menu.open .filter-menu-list {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.filter-option {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--slate-200);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.filter-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--slate-50);
+}
+
+.filter-option.selected {
+  background: rgba(244, 201, 93, 0.16);
+  color: var(--gold-500);
+}
+
+/* ---- Seletor de idioma (bandeiras) ---------------------------------------- */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(14, 86, 72, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(14, 86, 72, 0.25);
+}
+
+.lang-flag {
+  appearance: none;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0;
+  line-height: 0;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.lang-flag svg {
+  border-radius: 999px;
+  display: block;
+}
+
+.lang-flag:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.lang-flag[aria-pressed="true"] {
+  opacity: 1;
+  border-color: var(--gold-700);
+  box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35);
+}
+
+/* Botão de compartilhar: agora só o ícone de link. */
+.share-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
 }
 
 .header-refresh-btn {
@@ -304,12 +409,27 @@ h1 {
 }
 
 .progress-band {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 18px 18px;
 }
 
+/* Barra clicável: alterna % ↔ contagem de cartas (hover também espreita). */
+#progressBar {
+  cursor: pointer;
+}
+
+#progressBar:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 2px;
+}
+
 .progress-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -416,6 +536,45 @@ h1 {
 
 .search-input::placeholder {
   color: #7c8a85;
+}
+
+.panel-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Lupinha de busca: só em mobile (a busca sempre visível no desktop é o input). */
+.search-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 2px solid rgba(14, 86, 72, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #0d1114;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .panel-header {
+    gap: 10px;
+  }
+
+  .search-toggle {
+    display: inline-flex;
+  }
+
+  body.search-open .search-input {
+    opacity: 1;
+    pointer-events: auto;
+    border-color: var(--emerald-600);
+    box-shadow: 0 0 0 3px rgba(42, 185, 119, 0.18);
+  }
 }
 
 .card-grid {
@@ -561,6 +720,169 @@ h1 {
   display: block;
 }
 
+/* ---- Preços ----------------------------------------------------------------
+   Badge no canto superior direito da carta coletada, pill no preview do modal e
+   preço alinhado à direita em cada variante. Conteúdo vem de prices.min.json
+   (TCGplayer USD / Cardmarket EUR) convertido para R$ no navegador. */
+.card-price {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 2;
+  pointer-events: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  background: rgba(12, 18, 18, 0.88);
+  border: 1px solid rgba(244, 201, 93, 0.5);
+  color: var(--slate-50);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.variant-price {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--gold-500);
+  white-space: nowrap;
+  padding-left: 8px;
+}
+
+/* Variantes clicáveis: badge da grade, pill do preview e preço da linha da
+   lista abrem a loja (TCGplayer/Cardmarket) em nova aba. */
+.card-price-link {
+  pointer-events: auto;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.card-price-link:hover,
+.card-price-link:focus-visible {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35), 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.price-pill {
+  text-decoration: none;
+}
+
+a.price-pill {
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+a.price-pill:hover,
+a.price-pill:focus-visible {
+  border-color: var(--gold-500);
+  background: rgba(244, 201, 93, 0.14);
+}
+
+.variant-price-link {
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(244, 201, 93, 0.45);
+}
+
+.variant-price-link:hover,
+.variant-price-link:focus-visible {
+  color: var(--slate-50);
+  border-bottom-color: var(--gold-500);
+}
+
+.summary-pill.price-pill {
+  border-color: rgba(244, 201, 93, 0.65);
+  color: var(--gold-500);
+  font-weight: 800;
+}
+
+/* ---- Modo planejamento ------------------------------------------------------
+   Botão "Plan" vive no header, à esquerda do Rayquaza. Rascunho não salva:
+   nada toca o localStorage, a barra de progresso continua no checklist salvo,
+   e as artes ficam translúcidas para deixar claro que a tela é provisória.
+   Rascunhos desta sessão (nunca salvos) ganham borda tracejada. */
+.plan-toggle {
+  order: -1;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(12, 18, 18, 0.55);
+  color: #cfe0d6;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.plan-toggle .plan-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.plan-toggle:hover {
+  background: rgba(12, 18, 18, 0.75);
+  color: #f7faf7;
+}
+
+.plan-toggle.active {
+  background: linear-gradient(180deg, var(--gold-500), var(--gold-700));
+  color: #0b1010;
+  box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35);
+}
+
+.plan-toggle.active .plan-dot {
+  background: #0b1010;
+  box-shadow: 0 0 6px rgba(11, 16, 16, 0.6);
+}
+
+body.plan-mode .card.revealed .card-photo {
+  opacity: 0.55;
+}
+
+body.plan-mode .card.revealed .card-visual {
+  border-style: dashed;
+  border-color: rgba(244, 201, 93, 0.85);
+}
+
+body.plan-mode .card.plan-draft .card-visual {
+  border-color: rgba(244, 201, 93, 1);
+  box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.25), 0 8px 18px rgba(0,0,0,0.15);
+}
+
+body.plan-mode .card.revealed .card-art::after {
+  opacity: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .progress-band {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .plan-toggle {
+    align-self: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.plan-mode .card.revealed .card-photo {
+    transition: none;
+  }
+}
+
 /* ---- Brilho holográfico (grade) -------------------------------------------
    Carta holo ganha um brilho que segue o ponteiro junto com o tilt; reverse
    é um sheen mais discreto. Os botões de raridade do modal alimentam a classe
@@ -592,6 +914,16 @@ h1 {
   opacity: 0.9;
 }
 
+/* Na grade, o reverse fica apenas na moldura ao redor da arte (fora do
+   quadrado do Pokémon): o brilho é recortado num anel via mask-composite. */
+.card.finish-reverse .card-art::after {
+  border: 16px solid transparent;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
 .card.finish-reverse:hover .card-art::after,
 .card.finish-reverse:focus-visible .card-art::after {
   opacity: 0.5;
@@ -599,8 +931,7 @@ h1 {
 
 /* O mesmo brilho no preview grande do modal: sem ponteiro dedicado ali, um
    pulso lento de brilho indica a raridade escolhida. */
-.preview-stage.finish-holo::after,
-.preview-stage.finish-reverse::after {
+.preview-stage.finish-holo::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -616,8 +947,28 @@ h1 {
   animation: holoPulse 3.2s ease-in-out infinite;
 }
 
+/* Reverse: o brilho fica APENAS fora do quadrado da arte — atrás da imagem
+   (z-index) ele só aparece no fundo ao redor da carta, nunca por cima dela. */
 .preview-stage.finish-reverse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 42%,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 214, 120, 0.16) 30%,
+      rgba(140, 255, 200, 0.12) 50%,
+      transparent 70%);
+  mix-blend-mode: screen;
   opacity: 0.45;
+  animation: holoPulse 3.2s ease-in-out infinite;
+}
+
+.preview-stage .preview-image {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes holoPulse {
@@ -880,13 +1231,31 @@ h1 {
 }
 
 .variant-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: flex;
+  flex-direction: row;
   gap: 10px;
   margin-top: 12px;
-  max-height: min(42vh, 360px);
-  overflow-y: auto;
-  padding-right: 4px;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 4px 10px 2px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 201, 93, 0.5) transparent;
+}
+
+.variant-list::-webkit-scrollbar {
+  height: 8px;
+}
+
+.variant-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.variant-list::-webkit-scrollbar-thumb {
+  background: rgba(244, 201, 93, 0.45);
+  border-radius: 999px;
 }
 
 .variant-option {
@@ -898,9 +1267,12 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 340px;
   min-height: 64px;
   padding: 10px 12px;
+  scroll-snap-align: start;
   text-align: left;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
@@ -938,10 +1310,6 @@ h1 {
 @media (max-width: 540px) {
   .modal {
     width: min(96vw, 540px);
-  }
-
-  .variant-list {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 }
 

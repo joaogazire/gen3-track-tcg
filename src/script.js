@@ -206,6 +206,213 @@ const hoennPokemon = [
 const TOTAL_CARDS = hoennPokemon.length;
 const STORAGE_KEY = "pokemon_emerald_tcg_tracker_v1";
 const LAST_SYNC_KEY = "pokemon_emerald_tcg_last_sync_v1";
+const LANG_KEY = "pokemon_emerald_tcg_lang_v1";
+
+// ---- i18n -------------------------------------------------------------------
+// Toda a UI segue o idioma escolhido nas bandeiras (padrão EN, como os rótulos
+// históricos do header). O catálogo (nomes de Pokémon/sets) vem da TCGdex em EN
+// e não é traduzido. Strings dinâmicas usam t(); o estático do HTML usa os
+// atributos data-i18n* resolvidos em applyI18n().
+const I18N = {
+  en: {
+    seeAll: "See all",
+    mega: "Mega Evolution",
+    special: "Special Art",
+    checklist: "Checklist",
+    searchPlaceholder: "Search Pokémon...",
+    searchAria: "Search Pokémon by name",
+    searchToggleAria: "Open search",
+    progressLabel: "Collection progress",
+    progressHint: "Click to switch between percentage and card count",
+    progressCount: "{n} / {total} cards",
+    progressTooltip: "{n}/{total} complete · {missing} to go",
+    planTitle: "Plan without saving: marks last only this session and vanish on exit",
+    shareAria: "Share collection",
+    shareTitle: "Generate a link to show your collection",
+    shareTitleH: "Share collection",
+    shareHint: "The link loads the site with <strong>exactly the cards you marked</strong> — whoever opens it sees your collection, but nothing changes here. Your marks stay saved only in this browser.",
+    sharePlaceholder: "Mark at least one card to generate a link.",
+    shareWarn: "Very long link — some chat apps may cut it. If it doesn't open, try pasting it directly in the browser.",
+    shareClose: "Close",
+    shareCopy: "Copy link",
+    shareCopied: "Copied!",
+    shareLinkAria: "Collection link to copy",
+    sharePlanNote: "You are in Plan mode: this link shares the session DRAFT — your saved collection is not included.",
+    syncAria: "Check card synchronization",
+    syncHeader: "Card synchronization",
+    syncCloseAria: "Close notification",
+    syncStart: "Starting check...",
+    syncConnect: "Connecting to the database...",
+    syncDetails: "Details",
+    syncLoaded: "Local catalog loaded",
+    syncBase: "{n} cards in the base",
+    syncChecking: "Checking {name}...",
+    syncProcessing: "Processing {i} / {n}",
+    syncApiDown: "API unavailable",
+    syncDone: "Sync complete",
+    syncOk: "Everything aligned with the database.",
+    syncDiffs: "Differences: {extras} extras · {novas} new.",
+    syncFail: "Sync failed",
+    syncFailMsg: "Could not check the database right now.",
+    syncTitleFull: "Check synchronization with the database",
+    never: "never",
+    reportTitle: "Sync report",
+    reportGenerated: "Generated at {when} — comparison between the local catalog and the EX series on TCGdex.",
+    reportPokemon: "Pokémon",
+    reportSet: "Set",
+    reportNumber: "Number",
+    reportStatus: "Status",
+    reportEmpty: "No divergence recorded.",
+    statusNovo: "New on database",
+    statusExtra: "Local extra",
+    addCard: "Add card",
+    editCard: "Edit card",
+    selectCard: "Select the available card",
+    variantListAria: "Available cards list",
+    previewAria: "Card preview",
+    prevCard: "Previous card",
+    nextCard: "Next card",
+    noImage: "No image available",
+    collectionFallback: "Collection",
+    versionFallback: "Version",
+    rarityField: "Card rarity",
+    save: "Save",
+    update: "Update",
+    cancel: "Cancel",
+    unmark: "Unmark",
+    officialCard: "Official card",
+    sharedUnreadable: "This link could not be read (older site version?) — showing your collection.",
+    understood: "Got it",
+    sharedViewing: "You are viewing a collection shared by a link — editing is blocked.",
+    sharedMine: "View my collection",
+    priceLinkSuffix: " · click to open the store"
+  },
+  pt: {
+    seeAll: "Ver todas",
+    mega: "Mega Evolution",
+    special: "Special Art",
+    checklist: "Checklist",
+    searchPlaceholder: "Buscar Pokémon...",
+    searchAria: "Buscar Pokémon por nome",
+    searchToggleAria: "Abrir busca",
+    progressLabel: "Progresso da coleção",
+    progressHint: "Clique para alternar entre porcentagem e contagem de cartas",
+    progressCount: "{n} / {total} cartas",
+    progressTooltip: "{n}/{total} completas · {missing} faltando",
+    planTitle: "Planeje sem salvar: marcações valem só nesta sessão e somem ao sair",
+    shareAria: "Compartilhar coleção",
+    shareTitle: "Gerar um link para mostrar sua coleção",
+    shareTitleH: "Compartilhar coleção",
+    shareHint: "O link carrega o site com <strong>exatamente as cartas que você marcou</strong> — quem abrir vê sua coleção, mas nada muda por aqui. Suas marcações continuam salvas só neste navegador.",
+    sharePlaceholder: "Marque pelo menos uma carta para gerar um link.",
+    shareWarn: "Link bem longo — alguns apps de chat podem cortá-lo. Se não abrir, tente colar no navegador direto.",
+    shareClose: "Fechar",
+    shareCopy: "Copiar link",
+    shareCopied: "Copiado!",
+    shareLinkAria: "Link da coleção para copiar",
+    sharePlanNote: "Você está no modo planejamento: o link vai compartilhar o RASCUNHO desta sessão — sua coleção salva não muda.",
+    syncAria: "Verificar sincronização das cartas",
+    syncHeader: "Sincronização de cartas",
+    syncCloseAria: "Fechar notificação",
+    syncStart: "Iniciando verificação...",
+    syncConnect: "Conectando com a database...",
+    syncDetails: "Detalhes",
+    syncLoaded: "Catálogo local carregado",
+    syncBase: "{n} cartas na base",
+    syncChecking: "Verificando {name}...",
+    syncProcessing: "Processando {i} / {n}",
+    syncApiDown: "API indisponível",
+    syncDone: "Sincronização concluída",
+    syncOk: "Tudo alinhado com a database.",
+    syncDiffs: "Divergências: {extras} extras · {novas} novas.",
+    syncFail: "Falha na sincronização",
+    syncFailMsg: "Não foi possível verificar a database no momento.",
+    syncTitleFull: "Verificar sincronização com o banco de dados",
+    never: "nunca",
+    reportTitle: "Relatório de sincronização",
+    reportGenerated: "Gerado em {when} — comparação entre o catálogo local e a série EX da TCGdex.",
+    reportPokemon: "Pokémon",
+    reportSet: "Set",
+    reportNumber: "Número",
+    reportStatus: "Status",
+    reportEmpty: "Nenhuma divergência registrada.",
+    statusNovo: "Novo na database",
+    statusExtra: "Extra local",
+    addCard: "Adicionar carta",
+    editCard: "Editar carta",
+    selectCard: "Selecione a carta disponível",
+    variantListAria: "Lista de cartas disponíveis",
+    previewAria: "Pré-visualização da carta",
+    prevCard: "Carta anterior",
+    nextCard: "Próxima carta",
+    noImage: "Sem imagem disponível",
+    collectionFallback: "Coleção",
+    versionFallback: "Versão",
+    rarityField: "Raridade da carta",
+    save: "Salvar",
+    update: "Atualizar",
+    cancel: "Cancelar",
+    unmark: "Desmarcar",
+    officialCard: "Carta oficial",
+    sharedUnreadable: "Este link não pôde ser lido (versão antiga do site?) — mostrando a sua coleção.",
+    understood: "Entendi",
+    sharedViewing: "Você está vendo a coleção compartilhada por um link — edição bloqueada.",
+    sharedMine: "Ver minha coleção",
+    priceLinkSuffix: " · clique para abrir na loja"
+  }
+};
+
+const FILTER_LABEL_KEYS = { all: "seeAll", mega: "mega", special: "special" };
+let locale = "en";
+
+function t(key, params = null) {
+  let text = (I18N[locale] && I18N[locale][key]) ?? I18N.en[key] ?? key;
+  if (params) {
+    Object.entries(params).forEach(([name, value]) => {
+      text = text.replaceAll(`{${name}}`, String(value));
+    });
+  }
+  return text;
+}
+
+// Traduz os elementos estáticos marcados com data-i18n* no HTML.
+function applyI18n() {
+  document.documentElement.lang = locale === "pt" ? "pt-BR" : "en";
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  if (langPtBtn) langPtBtn.setAttribute("aria-pressed", String(locale === "pt"));
+  if (langEnBtn) langEnBtn.setAttribute("aria-pressed", String(locale === "en"));
+  loadLastSync();
+  updateProgressBar();
+  paintFilterTrigger();
+  renderCards();
+  if (currentCardId !== null) {
+    modalTitle.textContent = removeBtn && !removeBtn.classList.contains("hidden") ? t("editCard") : t("addCard");
+    confirmBtn.textContent = removeBtn && !removeBtn.classList.contains("hidden") ? t("update") : t("save");
+    renderVariantList(selectedAsset);
+  }
+}
+
+function setLocale(next) {
+  if (next === locale) return;
+  locale = next === "pt" ? "pt" : "en";
+  try {
+    localStorage.setItem(LANG_KEY, locale);
+  } catch (error) {
+    /* storage indisponível — idioma só desta página */
+  }
+  applyI18n();
+}
 
 const cardGrid = document.getElementById("cardGrid");
 const progressText = document.getElementById("progressText");
@@ -235,6 +442,15 @@ const shareLinkOutput = document.getElementById("shareLinkOutput");
 const shareWarn = document.getElementById("shareWarn");
 const shareCopyBtn = document.getElementById("shareCopyBtn");
 const shareCloseBtn = document.getElementById("shareCloseBtn");
+const planToggle = document.getElementById("planToggle");
+const progressBar = document.getElementById("progressBar");
+const filterMenu = document.getElementById("filterMenu");
+const filterTrigger = document.getElementById("filterTrigger");
+const langPtBtn = document.getElementById("langPt");
+const langEnBtn = document.getElementById("langEn");
+const searchToggleBtn = document.getElementById("searchToggle");
+const sharePlanNote = document.getElementById("sharePlanNote");
+const shareHintEl = document.getElementById("shareHint");
 
 let cards = [];
 let currentCardId = null;
@@ -259,8 +475,47 @@ let activeFilter = "all";
 // Busca por nome (input do painel): qualquer digitação já restringe a grade.
 let searchQuery = "";
 
+// Alternância do rótulo da barra de progresso: false = "42%", true = "84/202".
+// Hover temporariamente mostra o outro modo; clique fixa.
+let progressShowCount = false;
+let progressHoverCount = false;
+
 // Linhas de divergência da última sincronização (para o relatório "Detalhes").
 let syncReportRows = [];
+
+// ---- Modo planejamento ------------------------------------------------------
+// Marcações de "rascunho": nada toca o localStorage enquanto ativo, e a barra
+// de progresso continua contando só o checklist SALVO (snapshot de quando o
+// modo foi ligado / do último save real). Sair do modo descarta o rascunho.
+// É estado de sessão de propósito — recarregar a página já volta ao salvo.
+let planMode = false;
+let planSnapshot = null;         // cópia de `cards` feita ao entrar no modo
+let savedCollected = new Map();  // id -> coletada? (estado persistido)
+
+function refreshSavedSnapshot() {
+  savedCollected = new Map(cards.map((card) => [card.id, card.collected]));
+}
+
+function setPlanMode(enabled) {
+  if (sharedMode || enabled === planMode) return;
+
+  if (enabled) {
+    planSnapshot = cards.map((card) => ({ ...card }));
+    planMode = true;
+  } else {
+    if (planSnapshot) cards = planSnapshot;
+    planSnapshot = null;
+    planMode = false;
+    if (currentCardId !== null) closeModal();
+  }
+
+  document.body.classList.toggle("plan-mode", planMode);
+  if (planToggle) {
+    planToggle.setAttribute("aria-pressed", String(planMode));
+    planToggle.classList.toggle("active", planMode);
+  }
+  renderCards();
+}
 
 // ---- Compartilhamento de coleção via link (hash na URL) --------------------
 // O estado viaja na URL comprimido com LZString (vendor) — site 100% estático,
@@ -366,6 +621,115 @@ function createShareUrl() {
   return url.toString();
 }
 
+// ---- Preços (prices.min.json + câmbio para R$) ------------------------------
+// Fonte: TCGplayer (USD) com fallback Cardmarket (EUR), gerados no build por
+// build_card_database.py a partir do cache TCGdex. A conversão para R$ usa a
+// AwesomeAPI (CORS liberado, sem chave); o câmbio fica em localStorage com TTL
+// de 12h — o app continua 100% estático, sem backend. Sem câmbio disponível,
+// o preço aparece na moeda original. Preço é derivado: nunca vai para o
+// estado salvo no localStorage das cartas.
+const PRICES_URL = "../assets/data/prices.min.json";
+const FX_URL = "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL";
+const FX_KEY = "pokemon_emerald_tcg_fx_v1";
+const FX_TTL_MS = 12 * 60 * 60 * 1000;
+const FX_TIMEOUT_MS = 8000;
+
+let priceIndex = new Map();      // file -> {c, d, p:{n,h,r}}
+let fxRates = null;              // {USDBRL, EURBRL} ou null (moeda nativa)
+
+function formatMoney(amount, currency) {
+  const code = currency === "USD" || currency === "EUR" ? currency : "BRL";
+  try {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: code,
+      currencyDisplay: "narrowSymbol",
+      maximumFractionDigits: amount < 10 ? 2 : 0
+    }).format(amount);
+  } catch (error) {
+    return `${amount.toFixed(2)} ${code}`;
+  }
+}
+
+// Preço da variante no acabamento escolhido; cai para o foil mais próximo com
+// valor (uma variante "normal" sem preço reverse usa o normal, etc.).
+function cardPriceFor(file, finish) {
+  const entry = priceIndex.get(file);
+  if (!entry || !entry.p) return null;
+
+  const value = String(finish || "").toLowerCase();
+  let amount = null;
+  if (value === "reverse") amount = entry.p.r ?? entry.p.h ?? entry.p.n;
+  else if (value === "holo") amount = entry.p.h ?? entry.p.n;
+  else amount = entry.p.n ?? entry.p.h ?? entry.p.r;
+  if (amount == null) return null;
+
+  const native = entry.c === "EUR" ? "EUR" : "USD";
+  const rate = fxRates ? (native === "EUR" ? fxRates.EURBRL : fxRates.USDBRL) : null;
+  const display = rate ? amount * rate : amount;
+  const currency = rate ? "BRL" : native;
+  const source = entry.c === "EUR" ? "Cardmarket" : "TCGplayer";
+  return { amount: display, currency, nativeAmount: amount, nativeCurrency: native, source, updated: entry.d || "", url: entry.u || null };
+}
+
+function priceTitle(price) {
+  const native = formatMoney(price.nativeAmount, price.nativeCurrency);
+  const when = price.updated ? ` · ${price.updated}` : "";
+  const link = price.url ? t("priceLinkSuffix") : "";
+  return `${price.source}: ${native}${when}${link}`;
+}
+
+async function loadPriceData() {
+  try {
+    const response = await fetch(PRICES_URL);
+    if (!response.ok) return;
+    const data = await response.json();
+    const prices = data?.prices;
+    if (!prices || typeof prices !== "object") return;
+    priceIndex = new Map(Object.entries(prices));
+    renderCards();
+    if (currentCardId !== null) renderVariantList(selectedAsset);
+  } catch (error) {
+    /* preços são enfeite — sem eles o app segue igual */
+  }
+}
+
+function readFxCache() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(FX_KEY) || "");
+    if (stored && typeof stored.rates === "object" && Date.now() - stored.ts < FX_TTL_MS) {
+      fxRates = { USDBRL: Number(stored.rates.USDBRL), EURBRL: Number(stored.rates.EURBRL) };
+    }
+  } catch (error) {
+    /* sem cache — tenta a rede */
+  }
+}
+
+async function refreshFx() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FX_TIMEOUT_MS);
+  try {
+    const response = await fetch(FX_URL, { signal: controller.signal });
+    if (!response.ok) return;
+    const data = await response.json();
+    const usd = Number(data?.USDBRL?.bid);
+    const eur = Number(data?.EURBRL?.bid);
+    if (!Number.isFinite(usd) || !Number.isFinite(eur) || usd <= 0 || eur <= 0) return;
+    fxRates = { USDBRL: usd, EURBRL: eur };
+    try {
+      localStorage.setItem(FX_KEY, JSON.stringify({ rates: fxRates, ts: Date.now() }));
+    } catch (error) {
+      /* storage indisponível — câmbio só desta página */
+    }
+    renderCards();
+    if (currentCardId !== null) renderVariantList(selectedAsset);
+  } catch (error) {
+    /* offline/CORS — mantém cache ou moeda nativa */
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Resolve variantes do link após o catálogo chegar (índices → arquivos).
 function applySharedAssets() {
   if (!sharedMode || !sharedMap) return;
@@ -407,14 +771,14 @@ function renderSharedBanner() {
 
   if (sharedIgnored) {
     banner.innerHTML = `
-      <span>Este link não pôde ser lido (versão antiga do site?) — mostrando a sua coleção.</span>
-      <button type="button" class="shared-banner-clear">Entendi</button>
+      <span>${t("sharedUnreadable")}</span>
+      <button type="button" class="shared-banner-clear">${t("understood")}</button>
     `;
     banner.querySelector(".shared-banner-clear").addEventListener("click", clearSharedHash);
   } else {
     banner.innerHTML = `
-      <span>Você está vendo a coleção compartilhada por um link — edição bloqueada.</span>
-      <button type="button" class="shared-banner-clear">Ver minha coleção</button>
+      <span>${t("sharedViewing")}</span>
+      <button type="button" class="shared-banner-clear">${t("sharedMine")}</button>
     `;
     banner.querySelector(".shared-banner-clear").addEventListener("click", clearSharedHash);
   }
@@ -438,13 +802,20 @@ function clearSharedHash() {
 function openShareModal() {
   if (!shareModal) return;
 
+  // Em Plan mode o `cards` é o rascunho da sessão — o link nasce das marcações
+  // do planejamento (comportamento pedido); fora do modo, da coleção salva.
   const url = createShareUrl();
   shareModal.classList.remove("hidden");
   shareModal.setAttribute("aria-hidden", "false");
+  if (shareHintEl) shareHintEl.innerHTML = t("shareHint");
+  if (sharePlanNote) {
+    sharePlanNote.textContent = t("sharePlanNote");
+    sharePlanNote.hidden = !planMode;
+  }
 
   if (shareLinkOutput) {
     shareLinkOutput.value = url || "";
-    shareLinkOutput.placeholder = url ? "" : "Marque pelo menos uma carta para gerar um link.";
+    shareLinkOutput.placeholder = url ? "" : t("sharePlaceholder");
   }
   if (shareWarn) shareWarn.classList.toggle("hidden", !url || url.length <= 2000);
   if (shareCopyBtn) shareCopyBtn.disabled = !url;
@@ -481,10 +852,10 @@ async function copyShareLink() {
 
 function flashShareCopied() {
   if (!shareCopyBtn) return;
-  shareCopyBtn.textContent = "Copiado!";
+  shareCopyBtn.textContent = t("shareCopied");
   clearTimeout(flashShareCopied.timer);
   flashShareCopied.timer = setTimeout(() => {
-    shareCopyBtn.textContent = "Copiar link";
+    shareCopyBtn.textContent = t("shareCopy");
   }, 1800);
 }
 
@@ -549,7 +920,7 @@ async function loadCardAssets() {
   // O catálogo não traz mais cartas do Pokémon TCG Pocket: marcações antigas do
   // localStorage que apontavam para aquelas artes perdem a variante (a carta
   // continua coletada; o usuário reescolhe uma versão física no modal).
-  if (!sharedMode && cardAssets.length) {
+  if (!sharedMode && !planMode && cardAssets.length) {
     let droppedSelections = false;
     cards.forEach((card) => {
       if (!card.collected) return;
@@ -737,30 +1108,47 @@ function loadCards() {
 function saveCards() {
   // No modo compartilhado a grade é de outra pessoa — o localStorage local
   // não pode ser sobrescrito por engano (visitar um link ≠ perder a coleção).
-  if (sharedMode) return;
+  // No modo planejamento o mesmo: marcações são rascunho, nada persiste.
+  if (sharedMode || planMode) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+  refreshSavedSnapshot();
 }
 
 function updateProgressBar() {
-  const collectedCountValue = cards.filter((card) => card.collected).length;
+  // No modo planejamento a barra reflete o checklist SALVO (o snapshot), não o
+  // rascunho da tela — a porcentagem é o "quanto eu realmente tenho".
+  const collectedCountValue = planMode
+    ? cards.filter((card) => savedCollected.get(card.id)).length
+    : cards.filter((card) => card.collected).length;
   const percent = Math.round((collectedCountValue / TOTAL_CARDS) * 100);
+  const tooltip = t("progressTooltip", { n: collectedCountValue, total: TOTAL_CARDS, missing: TOTAL_CARDS - collectedCountValue });
 
-  if (progressText) progressText.textContent = `${collectedCountValue} / ${TOTAL_CARDS} cartas`;
+  if (progressText) progressText.textContent = t("progressCount", { n: collectedCountValue, total: TOTAL_CARDS });
   if (progressPercent) {
     progressPercent.textContent = `${percent}%`;
     // Tooltip nativo com o resumo completo.
-    progressPercent.title = `${collectedCountValue}/${TOTAL_CARDS} completas · ${TOTAL_CARDS - collectedCountValue} faltando`;
+    progressPercent.title = tooltip;
   }
   if (progressPercentCenter) {
-    progressPercentCenter.textContent = `${percent}%`;
-    progressPercentCenter.title = progressPercent ? progressPercent.title : "";
+    // Hover mostra a contagem; fora dele, o modo escolhido pelo clique (hover
+    // nunca esconde a contagem quando ela já está fixada).
+    const showCount = progressShowCount || progressHoverCount;
+    progressPercentCenter.textContent = showCount
+      ? `${collectedCountValue}/${TOTAL_CARDS}`
+      : `${percent}%`;
+    progressPercentCenter.title = tooltip;
+  }
+  if (progressBar) {
+    progressBar.title = t("progressHint");
+    progressBar.setAttribute("aria-pressed", String(progressShowCount));
   }
   if (progressFill) progressFill.style.width = `${percent}%`;
 
   if (progressFill && progressPercentCenter) {
     const progressWidth = progressFill.parentElement.clientWidth || 1;
     const fillWidth = progressFill.offsetWidth || 0;
-    const leftOffset = Math.min(Math.max(fillWidth - 26, 10), progressWidth - 42);
+    const labelWidth = progressPercentCenter.offsetWidth || 26;
+    const leftOffset = Math.min(Math.max(fillWidth - labelWidth - 6, 10), progressWidth - labelWidth - 12);
     progressPercentCenter.style.left = `${leftOffset}px`;
   }
 }
@@ -782,25 +1170,21 @@ function closeSyncNotification() {
 
 // Relatório de divergências da sincronização: página HTML gerada na hora,
 // aberta em Blob URL (fecha quando a guia fecha; não precisa de servidor).
-const STATUS_LABELS = {
-  novo: "Novo na database",
-  extra: "Extra local"
-};
-
 function openSyncDetailsReport() {
+  const statusLabels = { novo: t("statusNovo"), extra: t("statusExtra") };
   const rows = syncReportRows.map((row) => `
       <tr>
         <td>${escapeHtml(row.pokemon)}</td>
         <td>${escapeHtml(row.setId)}</td>
         <td>${escapeHtml(row.number)}</td>
-        <td class="status-${escapeHtml(row.status)}">${STATUS_LABELS[row.status] || escapeHtml(row.status)}</td>
+        <td class="status-${escapeHtml(row.status)}">${escapeHtml(statusLabels[row.status] || row.status)}</td>
       </tr>`).join("");
 
   const html = `<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="${locale === "pt" ? "pt-BR" : "en"}">
 <head>
   <meta charset="UTF-8" />
-  <title>Relatório de sincronização — Pokémon Emerald TCG</title>
+  <title>${escapeHtml(t("reportTitle"))} — Emerald TCG</title>
   <style>
     body { margin: 0; padding: 32px 24px; font-family: "Segoe UI", Tahoma, sans-serif; background: #f5f4f0; color: #0d1114; }
     h1 { font-size: 1.15rem; margin: 0 0 4px; }
@@ -815,11 +1199,11 @@ function openSyncDetailsReport() {
   </style>
 </head>
 <body>
-  <h1>Relatório de sincronização</h1>
-  <p>Gerado em ${new Date().toLocaleString("pt-BR")} — comparação entre o catálogo local e a série EX da TCGdex.</p>
+  <h1>${escapeHtml(t("reportTitle"))}</h1>
+  <p>${escapeHtml(t("reportGenerated", { when: new Date().toLocaleString(locale === "pt" ? "pt-BR" : "en-US") }))}</p>
   <table>
-    <thead><tr><th>Pokémon</th><th>Set</th><th>Número</th><th>Status</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="4" class="empty">Nenhuma divergência registrada.</td></tr>'}</tbody>
+    <thead><tr><th>${escapeHtml(t("reportPokemon"))}</th><th>${escapeHtml(t("reportSet"))}</th><th>${escapeHtml(t("reportNumber"))}</th><th>${escapeHtml(t("reportStatus"))}</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="4" class="empty">${escapeHtml(t("reportEmpty"))}</td></tr>`}</tbody>
   </table>
 </body>
 </html>`;
@@ -846,7 +1230,7 @@ function formatSyncTimestamp(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return "";
 
-  return date.toLocaleDateString("pt-BR", {
+  return date.toLocaleDateString(locale === "pt" ? "pt-BR" : "en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit"
@@ -854,9 +1238,9 @@ function formatSyncTimestamp(isoString) {
 }
 
 function updateLastSyncDisplay(isoString) {
-  const label = isoString ? formatSyncTimestamp(isoString) : "nunca";
+  const label = isoString ? formatSyncTimestamp(isoString) : t("never");
 
-  if (syncCheckBtn) syncCheckBtn.title = `Verificar sincronização com o banco de dados\n${label}`;
+  if (syncCheckBtn) syncCheckBtn.title = `${t("syncTitleFull")}\n${label}`;
   if (syncLastUpdated) syncLastUpdated.textContent = label;
   if (syncLastUpdatedStatus) syncLastUpdatedStatus.textContent = label;
 }
@@ -898,7 +1282,7 @@ async function runCardSyncCheck() {
     }
     await catalogReady;
 
-    updateSyncNotification(0, "Catálogo local carregado", `${cardAssets.length} cartas na base`);
+    updateSyncNotification(0, t("syncLoaded"), t("syncBase", { n: cardAssets.length }));
     const localMap = new Map();
 
     // O tracker cobre a série EX (Geração 3): ignora sets de outras eras que
@@ -922,11 +1306,11 @@ async function runCardSyncCheck() {
     for (let index = 0; index < pokemonNames.length; index += 1) {
       const pokemonName = pokemonNames[index];
       const progress = Math.round(((index + 1) / pokemonNames.length) * 100);
-      updateSyncNotification(progress, `Verificando ${pokemonName}...`, `Processando ${index + 1} / ${pokemonNames.length}`);
+      updateSyncNotification(progress, t("syncChecking", { name: pokemonName }), t("syncProcessing", { i: index + 1, n: pokemonNames.length }));
 
       const response = await fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(pokemonName)}`);
       if (!response.ok) {
-        issues.push({ pokemon: pokemonName, error: "API indisponível" });
+        issues.push({ pokemon: pokemonName, error: t("syncApiDown") });
         continue;
       }
 
@@ -998,10 +1382,10 @@ async function runCardSyncCheck() {
 
     if (!realIssues.length) {
       saveLastSync();
-      updateSyncNotification(100, "Sincronização concluída", "Tudo alinhado com a database.");
+      updateSyncNotification(100, t("syncDone"), t("syncOk"));
     } else {
       saveLastSync();
-      updateSyncNotification(100, "Sincronização concluída", `Divergências: ${totalMissingLocal} extras · ${totalMissingRemote} novas.`);
+      updateSyncNotification(100, t("syncDone"), t("syncDiffs", { extras: totalMissingLocal, novas: totalMissingRemote }));
       console.warn("Sincronização com divergências:", realIssues);
     }
     updateSyncDetailsLink();
@@ -1009,7 +1393,7 @@ async function runCardSyncCheck() {
     syncCloseBtn.hidden = false;
   } catch (error) {
     console.error(error);
-    updateSyncNotification(100, "Falha na sincronização", "Não foi possível verificar a database no momento.");
+    updateSyncNotification(100, t("syncFail"), t("syncFailMsg"));
     syncCloseBtn.hidden = false;
   } finally {
     syncCheckBtn.disabled = false;
@@ -1051,7 +1435,7 @@ function formatCardFinish(value) {
 }
 
 function formatVariantLabel(asset) {
-  const collectionLabel = asset?.collection || asset?.set || "Coleção";
+  const collectionLabel = asset?.collection || asset?.set || t("collectionFallback");
   const finishLabel = formatCardFinish(asset?.finish || "normal");
   const numberLabel = asset?.number ? ` · #${asset.number}` : "";
 
@@ -1102,10 +1486,11 @@ function createRarityButtonsMarkup(currentFinish) {
       data-finish="${option.value}">${option.label}</button>
   `).join("");
 
+  const rarityFieldLabel = escapeHtml(t("rarityField"));
   return `
     <div class="rarity-field">
-      <span class="field-label">Raridade da carta</span>
-      <div class="rarity-group" role="radiogroup" aria-label="Raridade da carta">${buttons}</div>
+      <span class="field-label">${rarityFieldLabel}</span>
+      <div class="rarity-group" role="radiogroup" aria-label="${rarityFieldLabel}">${buttons}</div>
     </div>
   `;
 }
@@ -1118,6 +1503,20 @@ function syncFinishPreview() {
   const pill = modalSummary.querySelector(".rarity-pill");
   if (pill) pill.textContent = formatCardFinish(pendingFinish);
 
+  // O preço do preview segue o acabamento escolhido (normal/holo/reverse têm
+  // preços próprios no TCGplayer quando a carta possui as duas faces).
+  const pricePill = modalSummary.querySelector(".price-pill");
+  const price = cardPriceFor(selectedAsset?.file || "", getCurrentFinish());
+  if (pricePill) {
+    if (price) {
+      pricePill.hidden = false;
+      pricePill.textContent = formatMoney(price.amount, price.currency);
+      pricePill.title = priceTitle(price);
+    } else {
+      pricePill.hidden = true;
+    }
+  }
+
   const stage = modalSummary.querySelector(".preview-stage");
   if (stage) {
     stage.classList.toggle("finish-holo", pendingFinish === "holo");
@@ -1125,14 +1524,40 @@ function syncFinishPreview() {
   }
 }
 
+// Reflete o filtro ativo no rótulo do trigger do dropdown (e nos itens).
+function paintFilterTrigger() {
+  if (filterTrigger) {
+    filterTrigger.textContent = t(FILTER_LABEL_KEYS[activeFilter] || "seeAll");
+    filterTrigger.classList.toggle("active", activeFilter !== "all");
+  }
+  if (filterMenu) {
+    filterMenu.querySelectorAll(".filter-option").forEach((option) => {
+      const isActive = option.dataset.filter === activeFilter;
+      option.classList.toggle("selected", isActive);
+      option.setAttribute("aria-checked", String(isActive));
+    });
+  }
+}
+
 function createCardMarkup(card) {
   const resolvedClass = card.collected ? "revealed" : "uncollected";
+  // No planejamento: "rascunho" = marcado agora mas ainda não salvo.
+  const draftClass = planMode && card.collected && !savedCollected.get(card.id) ? " plan-draft" : "";
   const shineClass = card.collected ? finishShineClass(card.finish) : "";
   const photoMarkup = card.collected && card.artPath ? `<img class="card-photo" src="${card.artPath}" alt="${escapeHtml(card.name)}" />` : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
+  const price = card.collected && card.artPath ? cardPriceFor(card.file, card.finish) : null;
+  // Badge com link vira âncora para a loja (TCGplayer/Cardmarket); sem URL,
+  // segue sendo span (pointer-events:none) para não engolir o clique da carta.
+  const priceMarkup = price
+    ? (price.url
+      ? `<a class="card-price card-price-link" href="${escapeHtml(price.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</a>`
+      : `<span class="card-price" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`)
+    : "";
 
   return `
-    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}" data-id="${card.id}" tabindex="0" aria-label="${escapeHtml(card.name)}">
+    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}${draftClass}" data-id="${card.id}" tabindex="0" aria-label="${escapeHtml(card.name)}">
+      ${priceMarkup}
       <div class="card-visual">
         <div class="card-art">
           ${photoMarkup}
@@ -1214,24 +1639,31 @@ function renderSelectedPreview(asset) {
   const hasNoImage = isNoImageVariant(asset);
   const imageSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
-  const collectionLabel = asset?.collection || asset?.set || "Coleção";
-  const variantLabel = asset?.number ? `#${asset.number}` : "Versão";
+  const collectionLabel = asset?.collection || asset?.set || t("collectionFallback");
+  const variantLabel = asset?.number ? `#${asset.number}` : t("versionFallback");
   const rarityLabel = formatCardFinish(getCurrentFinish());
   const shineClass = finishShineClass(getCurrentFinish());
+  const previewPrice = cardPriceFor(asset?.file || "", getCurrentFinish());
+  // <a> sem href = não clicável (mesma aparência); com URL vira link da loja.
+  const priceHref = previewPrice?.url ? ` href="${escapeHtml(previewPrice.url)}" target="_blank" rel="noopener noreferrer"` : "";
+  const pricePill = previewPrice
+    ? `<a class="summary-pill price-pill"${priceHref} title="${escapeHtml(priceTitle(previewPrice))}">${formatMoney(previewPrice.amount, previewPrice.currency)}</a>`
+    : "";
 
   modalSummary.innerHTML = `
     <div class="preview-shell">
-      <button type="button" class="preview-nav prev" data-nav="prev" aria-label="Carta anterior">&#8249;</button>
-      <div class="preview-stage${hasNoImage ? " no-image" : ""}${shineClass ? ` ${shineClass}` : ""}" aria-label="Pré-visualização da carta">
+      <button type="button" class="preview-nav prev" data-nav="prev" aria-label="${escapeHtml(t("prevCard"))}">&#8249;</button>
+      <div class="preview-stage${hasNoImage ? " no-image" : ""}${shineClass ? ` ${shineClass}` : ""}" aria-label="${escapeHtml(t("previewAria"))}">
         <img class="preview-image" src="${imageSrc}" alt="${escapeHtml(card.name)}" />
-        ${hasNoImage ? '<span class="no-image-badge">Sem imagem disponível</span>' : ""}
+        ${hasNoImage ? `<span class="no-image-badge">${escapeHtml(t("noImage"))}</span>` : ""}
       </div>
-      <button type="button" class="preview-nav next" data-nav="next" aria-label="Próxima carta">&#8250;</button>
+      <button type="button" class="preview-nav next" data-nav="next" aria-label="${escapeHtml(t("nextCard"))}">&#8250;</button>
     </div>
     <div class="summary-meta">
       <span class="summary-pill">${variantLabel}</span>
       <strong>${escapeHtml(collectionLabel)}</strong>
       <span class="summary-pill rarity-pill">${escapeHtml(rarityLabel)}</span>
+      ${pricePill}
       ${hasNoImage ? '<span class="summary-pill no-image-pill">promo ex5.5</span>' : ""}
     </div>
   `;
@@ -1316,10 +1748,17 @@ function renderVariantList(defaultAsset = null) {
     button.type = "button";
     button.className = `variant-option ${selectedAsset && selectedAsset.file === asset.file ? "selected" : ""}`;
     const variantText = formatVariantLabel(asset);
+    const price = cardPriceFor(asset.file || "", asset.finish);
+    // <a> dentro de <button> é HTML inválido — o preço da linha é span com
+    // listener próprio que abre a loja sem deixar o clique selecionar a variante.
+    const priceMarkup = price
+      ? `<span class="variant-price${price.url ? " variant-price-link" : ""}"${price.url ? ` data-store="${escapeHtml(price.url)}"` : ""} title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`
+      : "";
 
     button.innerHTML = `
       <img class="variant-thumb" loading="lazy" decoding="async" src="${getAssetPath(asset.file)}" alt="${escapeHtml(asset.name)}" />
       <span class="variant-label">${variantText}${noImage ? '<em class="variant-no-image">· sem imagem</em>' : ""}</span>
+      ${priceMarkup}
     `;
 
     button.addEventListener("click", () => {
@@ -1328,6 +1767,15 @@ function renderVariantList(defaultAsset = null) {
       currentVariantIndex = assetIndex >= 0 ? assetIndex : 0;
       renderVariantList(asset);
     });
+
+    // Clicar no preço abre a loja em aba nova sem trocar a variante selecionada.
+    const priceEl = button.querySelector(".variant-price-link");
+    if (priceEl) {
+      priceEl.addEventListener("click", (event) => {
+        event.stopPropagation();
+        window.open(priceEl.dataset.store, "_blank", "noopener,noreferrer");
+      });
+    }
 
     variantList.appendChild(button);
   });
@@ -1338,7 +1786,7 @@ function openModal(cardId, mode = "collect") {
   if (!card) return;
 
   currentCardId = cardId;
-  modalTitle.textContent = mode === "collect" ? "Adicionar carta" : "Editar carta";
+  modalTitle.textContent = mode === "collect" ? t("addCard") : t("editCard");
 
   const variants = getCardVariants(card.name);
   // Na edição, reabrir na variante que a carta mostra hoje (fallback: primeira).
@@ -1359,10 +1807,10 @@ function openModal(cardId, mode = "collect") {
 
   if (mode === "collect") {
     removeBtn.classList.add("hidden");
-    confirmBtn.textContent = "Salvar";
+    confirmBtn.textContent = t("save");
   } else {
     removeBtn.classList.remove("hidden");
-    confirmBtn.textContent = "Atualizar";
+    confirmBtn.textContent = t("update");
   }
 
   modal.classList.remove("hidden");
@@ -1430,6 +1878,9 @@ document.addEventListener("click", (event) => {
   // Coleção de link compartilhado é vitrine: clicar em carta não abre modal.
   if (sharedMode) return;
 
+  // O badge de preço é link da loja — não deve abrir o modal por trás.
+  if (event.target.closest(".card-price-link")) return;
+
   const cardElement = event.target.closest(".card");
   if (!cardElement) return;
 
@@ -1480,6 +1931,10 @@ if (shareModal) {
   shareModal.addEventListener("click", (event) => {
     if (event.target === shareModal) closeShareModal();
   });
+}
+
+if (planToggle) {
+  planToggle.addEventListener("click", () => setPlanMode(!planMode));
 }
 
 document.addEventListener("keydown", (event) => {
@@ -1542,29 +1997,92 @@ if (syncDetailsLink) {
   });
 })();
 
-(function initFilterPills() {
-  const pills = document.querySelectorAll(".top-actions .pill-btn");
+// Dropdown de filtro: o trigger mostra o filtro ativo; hover (desktop) ou
+// clique abre a lista Mega/Special. Escolher um item atualiza o rótulo.
+(function initFilterMenu() {
+  if (!filterMenu || !filterTrigger) return;
 
-  pills.forEach((pill) => {
-    pill.addEventListener("click", () => {
-      const filter = pill.dataset.filter;
-      if (!filter || filter === activeFilter) return;
+  const options = filterMenu.querySelectorAll(".filter-option");
 
-      activeFilter = filter;
-      pills.forEach((item) => {
-        const isActive = item === pill;
-        item.classList.toggle("active", isActive);
-        item.setAttribute("aria-pressed", String(isActive));
-      });
-      renderCards();
+  const open = () => filterMenu.classList.add("open");
+  const close = () => filterMenu.classList.remove("open");
+
+  filterTrigger.addEventListener("click", () => {
+    const isOpen = filterMenu.classList.toggle("open");
+    filterTrigger.setAttribute("aria-expanded", String(isOpen));
+  });
+  filterMenu.addEventListener("mouseenter", open);
+  filterMenu.addEventListener("mouseleave", close);
+  filterTrigger.addEventListener("focus", open);
+
+  options.forEach((option) => {
+    option.addEventListener("click", () => {
+      const filter = option.dataset.filter;
+      if (filter && filter !== activeFilter) {
+        activeFilter = filter;
+        renderCards();
+      }
+      paintFilterTrigger();
+      close();
+      filterTrigger.setAttribute("aria-expanded", "false");
     });
   });
+
+  document.addEventListener("click", (event) => {
+    if (!filterMenu.contains(event.target)) close();
+  });
+
+  paintFilterTrigger();
 })();
 
+// Bandeiras de idioma: PT-BR ↔ EN-US, refletido em toda a UI.
+if (langPtBtn) langPtBtn.addEventListener("click", () => setLocale("pt"));
+if (langEnBtn) langEnBtn.addEventListener("click", () => setLocale("en"));
+
+// Barra de progresso: hover espreita o outro modo; clique/Enter fixa.
+if (progressBar) {
+  progressBar.addEventListener("mouseenter", () => { progressHoverCount = true; updateProgressBar(); });
+  progressBar.addEventListener("mouseleave", () => { progressHoverCount = false; updateProgressBar(); });
+  progressBar.addEventListener("focus", () => { progressHoverCount = true; updateProgressBar(); });
+  progressBar.addEventListener("blur", () => { progressHoverCount = false; updateProgressBar(); });
+  progressBar.addEventListener("click", () => { progressShowCount = !progressShowCount; updateProgressBar(); });
+  progressBar.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      progressShowCount = !progressShowCount;
+      updateProgressBar();
+    }
+  });
+}
+
+// Mobile: a lupinha na direita do Checklist abre/fecha o campo de busca.
+if (searchToggleBtn) {
+  const searchInputEl = document.getElementById("searchInput");
+  searchToggleBtn.addEventListener("click", () => {
+    const isOpen = document.body.classList.toggle("search-open");
+    searchToggleBtn.setAttribute("aria-expanded", String(isOpen));
+    if (isOpen && searchInputEl) searchInputEl.focus();
+    else if (searchInputEl) searchInputEl.blur();
+  });
+}
+
 (function init() {
+  try {
+    const stored = localStorage.getItem(LANG_KEY);
+    if (stored === "pt" || stored === "en") locale = stored;
+  } catch (error) {
+    /* storage indisponível — segue no padrão EN */
+  }
+
   loadCards();
+  refreshSavedSnapshot();
+  if (sharedMode && planToggle) planToggle.hidden = true;
   renderSharedBanner();
+  applyI18n();  // resolve rótulos estáticos + re-renderiza com o idioma salvo
   // A grade não depende do catálogo: pinta já; a base chega em background.
   renderCards();
   loadCardAssets();
+  readFxCache();
+  loadPriceData();
+  refreshFx();
 })();

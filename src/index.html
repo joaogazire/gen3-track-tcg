@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pokémon Emerald TCG</title>
+    <title>Emerald TCG</title>
     <meta name="description" content="Tracker pessoal de coleção de cartas Pokémon TCG da geração 3, inspirada em Pokémon Emerald." />
     <link rel="stylesheet" href="style.css" />
     <script>
@@ -17,25 +17,48 @@
   <body>
     <header class="topbar">
       <div class="header-inner">
-        <div class="brand-group" aria-label="Pokémon Emerald TCG">
+        <div class="brand-group" aria-label="Emerald TCG">
+          <button id="planToggle" class="plan-toggle" type="button" aria-pressed="false"
+            data-i18n-title="planTitle"
+            title="Planeje sem salvar: marcações valem só nesta sessão e somem ao sair">
+            <span class="plan-dot" aria-hidden="true"></span>
+            <span class="plan-toggle-label">Plan</span>
+          </button>
           <a id="rayquazaLink" class="brand-badge" href="https://github.com/joaogazire" target="_blank" rel="noopener noreferrer" title="DO NOT CLICK" aria-label="DO NOT CLICK — GitHub do autor">
             <img id="rayquazaImg" src="../assets/site/png-transparent-pixel-art-rayquaza-groudon-kyogre-sprite-kyogre-et-groudon-dragon-swampert-leaf.png?v=20260909" alt="Rayquaza" />
           </a>
           <div class="brand-copy">
-            <h1>Pokémon Emerald TCG</h1>
+            <h1>Emerald TCG</h1>
           </div>
         </div>
 
         <div class="header-right">
-          <div class="top-actions" aria-label="Navegação rápida">
-            <button type="button" class="pill-btn active" data-filter="all" aria-pressed="true">See all</button>
-            <button type="button" class="pill-btn" data-filter="mega" aria-pressed="false">Mega Evolution</button>
-            <button type="button" class="pill-btn" data-filter="special" aria-pressed="false">Special Art</button>
+          <div class="filter-menu" id="filterMenu" aria-label="Navegação rápida">
+            <button type="button" id="filterTrigger" class="pill-btn active" aria-haspopup="true" aria-expanded="false" data-i18n="seeAll">See all</button>
+            <div class="filter-menu-list" id="filterMenuList" role="menu">
+              <button type="button" role="menuitemradio" aria-checked="true" class="filter-option selected" data-filter="all" data-i18n="seeAll">See all</button>
+              <button type="button" role="menuitemradio" aria-checked="false" class="filter-option" data-filter="mega" data-i18n="mega">Mega Evolution</button>
+              <button type="button" role="menuitemradio" aria-checked="false" class="filter-option" data-filter="special" data-i18n="special">Special Art</button>
+            </div>
           </div>
 
-          <button id="shareBtn" class="pill-btn share-btn" type="button" title="Gerar um link para mostrar sua coleção">Compartilhar</button>
+          <button id="shareBtn" class="pill-btn share-btn share-icon-btn" type="button" data-i18n-title="shareTitle" data-i18n-aria="shareAria" aria-label="Compartilhar coleção" title="Gerar um link para mostrar sua coleção">
+            <svg class="share-link-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+          </button>
 
-          <button id="syncCheckBtn" class="header-refresh-btn" type="button" aria-label="Verificar sincronização das cartas" title="Verificar sincronização com o banco de dados">
+          <div class="lang-switch" role="group" aria-label="Idioma / Language">
+            <button id="langPt" class="lang-flag" type="button" title="Português (Brasil)" aria-label="Português (Brasil)" aria-pressed="true">
+              <svg viewBox="0 0 28 20" width="26" height="19" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#009c3b" /><path d="M14 2.4 25.4 10 14 17.6 2.6 10Z" fill="#ffdf00" /><circle cx="14" cy="10" r="4.1" fill="#002776" /></svg>
+            </button>
+            <button id="langEn" class="lang-flag" type="button" title="English (US)" aria-label="English (US)" aria-pressed="false">
+              <svg viewBox="0 0 28 20" width="26" height="19" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#b22234" /><g fill="#fff"><rect y="3.1" width="28" height="1.55" /><rect y="6.2" width="28" height="1.55" /><rect y="9.3" width="28" height="1.55" /><rect y="12.4" width="28" height="1.55" /><rect y="15.5" width="28" height="1.55" /></g><rect width="12.5" height="10.8" rx="2" fill="#3c3b6e" /></svg>
+            </button>
+          </div>
+
+          <button id="syncCheckBtn" class="header-refresh-btn" type="button" data-i18n-aria="syncAria" aria-label="Verificar sincronização das cartas" title="Verificar sincronização com o banco de dados">
             <img src="../assets/site/refresh-icon.png?v=20260909" alt="Atualizar" />
           </button>
           <span id="syncLastUpdated" class="sync-last-updated" aria-live="polite">nunca</span>
@@ -43,12 +66,13 @@
       </div>
 
       <div class="progress-band" id="progresso">
-        <div class="progress-wrap" aria-label="Progresso da coleção">
+        <div class="progress-wrap" data-i18n-aria="progressLabel" aria-label="Progresso da coleção">
           <div class="progress-meta">
             <span class="progress-text" id="progressText">0 / 202 cartas</span>
             <span class="progress-percent" id="progressPercent">0%</span>
           </div>
-          <div class="progress-bar">
+          <div class="progress-bar" id="progressBar" role="button" tabindex="0" aria-pressed="false"
+            title="Clique para alternar entre porcentagem e contagem de cartas">
             <div class="progress-fill" id="progressFill"></div>
             <span class="progress-percent-center" id="progressPercentCenter">0%</span>
           </div>
@@ -59,16 +83,26 @@
     <main class="page-shell">
       <section id="catalogo" class="collection-panel">
         <div class="panel-header">
-          <span class="section-tag">Checklist</span>
-          <input
-            id="searchInput"
-            class="search-input"
-            type="search"
-            placeholder="Buscar Pokémon..."
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Buscar Pokémon por nome"
-          />
+          <span class="section-tag" data-i18n="checklist">Checklist</span>
+          <div class="panel-search">
+            <input
+              id="searchInput"
+              class="search-input"
+              type="search"
+              placeholder="Buscar Pokémon..."
+              autocomplete="off"
+              spellcheck="false"
+              data-i18n-placeholder="searchPlaceholder"
+              data-i18n-aria="searchAria"
+              aria-label="Buscar Pokémon por nome"
+            />
+            <button id="searchToggle" class="search-toggle" type="button" data-i18n-aria="searchToggleAria" aria-label="Abrir busca" aria-expanded="false">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.8-3.8" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <section id="cardGrid" class="card-grid" aria-live="polite"></section>
@@ -81,45 +115,42 @@
 
         <div class="modal-summary" id="modalSummary"></div>
 
-        <div class="field-label">Selecione a carta disponível</div>
-        <div id="variantList" class="variant-list" aria-label="Lista de cartas disponíveis"></div>
+        <div class="field-label" data-i18n="selectCard">Selecione a carta disponível</div>
+        <div id="variantList" class="variant-list" data-i18n-aria="variantListAria" aria-label="Lista de cartas disponíveis"></div>
 
         <div id="finishFieldHost"></div>
 
         <div class="modal-actions">
-          <button id="cancelBtn" class="btn btn-secondary" type="button">Cancelar</button>
+          <button id="cancelBtn" class="btn btn-secondary" type="button" data-i18n="cancel">Cancelar</button>
           <button id="confirmBtn" class="btn btn-primary" type="button">Salvar</button>
-          <button id="removeBtn" class="btn btn-danger hidden" type="button">Desmarcar</button>
+          <button id="removeBtn" class="btn btn-danger hidden" type="button" data-i18n="unmark">Desmarcar</button>
         </div>
       </div>
     </div>
 
     <div class="modal-backdrop hidden" id="shareModal" aria-hidden="true">
       <div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
-        <h2 id="shareModalTitle">Compartilhar coleção</h2>
-        <p class="share-hint">
-          O link carrega o site com <strong>exatamente as cartas que você marcou</strong> —
-          quem abrir vê sua coleção, mas nada muda por aqui. Suas marcações continuam
-          salvas só neste navegador.
-        </p>
+        <h2 id="shareModalTitle" data-i18n="shareTitleH">Compartilhar coleção</h2>
+        <p id="sharePlanNote" class="share-warn" hidden></p>
+        <p class="share-hint" id="shareHint"></p>
         <textarea id="shareLinkOutput" class="share-link-output" readonly spellcheck="false"
-          aria-label="Link da coleção para copiar"></textarea>
-        <p id="shareWarn" class="share-warn hidden">Link bem longo — alguns apps de chat podem cortá-lo. Se não abrir, tente colar no navegador direto.</p>
+          data-i18n-aria="shareLinkAria" aria-label="Link da coleção para copiar"></textarea>
+        <p id="shareWarn" class="share-warn hidden" data-i18n="shareWarn">Link bem longo — alguns apps de chat podem cortá-lo. Se não abrir, tente colar no navegador direto.</p>
         <div class="modal-actions">
-          <button id="shareCloseBtn" class="btn btn-secondary" type="button">Fechar</button>
-          <button id="shareCopyBtn" class="btn btn-primary" type="button">Copiar link</button>
+          <button id="shareCloseBtn" class="btn btn-secondary" type="button" data-i18n="shareClose">Fechar</button>
+          <button id="shareCopyBtn" class="btn btn-primary" type="button" data-i18n="shareCopy">Copiar link</button>
         </div>
       </div>
     </div>
 
     <div id="syncNotification" class="sync-notification hidden" role="status" aria-live="polite" aria-atomic="true">
       <div class="sync-notification-header">
-        <strong>Sincronização de cartas</strong>
-        <button id="syncCloseBtn" class="sync-close-btn" type="button" aria-label="Fechar notificação">×</button>
+        <strong data-i18n="syncHeader">Sincronização de cartas</strong>
+        <button id="syncCloseBtn" class="sync-close-btn" type="button" data-i18n-aria="syncCloseAria" aria-label="Fechar notificação">×</button>
       </div>
 
       <div class="sync-progress-meta">
-        <span id="syncProgressLabel">Iniciando verificação...</span>
+        <span id="syncProgressLabel" data-i18n="syncStart">Iniciando verificação...</span>
         <span id="syncProgressPercent">0%</span>
       </div>
 
@@ -127,10 +158,10 @@
         <div id="syncProgressFill" class="sync-progress-fill"></div>
       </div>
 
-      <div id="syncStatusText" class="sync-status-text">Conectando com a database...</div>
+      <div id="syncStatusText" class="sync-status-text" data-i18n="syncConnect">Conectando com a database...</div>
       <div class="sync-footer">
         <span id="syncLastUpdatedStatus" class="sync-last-updated-status">nunca</span>
-        <a id="syncDetailsLink" class="sync-details-link hidden" href="#" target="_blank" rel="noopener noreferrer">Detalhes</a>
+        <a id="syncDetailsLink" class="sync-details-link hidden" href="#" target="_blank" rel="noopener noreferrer" data-i18n="syncDetails">Detalhes</a>
       </div>
     </div>
 
