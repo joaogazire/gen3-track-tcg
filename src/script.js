@@ -500,11 +500,17 @@ function setupCardTilt(cardElement) {
 
     cardElement.style.setProperty("--card-rotate-x", `${rotateX}deg`);
     cardElement.style.setProperty("--card-rotate-y", `${rotateY}deg`);
+    // Posição normalizada do ponteiro: o shine holográfico varre a carta
+    // acompanhando o mouse, junto com o tilt.
+    cardElement.style.setProperty("--card-mx", `${(x / rect.width) * 100}%`);
+    cardElement.style.setProperty("--card-my", `${(y / rect.height) * 100}%`);
   });
 
   cardElement.addEventListener("pointerleave", () => {
     cardElement.style.setProperty("--card-rotate-x", "0deg");
     cardElement.style.setProperty("--card-rotate-y", "0deg");
+    cardElement.style.setProperty("--card-mx", "50%");
+    cardElement.style.setProperty("--card-my", "50%");
   });
 }
 
@@ -539,6 +545,29 @@ async function loadCardAssets() {
     assetIndexByFile.set(asset.file, index);
   });
   catalogAssetsPrepared = true;
+
+  // O catálogo não traz mais cartas do Pokémon TCG Pocket: marcações antigas do
+  // localStorage que apontavam para aquelas artes perdem a variante (a carta
+  // continua coletada; o usuário reescolhe uma versão física no modal).
+  if (!sharedMode && cardAssets.length) {
+    let droppedSelections = false;
+    cards.forEach((card) => {
+      if (!card.collected) return;
+      const file = cardAssetFile(card);
+      if (!file || assetIndexByFile.has(file)) return;
+      card.file = "";
+      card.artPath = "";
+      card.variant = "";
+      card.collection = "";
+      card.label = "";
+      card.finish = "";
+      droppedSelections = true;
+    });
+    if (droppedSelections) {
+      saveCards();
+      renderCards();
+    }
+  }
 
   // Link compartilhado: agora que o catálogo chegou, resolve as variantes
   // escolhidas por quem criou o link e repinta a grade com as artes.
@@ -1029,42 +1058,81 @@ function formatVariantLabel(asset) {
   return `${collectionLabel} · ${finishLabel}${numberLabel}`;
 }
 
-// Opções de acabamento do select do modal (valores no mesmo formato do catálogo).
-const FINISH_OPTIONS = [
+// Opções de raridade dos botões do modal — seleção única. Os três valores
+// cobrem o que o catálogo imprime (normal/holo/reverse); acabamento de links
+// antigos (SHARE_FINISH_CODES) continua legível, só não é mais oferecido.
+const RARITY_OPTIONS = [
   { value: "normal", label: "Normal" },
-  { value: "holo", label: "Foil (Holo)" },
-  { value: "reverse", label: "Reverse" },
-  { value: "reverse holo", label: "Reverse Foil" },
-  { value: "full art", label: "Full Art" },
-  { value: "secret", label: "Secret" },
-  { value: "shiny", label: "Shiny" }
+  { value: "holo", label: "Holo" },
+  { value: "reverse", label: "Reverse" }
 ];
 
+// Raridade em edição no modal. `rarityPinned` marca escolha explícita do
+// usuário: trocar de variante não pisa nela; sem escolha, a variante manda.
+let pendingFinish = "normal";
+let rarityPinned = false;
+
 function getCurrentFinish() {
-  const card = cards.find((item) => item.id === currentCardId);
-  return card?.finish || selectedAsset?.finish || "normal";
+  return pendingFinish || "normal";
 }
 
-function createFinishSelectMarkup(currentFinish) {
-  const options = FINISH_OPTIONS.map((option) => `
-    <option value="${option.value}"${option.value === currentFinish ? " selected" : ""}>${option.label}</option>
+// Colapsa qualquer acabamento (catálogo, links antigos) nas 3 opções dos botões.
+function normalizeFinishChoice(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "holo") return "holo";
+  if (normalized === "reverse") return "reverse";
+  if (normalized === "reverse holo" || normalized === "reverse foil" || normalized === "foil") return "holo";
+  if (normalized === "normal") return "normal";
+  return "";
+}
+
+// Classe que ativa o shine na grade/preview. Acabamentos de links antigos
+// ("reverse holo" etc.) caem no brilho mais próximo.
+function finishShineClass(finish) {
+  const value = String(finish || "").toLowerCase();
+  if (value === "reverse") return "finish-reverse";
+  if (value === "holo" || value === "reverse holo" || value === "reverse foil") return "finish-holo";
+  return "";
+}
+
+function createRarityButtonsMarkup(currentFinish) {
+  const buttons = RARITY_OPTIONS.map((option) => `
+    <button type="button" class="rarity-btn${option.value === currentFinish ? " selected" : ""}"
+      role="radio" aria-checked="${option.value === currentFinish}"
+      data-finish="${option.value}">${option.label}</button>
   `).join("");
 
   return `
-    <label class="finish-field">
-      <span class="field-label finish-label">Raridade da carta</span>
-      <select id="finishSelect" class="finish-select" aria-label="Raridade da carta">${options}</select>
-    </label>
+    <div class="rarity-field">
+      <span class="field-label">Raridade da carta</span>
+      <div class="rarity-group" role="radiogroup" aria-label="Raridade da carta">${buttons}</div>
+    </div>
   `;
+}
+
+// Repinta pílula de raridade e o estado do shine no preview sem re-criar a
+// imagem (evita flicker de reload da arte ao clicar num botão).
+function syncFinishPreview() {
+  if (!modalSummary) return;
+
+  const pill = modalSummary.querySelector(".rarity-pill");
+  if (pill) pill.textContent = formatCardFinish(pendingFinish);
+
+  const stage = modalSummary.querySelector(".preview-stage");
+  if (stage) {
+    stage.classList.toggle("finish-holo", pendingFinish === "holo");
+    stage.classList.toggle("finish-reverse", pendingFinish === "reverse");
+  }
 }
 
 function createCardMarkup(card) {
   const resolvedClass = card.collected ? "revealed" : "uncollected";
+  const shineClass = card.collected ? finishShineClass(card.finish) : "";
   const photoMarkup = card.collected && card.artPath ? `<img class="card-photo" src="${card.artPath}" alt="${escapeHtml(card.name)}" />` : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
 
   return `
-    <article class="card ${resolvedClass}" data-id="${card.id}" tabindex="0" aria-label="${escapeHtml(card.name)}">
+    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}" data-id="${card.id}" tabindex="0" aria-label="${escapeHtml(card.name)}">
       <div class="card-visual">
         <div class="card-art">
           ${photoMarkup}
@@ -1148,12 +1216,13 @@ function renderSelectedPreview(asset) {
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
   const collectionLabel = asset?.collection || asset?.set || "Coleção";
   const variantLabel = asset?.number ? `#${asset.number}` : "Versão";
-  const rarityLabel = formatCardFinish(asset?.finish || getCurrentFinish());
+  const rarityLabel = formatCardFinish(getCurrentFinish());
+  const shineClass = finishShineClass(getCurrentFinish());
 
   modalSummary.innerHTML = `
     <div class="preview-shell">
       <button type="button" class="preview-nav prev" data-nav="prev" aria-label="Carta anterior">&#8249;</button>
-      <div class="preview-stage${hasNoImage ? " no-image" : ""}" aria-label="Pré-visualização da carta">
+      <div class="preview-stage${hasNoImage ? " no-image" : ""}${shineClass ? ` ${shineClass}` : ""}" aria-label="Pré-visualização da carta">
         <img class="preview-image" src="${imageSrc}" alt="${escapeHtml(card.name)}" />
         ${hasNoImage ? '<span class="no-image-badge">Sem imagem disponível</span>' : ""}
       </div>
@@ -1216,22 +1285,29 @@ function renderVariantList(defaultAsset = null) {
   selectedAsset = options[currentVariantIndex] || options[0];
 
   variantList.innerHTML = "";
+
+  // Raridade segue a variante impressa enquanto o usuário não escolher outra.
+  if (!rarityPinned) {
+    pendingFinish = normalizeFinishChoice(selectedAsset?.finish) || "normal";
+  }
   renderSelectedPreview(selectedAsset);
 
-  // Select de raridade — persiste a escolha por carta no card coletado.
-  const existingFinish = cards.find((item) => item.id === currentCardId)?.finish
-    || selectedAsset?.finish
-    || "normal";
+  // Botões de raridade (seleção única) — persistem na carta ao confirmar.
   const finishHost = document.getElementById("finishFieldHost");
   if (finishHost) {
-    finishHost.innerHTML = createFinishSelectMarkup(existingFinish);
-    const finishSelect = finishHost.querySelector("#finishSelect");
-    if (finishSelect) {
-      finishSelect.value = existingFinish;
-      finishSelect.addEventListener("change", () => {
-        if (selectedAsset) selectedAsset.finish = finishSelect.value;
+    finishHost.innerHTML = createRarityButtonsMarkup(getCurrentFinish());
+    finishHost.querySelectorAll(".rarity-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        pendingFinish = button.dataset.finish;
+        rarityPinned = true;
+        finishHost.querySelectorAll(".rarity-btn").forEach((item) => {
+          const active = item === button;
+          item.classList.toggle("selected", active);
+          item.setAttribute("aria-checked", String(active));
+        });
+        syncFinishPreview();
       });
-    }
+    });
   }
 
   options.forEach((asset) => {
@@ -1265,8 +1341,19 @@ function openModal(cardId, mode = "collect") {
   modalTitle.textContent = mode === "collect" ? "Adicionar carta" : "Editar carta";
 
   const variants = getCardVariants(card.name);
-  const defaultAsset = variants[0] || { name: card.name, set: "base", number: card.number, file: "" };
+  // Na edição, reabrir na variante que a carta mostra hoje (fallback: primeira).
+  const savedAsset = mode === "edit" && card.file
+    ? variants.find((asset) => asset.file === card.file)
+    : null;
+  const defaultAsset = savedAsset || variants[0] || { name: card.name, set: "base", number: card.number, file: "" };
   selectedAsset = defaultAsset;
+
+  // Raridade inicial: a escolha salva na carta (pinned — trocar variante não
+  // pisa) ou, em carta nova, a variante impressa escolhida.
+  pendingFinish = normalizeFinishChoice(card.collected ? card.finish : "")
+    || normalizeFinishChoice(defaultAsset?.finish)
+    || "normal";
+  rarityPinned = Boolean(card.collected && card.finish);
 
   renderVariantList(defaultAsset);
 
@@ -1293,7 +1380,8 @@ function markCardAsCollected(cardId, assetInfo = null) {
   const card = cards.find((item) => item.id === cardId);
   if (!card) return;
 
-  const finishValue = assetInfo?.finish || getCurrentFinish() || "normal";
+  // A escolha do usuário (botões) manda sobre a variante impressa.
+  const finishValue = getCurrentFinish() || assetInfo?.finish || "normal";
 
   card.collected = true;
   card.variant = assetInfo ? `${assetInfo.set}` : "";

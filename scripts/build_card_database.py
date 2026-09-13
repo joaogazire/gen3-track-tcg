@@ -29,6 +29,7 @@ DETAILS_DIR = DATA_DIR / "details"
 CATALOG_PATH = DATA_DIR / "catalog.min.json"
 CACHE_PATH = Path(__file__).resolve().parent / ".tcgdex_cache.json"
 API_BASE = "https://api.tcgdex.net/v2/en"
+API_BASE_PT = "https://api.tcgdex.net/v2/pt"
 REQUEST_TIMEOUT = 45
 DETAIL_PAUSE = 0.15
 
@@ -75,6 +76,31 @@ def derive_finish(detail):
     return "normal"
 
 
+def normalize_variants(payload):
+    """Variantes brutas da API normalizadas em booleans (source of truth das
+    opções de acabamento por carta)."""
+    variants = payload.get("variants") or {}
+    return {
+        "normal": bool(variants.get("normal")),
+        "holo": bool(variants.get("holo")),
+        "reverse": bool(variants.get("reverse")),
+    }
+
+
+def finish_options_from_variants(variants):
+    """Lista de acabamentos que a carta realmente possui (valores do catálogo):
+    normal = sem brilho; holo = foil no corpo; reverse = reverse foil (bordas).
+    Sem flags (cartas promo/indiretas) → cai em normal."""
+    options = []
+    if variants.get("normal"):
+        options.append("normal")
+    if variants.get("holo"):
+        options.append("holo")
+    if variants.get("reverse"):
+        options.append("reverse")
+    return options or ["normal"]
+
+
 def printed_pokemon_from_file(file_path):
     """Prefixo do filename (ex.: 'kadabra' em abra/kadabra_a1-116.png)."""
     stem = Path(file_path).stem
@@ -102,11 +128,13 @@ def fetch_card_detail(card_id):
 
 
 def build_sets_dictionary(cache, set_ids):
-    """Nome/release/série por set id, via /sets/{id} (com cache)."""
+    """Nome/release/série (EN) + nome PT por set id, via /sets/{id} (com cache).
+
+    Entradas antigas de cache sem name_pt são re-buscadas uma vez (PT)."""
     sets_out = {}
     for set_id in sorted(set_ids):
         cached = cache["sets"].get(set_id)
-        if isinstance(cached, dict):
+        if isinstance(cached, dict) and cached.get("name_pt"):
             sets_out[set_id] = cached
             continue
         payload = fetch_with_retry(f"{API_BASE}/sets/{quote(set_id, safe='')}")
@@ -120,6 +148,8 @@ def build_sets_dictionary(cache, set_ids):
             }
         else:
             info = {"name": None, "release": None, "serie": None}
+        payload_pt = fetch_with_retry(f"{API_BASE_PT}/sets/{quote(set_id, safe='')}")
+        info["name_pt"] = payload_pt.get("name") if isinstance(payload_pt, dict) else None
         cache["sets"][set_id] = info
         sets_out[set_id] = info
         time.sleep(0.2)
@@ -175,14 +205,19 @@ def main():
 
         detail = None
         if card_id:
-            if card_id in cache["cards"]:
-                detail = cache["cards"][card_id]
+            cached = cache["cards"].get(card_id, "MISS")
+            if isinstance(cached, dict) and "variants" in cached:
+                detail = cached
+            elif cached is None:
+                pass  # falha conhecida na API — não re-hitamos
             else:
+                # miss puro ou cache antigo (sem variantes brutas) → re-busca
                 payload = fetch_card_detail(card_id)
                 if isinstance(payload, dict):
                     detail = {
                         "rarity": payload.get("rarity"),
                         "finish": derive_finish(payload),
+                        "variants": normalize_variants(payload),
                         "hp": payload.get("hp"),
                         "types": payload.get("types") or [],
                         "stage": payload.get("stage"),
