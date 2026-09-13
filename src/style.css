@@ -729,6 +729,10 @@ h1 {
   top: 7px;
   right: 7px;
   z-index: 2;
+  /* .card usa preserve-3d e o tilt move a arte ~30px à frente do plano; sem
+     translateZ o rotateY cobriria o badge. Avançar o badge garante que o preço
+     fica sempre sobreposto à rotação do mouse. */
+  transform: translateZ(64px);
   pointer-events: none;
   padding: 3px 8px;
   border-radius: 999px;
@@ -765,7 +769,7 @@ h1 {
 .card-price-link:focus-visible {
   border-color: var(--gold-500);
   box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35), 0 2px 6px rgba(0, 0, 0, 0.35);
-  transform: translateY(-1px);
+  transform: translateZ(64px) translateY(-1px);
 }
 
 .price-pill {
@@ -1352,6 +1356,22 @@ body.plan-mode .card.revealed .card-art::after {
 .btn-danger {
   background: linear-gradient(180deg, var(--danger), var(--danger-dark));
   color: #fff;
+}
+
+/* Ações do modal viraram só ícone (voltar / certinho / X) — mantém o fundo
+   colorido de cada variante e garante área de toque confortável. */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn-icon svg {
+  display: block;
 }
 
 .sync-notification {

@@ -121,9 +121,22 @@
         <div id="finishFieldHost"></div>
 
         <div class="modal-actions">
-          <button id="cancelBtn" class="btn btn-secondary" type="button" data-i18n="cancel">Cancelar</button>
-          <button id="confirmBtn" class="btn btn-primary" type="button">Salvar</button>
-          <button id="removeBtn" class="btn btn-danger hidden" type="button" data-i18n="unmark">Desmarcar</button>
+          <button id="cancelBtn" class="btn btn-secondary btn-icon" type="button" data-i18n-title="cancel" data-i18n-aria="cancel" title="Cancelar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h10.5A5.5 5.5 0 0 1 20 14.5V20" />
+            </svg>
+          </button>
+          <button id="confirmBtn" class="btn btn-primary btn-icon" type="button" data-i18n-title="save" data-i18n-aria="save" title="Salvar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m4.5 12.5 5 5 10-11" />
+            </svg>
+          </button>
+          <button id="removeBtn" class="btn btn-danger btn-icon hidden" type="button" data-i18n-title="unmark" data-i18n-aria="unmark" title="Desmarcar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

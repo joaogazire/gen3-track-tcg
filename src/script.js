@@ -398,7 +398,7 @@ function applyI18n() {
   renderCards();
   if (currentCardId !== null) {
     modalTitle.textContent = removeBtn && !removeBtn.classList.contains("hidden") ? t("editCard") : t("addCard");
-    confirmBtn.textContent = removeBtn && !removeBtn.classList.contains("hidden") ? t("update") : t("save");
+    paintConfirmBtn(removeBtn && !removeBtn.classList.contains("hidden"));
     renderVariantList(selectedAsset);
   }
 }
@@ -677,6 +677,13 @@ function priceTitle(price) {
   const when = price.updated ? ` · ${price.updated}` : "";
   const link = price.url ? t("priceLinkSuffix") : "";
   return `${price.source}: ${native}${when}${link}`;
+}
+
+// Chave de ordenação da lista de variantes: preço na moeda exibida; sem preço
+// conhecido vira Infinity (vai para o fim da lista).
+function variantSortPrice(asset) {
+  const hit = cardPriceFor(asset.file || "", asset.finish);
+  return hit ? hit.amount : Number.POSITIVE_INFINITY;
 }
 
 async function loadPriceData() {
@@ -1434,6 +1441,15 @@ function formatCardFinish(value) {
     .join(" ");
 }
 
+// Botão confirmar é só ícone (certinho); o texto vira tooltip/aria-label e
+// troca entre "Salvar" e "Atualizar" conforme o modo do modal.
+function paintConfirmBtn(isEdit) {
+  if (!confirmBtn) return;
+  const label = t(isEdit ? "update" : "save");
+  confirmBtn.title = label;
+  confirmBtn.setAttribute("aria-label", label);
+}
+
 function formatVariantLabel(asset) {
   const collectionLabel = asset?.collection || asset?.set || t("collectionFallback");
   const finishLabel = formatCardFinish(asset?.finish || "normal");
@@ -1701,7 +1717,10 @@ function renderVariantList(defaultAsset = null) {
   if (!card) return;
 
   const variants = getCardVariants(card.name);
-  const options = variants.length ? variants : [{ name: card.name, set: "base", number: card.number, file: "" }];
+  const options = variants.length ? [...variants] : [{ name: card.name, set: "base", number: card.number, file: "" }];
+  // Mais barato → mais caro (preço exibido, já convertido p/ R$ quando há
+  // câmbio). Sem preço conhecido vai para o fim, em ordem original.
+  options.sort((a, b) => variantSortPrice(a) - variantSortPrice(b));
   currentVariantOptions = options;
 
   const targetIndex = defaultAsset
@@ -1807,10 +1826,10 @@ function openModal(cardId, mode = "collect") {
 
   if (mode === "collect") {
     removeBtn.classList.add("hidden");
-    confirmBtn.textContent = t("save");
+    paintConfirmBtn(false);
   } else {
     removeBtn.classList.remove("hidden");
-    confirmBtn.textContent = t("update");
+    paintConfirmBtn(true);
   }
 
   modal.classList.remove("hidden");
