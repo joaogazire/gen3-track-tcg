@@ -58,6 +58,10 @@ def build_local_ex_index(local_cards):
         if not re.match(r"^ex\d+(\.\d+)?$", set_id) and set_id != "exu":
             continue
         number = str(card.get("number") or "").strip()
+        # Entrada sem número (ex.: legado "*_common_normal") não tem contraparte
+        # na API — sem este filtro viraria "extra" fantasma em toda execução.
+        if not number:
+            continue
         # compara zero-padding-insensitive: "007" == "7"
         number_key = str(int(number)) if number.isdigit() else number.lower()
         index[(set_id, number_key)] = card

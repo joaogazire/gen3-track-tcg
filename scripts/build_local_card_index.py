@@ -13,6 +13,24 @@ def title_case(value: str) -> str:
     return " ".join(part.capitalize() for part in value.split()) if value else "Unknown"
 
 
+def printed_species_of(stem: str) -> str:
+    """Prefixo impresso da carta: o stem sem o sufixo `_set-numero`.
+
+    `m-absol-ex_B1-151` → `m-absol-ex`; `abra_base1-32` → `abra`."""
+    return stem.rsplit("_", 1)[0].lower() if "_" in stem else stem.lower()
+
+
+def is_on_species(folder_name: str, stem: str) -> bool:
+    """A frente impressa pertence à espécie da pasta?
+
+    Compara por TOKEN exato separado por hífen — não substring, que já colocou
+    Crabrawler dentro de abra/ (substring "abra" ⊂ "crabrawler") e Volcarona em aron/.
+    `m-absol-ex`/`absol`, `team-magma-s-groudon`/`groudon`, `castform-rain-form`/`castform`
+    e `alakazam-e4-lv-x`/`alakazam` passam; `crabrawler`/`abra` não."""
+    printed = printed_species_of(stem)
+    return printed == folder_name or folder_name in printed.split("-")
+
+
 def extract_metadata(folder_name: str, file_name: str):
     stem = Path(file_name).stem
     pokemon = title_case(folder_name)
@@ -46,7 +64,7 @@ def extract_metadata(folder_name: str, file_name: str):
         "file": f"{folder_name}/{file_name}",
         "source": "local",
         "folder": folder_name,
-        "collection": "Hoenn / Generation 3",
+        "collection": "",
         "finish": "normal",
         "cardType": "Pokemon",
         "subtype": "Pokemon",
@@ -60,14 +78,24 @@ def extract_metadata(folder_name: str, file_name: str):
 def main():
     CARD_ROOT.mkdir(parents=True, exist_ok=True)
     entries = []
+    skipped = []
     for folder in sorted(p for p in CARD_ROOT.iterdir() if p.is_dir()):
         for image in sorted(folder.glob("*.png")):
-            entry = extract_metadata(folder.name, image.name)
-            entries.append(entry)
+            stem = image.stem
+            if "_common_normal" in stem or not is_on_species(folder.name, stem):
+                skipped.append(f"{folder.name}/{image.name}")
+                continue
+            entries.append(extract_metadata(folder.name, image.name))
 
     entries.sort(key=lambda item: (item["pokemon"], item["set"], item["number"], item["file"]))
     INDEX_PATH.write_text(json.dumps(entries, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"catalog_entries={len(entries)}")
+    if skipped:
+        print(f"skipped={len(skipped)} (fora da espécie da pasta ou legado sem número):")
+        for name in skipped[:20]:
+            print(f"  {name}")
+        if len(skipped) > 20:
+            print(f"  ... +{len(skipped) - 20}")
     print(f"index_path={INDEX_PATH}")
 
 

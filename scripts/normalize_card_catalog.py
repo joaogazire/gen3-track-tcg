@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""DEPRECADO — não rode este script.
+
+Reescreve `assets/cards/index.json` com regras antigas (collection fixa "Hoenn /
+Generation 3" e standardName por raridade) que conflitam com o fluxo atual:
+`build_local_card_index.py` gera o índice a partir dos arquivos em disco e
+`build_card_database.py` deriva coleção/raridade/preço da TCGdex. Rodar este
+normalizador regride os dois.
+"""
 import json
 import re
 from pathlib import Path

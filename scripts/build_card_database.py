@@ -27,6 +27,7 @@ INDEX_PATH = CARD_ROOT / "index.json"
 DATA_DIR = ROOT / "assets" / "data"
 DETAILS_DIR = DATA_DIR / "details"
 CATALOG_PATH = DATA_DIR / "catalog.min.json"
+PRICES_PATH = DATA_DIR / "prices.min.json"
 CACHE_PATH = Path(__file__).resolve().parent / ".tcgdex_cache.json"
 API_BASE = "https://api.tcgdex.net/v2/en"
 API_BASE_PT = "https://api.tcgdex.net/v2/pt"
@@ -182,6 +183,88 @@ def dedupe_entries(entries):
     return kept, dropped
 
 
+def _tp_slot_price(slot):
+    """marketPrice com fallback em midPrice; sanidade 0 < v < 5000."""
+    if not isinstance(slot, dict):
+        return None
+    for key in ("marketPrice", "midPrice"):
+        value = slot.get(key)
+        if isinstance(value, (int, float)) and 0 < value < 5000:
+            return round(float(value), 2)
+    return None
+
+
+# Slots de foil do TCGplayer, na ordem de preferência por acabamento.
+TP_NORMAL_KEYS = ("normal", "unlimited", "1st-edition")
+TP_HOLO_KEYS = ("holofoil", "unlimited-holofoil", "1st-edition-holofoil")
+TP_REVERSE_KEYS = ("reverse-holofoil",)
+
+
+def _first_product_id(obj, key):
+    """Primeiro productId/idProduct útil: objeto com a chave, ou dict de slots."""
+    if isinstance(obj, dict):
+        value = obj.get(key)
+        if isinstance(value, (int, str)) and str(value).strip():
+            return value
+        for slot in obj.values():
+            if isinstance(slot, dict):
+                value = slot.get(key)
+                if isinstance(value, (int, str)) and str(value).strip():
+                    return value
+    return None
+
+
+def build_price_entry(pricing):
+    """Preço compacto por carta: {"c": moeda, "d": data, "p": {n, h, r}, "u": url}.
+
+    TCGplayer (USD) primeiro — tem preço por foil; fallback Cardmarket (EUR) com
+    avg/avg-holo. None quando nenhuma fonte tem valor útil. "u" é o link direto
+    da loja (product id da própria API) para o clique no preço da UI.
+    """
+    if not isinstance(pricing, dict):
+        return None
+
+    tp = pricing.get("tcgplayer")
+    if isinstance(tp, dict):
+        def pick(keys):
+            for key in keys:
+                price = _tp_slot_price(tp.get(key))
+                if price is not None:
+                    return price
+            return None
+
+        prices = {"n": pick(TP_NORMAL_KEYS), "h": pick(TP_HOLO_KEYS), "r": pick(TP_REVERSE_KEYS)}
+        if any(v is not None for v in prices.values()):
+            entry = {"c": tp.get("unit") or "USD", "d": (tp.get("updated") or "")[:10], "p": prices}
+            product_id = _first_product_id(tp, "productId")
+            if product_id:
+                entry["u"] = f"https://www.tcgplayer.com/product/{product_id}"
+            return entry
+
+    cm = pricing.get("cardmarket")
+    if isinstance(cm, dict):
+        def cm_pick(*keys):
+            for key in keys:
+                value = cm.get(key)
+                if isinstance(value, (int, float)) and 0 < value < 5000:
+                    return round(float(value), 2)
+            return None
+
+        prices = {
+            "n": cm_pick("avg", "trend"),
+            "h": cm_pick("avg-holo", "trend-holo"),
+            "r": None,
+        }
+        if any(v is not None for v in prices.values()):
+            entry = {"c": cm.get("unit") or "EUR", "d": (cm.get("updated") or "")[:10], "p": prices}
+            product_id = cm.get("idProduct")
+            if product_id:
+                entry["u"] = f"https://www.cardmarket.com/pt/Pokemon/Products/Singles?idProduct={product_id}"
+            return entry
+
+    return None
+
+
 def main():
     cards = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
     cache = load_cache()
@@ -191,10 +274,18 @@ def main():
     cards, dropped = dedupe_entries(cards)
     print(f"entries: {len(cards) + dropped} -> {len(cards)} (dropped {dropped} duplicates)")
 
+    # Entradas sem número (ex.: legado "*_common_normal") não resolvem card id na
+    # API; entravam set_ids falsos no dicionário de sets. Descartar aqui, antes de tudo.
+    total_in = len(cards)
+    cards = [c for c in cards if str(c.get("number") or "").strip()]
+    if total_in != len(cards):
+        print(f"entries: {total_in} -> {len(cards)} (dropped {total_in - len(cards)} sem número)")
+
     # --- enriquecimento com a API ---
     failures = 0
     catalog_cards = []
     details_out = {}
+    prices_out = {}
     set_ids = {str(c.get("set") or "").strip().lower() for c in cards if c.get("set")}
 
     for index, card in enumerate(cards, 1):
@@ -268,6 +359,11 @@ def main():
                 **detail["heavy"],
             }
 
+        if detail:
+            price = build_price_entry((detail.get("heavy") or {}).get("pricing"))
+            if price:
+                prices_out[file_path] = price
+
         if index % 200 == 0:
             print(f"  {index}/{len(cards)}")
 
@@ -301,11 +397,19 @@ def main():
             encoding="utf-8",
         )
 
+    prices_doc = {"v": 1, "generatedAt": now, "prices": prices_out}
+    PRICES_PATH.write_text(
+        json.dumps(prices_doc, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+
     if cache_dirty:
         save_cache(cache)
 
     catalog_size = CATALOG_PATH.stat().st_size
+    prices_size = PRICES_PATH.stat().st_size
     print(f"catalog: {len(catalog_cards)} cards, {catalog_size} bytes ({catalog_size // 1024} KB)")
+    print(f"prices: {len(prices_out)} of {len(cards)} cards, {prices_size // 1024} KB")
     print(f"detail shards: {len(details_out)} files")
     print(f"failures: {failures}")
     return 0 if failures < len(cards) / 2 else 1
