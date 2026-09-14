@@ -60,6 +60,14 @@
             <img src="../assets/site/refresh-icon.png?v=20260909" alt="Atualizar" />
           </button>
         </div>
+
+        <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-expanded="false" data-i18n-aria="menuAria" aria-label="Abrir menu" title="Menu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="12" cy="19" r="2" />
+          </svg>
+        </button>
       </div>
 
       <div class="progress-band" id="progresso">
@@ -80,17 +88,7 @@
     <main class="page-shell">
       <section id="catalogo" class="collection-panel">
         <div class="panel-header">
-          <span class="panel-total" id="panelTotal">
-            <span class="sr-only" data-i18n="totalLabel">Soma das cartas selecionadas</span>
-            <span class="section-tag total-value" id="collectionTotal" title="Total das cartas coletadas">R$ 0,00</span>
-            <button id="totalEye" class="total-eye" type="button" aria-pressed="false" aria-label="Ocultar o valor total" title="Ocultar o valor total">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" />
-                <circle cx="12" cy="12" r="2.6" />
-                <path id="eyeSlash" d="M4 20 20 4" hidden />
-              </svg>
-            </button>
-          </span>
+          <button class="section-tag total-value" id="collectionTotal" type="button" aria-pressed="false" title="Total das cartas coletadas">R$ 0,00</button>
           <div class="panel-search">
             <input
               id="searchInput"

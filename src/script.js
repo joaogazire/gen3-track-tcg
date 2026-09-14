@@ -292,7 +292,6 @@ const I18N = {
     sharedViewing: "You are viewing a collection shared by a link — editing is blocked.",
     sharedMine: "View my collection",
     priceLinkSuffix: " · click to open the store",
-    totalLabel: "Sum of selected cards",
     totalShown: "Hide the total value",
     totalHidden: "Show the total value",
     cardLangAria: "Card language",
@@ -301,6 +300,8 @@ const I18N = {
     cardLangEn: "EUA (EN)",
     backToTop: "Back to top",
     pageActions: "Page actions",
+    menuAria: "Open menu",
+    menuClose: "Close menu",
     resetAll: "Reset all cards",
     resetConfirmTitle: "Reset collection?",
     resetConfirmMsg: "This unmarks ALL cards and clears your saved variants. This action cannot be undone.",
@@ -381,7 +382,6 @@ const I18N = {
     sharedViewing: "Você está vendo a coleção compartilhada por um link — edição bloqueada.",
     sharedMine: "Ver minha coleção",
     priceLinkSuffix: " · clique para abrir na loja",
-    totalLabel: "Soma das cartas selecionadas",
     totalShown: "Ocultar o valor total",
     totalHidden: "Mostrar o valor total",
     cardLangAria: "Idioma da carta",
@@ -390,6 +390,8 @@ const I18N = {
     cardLangEn: "EUA (EN)",
     backToTop: "Voltar ao topo",
     pageActions: "Ações da página",
+    menuAria: "Abrir menu",
+    menuClose: "Fechar menu",
     resetAll: "Resetar todas as cartas",
     resetConfirmTitle: "Resetar coleção?",
     resetConfirmMsg: "Isso desmarca TODAS as cartas e apaga suas variantes salvas. Essa ação não pode ser desfeita.",
@@ -494,8 +496,6 @@ const searchToggleBtn = document.getElementById("searchToggle");
 const sharePlanNote = document.getElementById("sharePlanNote");
 const shareHintEl = document.getElementById("shareHint");
 const collectionTotalEl = document.getElementById("collectionTotal");
-const totalEyeBtn = document.getElementById("totalEye");
-const eyeSlash = document.getElementById("eyeSlash");
 const cardLangPicker = document.getElementById("cardLangPicker");
 const backTopBtn = document.getElementById("backTopBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
@@ -503,6 +503,7 @@ const resetModal = document.getElementById("resetModal");
 const resetConfirmYes = document.getElementById("resetConfirmYes");
 const resetConfirmNo = document.getElementById("resetConfirmNo");
 const fabActions = document.querySelector(".fab-actions");
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
 
 let cards = [];
 let currentCardId = null;
@@ -903,7 +904,6 @@ function updateCollectionTotal() {
 
   if (totalHidden) {
     collectionTotalEl.textContent = "••••••";
-    collectionTotalEl.title = t("totalHidden");
     return;
   }
 
@@ -928,16 +928,16 @@ function updateCollectionTotal() {
   });
 
   collectionTotalEl.textContent = any ? formatMoney(sum, currency) : formatMoney(0, "BRL");
-  collectionTotalEl.title = planMode ? `${t("totalLabel")} — ${t("planTitle")}` : t("totalLabel");
 }
 
+// O próprio valor é o botão: clicar esconde; clicar de novo revela. Sem
+// ícone de olho — o state vazio ("••••••") já comunica que está escondido.
 function paintTotalEye() {
-  if (!totalEyeBtn) return;
-  totalEyeBtn.setAttribute("aria-pressed", String(totalHidden));
+  if (!collectionTotalEl) return;
   const label = totalHidden ? t("totalHidden") : t("totalShown");
-  totalEyeBtn.title = label;
-  totalEyeBtn.setAttribute("aria-label", label);
-  if (eyeSlash) eyeSlash.hidden = !totalHidden;
+  collectionTotalEl.title = label;
+  collectionTotalEl.setAttribute("aria-label", label);
+  collectionTotalEl.setAttribute("aria-pressed", String(totalHidden));
 }
 
 function setTotalHidden(hidden) {
@@ -2263,9 +2263,9 @@ if (cardLangPicker) {
   });
 }
 
-// Olhinho: esconde/revela a soma do painel (o olho aberto é o estado padrão).
-if (totalEyeBtn) {
-  totalEyeBtn.addEventListener("click", () => setTotalHidden(!totalHidden));
+// Clicar no valor alterna esconder/mostrar a soma do painel.
+if (collectionTotalEl) {
+  collectionTotalEl.addEventListener("click", () => setTotalHidden(!totalHidden));
 }
 
 // FAB do fim da página: voltar ao topo + resetar tudo (com confirmação).
@@ -2302,8 +2302,50 @@ if (fabActions) {
   syncBackTopVisibility();
 }
 
+// Mobile: botão ⋮ reúne as ações do header num painel suspenso.
+function setMobileMenuOpen(open) {
+  document.body.classList.toggle("menu-open", open);
+  if (mobileMenuBtn) {
+    mobileMenuBtn.setAttribute("aria-expanded", String(open));
+    const label = t(open ? "menuClose" : "menuAria");
+    mobileMenuBtn.setAttribute("aria-label", label);
+    mobileMenuBtn.title = label;
+  }
+}
+
+(function initMobileMenu() {
+  if (!mobileMenuBtn) return;
+
+  mobileMenuBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setMobileMenuOpen(!document.body.classList.contains("menu-open"));
+  });
+
+  // Tocar fora do painel fecha; escolher uma opção (exceto abrir o submenu de
+  // filtro) também fecha. No desktop não há menu (width > 760).
+  document.addEventListener("click", (event) => {
+    if (!document.body.classList.contains("menu-open")) return;
+    const headerRight = document.querySelector(".header-right");
+    if (!headerRight) return;
+    if (headerRight.contains(event.target)) {
+      const option = event.target.closest("button");
+      if (option && option.id !== "filterTrigger") setMobileMenuOpen(false);
+      return;
+    }
+    if (!mobileMenuBtn.contains(event.target)) setMobileMenuOpen(false);
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 760) setMobileMenuOpen(false);
+  });
+})();
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (document.body.classList.contains("menu-open")) {
+      setMobileMenuOpen(false);
+      return;
+    }
     if (resetModal && !resetModal.classList.contains("hidden")) {
       closeResetModal();
       return;

@@ -71,7 +71,12 @@ gen3-track-tcg/
   Plan, o botão de compartilhar gera o link do **rascunho** da sessão (com aviso no modal)
 - **Soma da coleção no painel** — no lugar do antigo "Checklist", o header do painel
   mostra o total em R$ das cartas marcadas (no modo Plan, soma só o rascunho da
-  sessão); o olhinho ao lado esconde/revela o valor (a escolha persiste)
+  sessão); clicar no próprio valor esconde (`••••••`) e clicar de novo revela
+  (a escolha persiste)
+- **Cabeçalho mobile enxuto** — em telas pequenas ficam só o Rayquaza, o título e
+  um botão de menu (⋮) que abre as ações do header (lápis, filtro, compartilhar,
+  idioma, sincronizar) num painel suspenso; na linha das cartas, valor + lupa +
+  busca compartilham a mesma linha
 - **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
   trocam a pré-visualização para a arte daquele idioma (TCGdex PT-BR/JP, sondada sob
   demanda e cacheada; sem versão localizada, usa a arte EN local)
