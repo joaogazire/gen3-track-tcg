@@ -207,6 +207,8 @@ const TOTAL_CARDS = hoennPokemon.length;
 const STORAGE_KEY = "pokemon_emerald_tcg_tracker_v1";
 const LAST_SYNC_KEY = "pokemon_emerald_tcg_last_sync_v1";
 const LANG_KEY = "pokemon_emerald_tcg_lang_v1";
+// Presets da coleção (nomes + variantes) salvos no navegador.
+const PRESET_KEY = "pokemon_emerald_tcg_presets_v1";
 // Idioma da ARTE da carta no preview do modal ("en" | "pt" | "ja") e o olho do
 // total do painel (true = valor escondido). Ambos persistem no localStorage.
 const CARD_LANG_KEY = "pokemon_emerald_tcg_cardlang_v1";
@@ -302,6 +304,18 @@ const I18N = {
     pageActions: "Page actions",
     menuAria: "Open menu",
     menuClose: "Close menu",
+    presetAria: "Collection presets",
+    presetTitle: "Save and load collection presets",
+    presetSaveNew: "Save new",
+    presetEmpty: "No presets saved yet.",
+    presetDelete: "Delete preset",
+    presetCardsSuffix: "cards",
+    presetDefaultName: "Preset {n}",
+    presetConfirmTitle: "Save this preset?",
+    presetConfirmMsg: "Confirm you want to save the current collection as a preset. It will appear right below \"Save new\".",
+    presetNamePlaceholder: "Preset name",
+    presetNameAria: "Preset name",
+    presetConfirmYes: "Yes, save",
     resetAll: "Reset all cards",
     resetConfirmTitle: "Reset collection?",
     resetConfirmMsg: "This unmarks ALL cards and clears your saved variants. This action cannot be undone.",
@@ -392,6 +406,18 @@ const I18N = {
     pageActions: "Ações da página",
     menuAria: "Abrir menu",
     menuClose: "Fechar menu",
+    presetAria: "Presets da coleção",
+    presetTitle: "Salvar e carregar presets da coleção",
+    presetSaveNew: "Salvar novo",
+    presetEmpty: "Nenhum preset salvo ainda.",
+    presetDelete: "Excluir preset",
+    presetCardsSuffix: "cartas",
+    presetDefaultName: "Preset {n}",
+    presetConfirmTitle: "Salvar este preset?",
+    presetConfirmMsg: "Confirma que quer salvar a coleção atual como preset? Ele aparecerá logo abaixo de \"Salvar novo\".",
+    presetNamePlaceholder: "Nome do preset",
+    presetNameAria: "Nome do preset",
+    presetConfirmYes: "Sim, salvar",
     resetAll: "Resetar todas as cartas",
     resetConfirmTitle: "Resetar coleção?",
     resetConfirmMsg: "Isso desmarca TODAS as cartas e apaga suas variantes salvas. Essa ação não pode ser desfeita.",
@@ -483,6 +509,13 @@ const cancelBtn = document.getElementById("cancelBtn");
 const removeBtn = document.getElementById("removeBtn");
 const shareBtn = document.getElementById("shareBtn");
 const shareModal = document.getElementById("shareModal");
+const presetBtn = document.getElementById("presetBtn");
+const presetMenu = document.getElementById("presetMenu");
+const presetMenuList = document.getElementById("presetMenuList");
+const presetAskModal = document.getElementById("presetAskModal");
+const presetNameInput = document.getElementById("presetNameInput");
+const presetAskYes = document.getElementById("presetAskYes");
+const presetAskNo = document.getElementById("presetAskNo");
 const shareLinkOutput = document.getElementById("shareLinkOutput");
 const shareWarn = document.getElementById("shareWarn");
 const shareCopyBtn = document.getElementById("shareCopyBtn");
@@ -1115,6 +1148,183 @@ async function copyShareLink() {
   shareLinkOutput.setAttribute("readonly", "");
 }
 
+// ---- Presets da coleção -----------------------------------------------------
+//Snapshot das cartas salvas (marcadas + variantes) guardado no navegador sob
+//nome escolhido. "Salvar novo" pede confirmação; clicar no nome de um preset
+//carrega aquela coleção (substitui a atual no localStorage).
+function loadPresets() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PRESET_KEY) || "[]");
+    return Array.isArray(stored) ? stored.filter((p) => p && typeof p.name === "string" && Array.isArray(p.cards)) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function savePresets(presets) {
+  try {
+    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+  } catch (error) {
+    /* storage cheio/indisponível — presets só desta página */
+  }
+}
+
+function presetSnapshot() {
+  // Guarda o estado essencial por carta (marcada + variante escolhida).
+  return cards.map((card) => ({
+    id: card.id,
+    collected: Boolean(card.collected),
+    file: card.file || "",
+    finish: card.finish || "",
+    variant: card.variant || "",
+    collection: card.collection || "",
+    label: card.label || ""
+  }));
+}
+
+function closePresetMenu() {
+  if (!presetMenu) return;
+  presetMenu.classList.remove("open");
+  if (presetBtn) presetBtn.setAttribute("aria-expanded", "false");
+}
+
+function renderPresetMenu() {
+  if (!presetMenuList) return;
+  const presets = loadPresets();
+  const saveNew = `
+    <button type="button" role="menuitem" class="preset-option preset-save-new">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      <span>${escapeHtml(t("presetSaveNew"))}</span>
+    </button>`;
+  const items = presets.map((preset, index) => `
+    <button type="button" role="menuitem" class="preset-option" data-preset="${index}">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+        <path d="M17 21v-8H7v8" />
+        <path d="M7 3v5h8" />
+      </svg>
+      <span>${escapeHtml(preset.name)}</span>
+      <em>${preset.cards.filter((c) => c.collected).length} ${t("presetCardsSuffix")}</em>
+      <span class="preset-delete" role="button" tabindex="0" data-preset-del="${index}" aria-label="${escapeHtml(t("presetDelete"))}" title="${escapeHtml(t("presetDelete"))}">×</span>
+    </button>`).join("");
+  presetMenuList.innerHTML = saveNew + (items || `<div class="preset-empty">${escapeHtml(t("presetEmpty"))}</div>`);
+
+  const saveBtnEl = presetMenuList.querySelector(".preset-save-new");
+  if (saveBtnEl) saveBtnEl.addEventListener("click", openPresetAskModal);
+
+  presetMenuList.querySelectorAll(".preset-option[data-preset]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      if (event.target.closest(".preset-delete")) return;
+      applyPreset(Number(button.dataset.preset));
+    });
+  });
+  presetMenuList.querySelectorAll(".preset-delete").forEach((el) => {
+    const remove = (event) => {
+      event.stopPropagation();
+      const presetsNow = loadPresets();
+      presetsNow.splice(Number(el.dataset.presetDel), 1);
+      savePresets(presetsNow);
+      renderPresetMenu();
+    };
+    el.addEventListener("click", remove);
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        remove(event);
+      }
+    });
+  });
+}
+
+function openPresetAskModal() {
+  if (!presetAskModal) return;
+  closePresetMenu();
+  if (presetNameInput) presetNameInput.value = "";
+  presetAskModal.classList.remove("hidden");
+  presetAskModal.setAttribute("aria-hidden", "false");
+  if (presetNameInput) setTimeout(() => presetNameInput.focus(), 30);
+}
+
+function closePresetAskModal() {
+  if (!presetAskModal) return;
+  presetAskModal.classList.add("hidden");
+  presetAskModal.setAttribute("aria-hidden", "true");
+}
+
+function confirmSavePreset() {
+  const raw = (presetNameInput?.value || "").trim();
+  const name = raw || t("presetDefaultName", { n: loadPresets().length + 1 });
+  const presets = loadPresets().filter((preset) => preset.name !== name);
+  presets.push({ name, when: new Date().toISOString(), cards: presetSnapshot() });
+  savePresets(presets);
+  closePresetAskModal();
+  renderPresetMenu();
+}
+
+function applyPreset(index) {
+  if (sharedMode) return;
+  const preset = loadPresets()[index];
+  if (!preset) return;
+  closePresetMenu();
+
+  const byId = new Map(preset.cards.map((entry) => [entry.id, entry]));
+  cards.forEach((card) => {
+    const saved = byId.get(card.id);
+    card.collected = Boolean(saved?.collected);
+    card.file = saved?.collected ? saved.file || "" : "";
+    card.finish = saved?.collected ? saved.finish || "" : "";
+    card.variant = saved?.collected ? saved.variant || "" : "";
+    card.label = saved?.collected ? saved.label || "" : "";
+    card.artPath = saved?.collected && card.file ? getAssetPath(card.file) : "";
+    card.collection = saved?.collected ? saved.collection || "" : "";
+  });
+  if (planMode) {
+    // No Plan, o preset vira só o rascunho da tela: nada persiste, e sair do
+    // modo volta ao snapshot salvo (comportamento padrão do modo).
+    if (currentCardId !== null) closeModal();
+    renderCards();
+    return;
+  }
+  saveCards();
+  refreshSavedSnapshot();
+  if (currentCardId !== null) closeModal();
+  renderCards();
+}
+
+if (presetBtn && presetMenu) {
+  presetBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const open = presetMenu.classList.toggle("open");
+    presetBtn.setAttribute("aria-expanded", String(open));
+    if (open) renderPresetMenu();
+  });
+  document.addEventListener("click", (event) => {
+    if (!presetMenu.contains(event.target)) closePresetMenu();
+  });
+}
+
+if (presetAskYes) {
+  presetAskYes.addEventListener("click", confirmSavePreset);
+}
+if (presetAskNo) {
+  presetAskNo.addEventListener("click", closePresetAskModal);
+}
+if (presetAskModal) {
+  presetAskModal.addEventListener("click", (event) => {
+    if (event.target === presetAskModal) closePresetAskModal();
+  });
+  if (presetNameInput) {
+    presetNameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        confirmSavePreset();
+      }
+    });
+  }
+}
+
 function flashShareCopied() {
   if (!shareCopyBtn) return;
   shareCopyBtn.textContent = t("shareCopied");
@@ -1170,17 +1380,20 @@ async function loadCardAssets() {
     setsIndex = null;
   }
 
-  // Repõe folder (derivável) e pré-computa candidatos normalizados uma única
+  // Repõe folder (derivável) e pré-computa as chaves EXATAS de nome uma única
   // vez — getCardVariants deixa de normalizar 5 campos por entrada a cada call.
   assetIndexByFile = new Map();
   cardAssets.forEach((asset, index) => {
     asset.folder = String(asset.file || "").split("/")[0];
-    asset.__candidates = [
-      asset.pokemon,
-      asset.folder,
-      asset.printedPokemon,
-      asset.file
-    ].map((candidate) => normalizePokemonKey(candidate));
+    asset.__keys = new Set([
+      normalizePokemonKey(asset.pokemon),
+      normalizePokemonKey(asset.folder),
+      normalizePokemonKey(asset.printedPokemon),
+      // Tokens do nome do arquivo antes do "_set-número" (cobre duplas como
+      // "magikarp-wailord-gx", que pertencem aos dois Pokémon).
+      ...String(asset.file || "").split("/").pop().replace(/\.[a-z]+$/i, "").split("_")[0]
+        .toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+    ].filter(Boolean));
     assetIndexByFile.set(asset.file, index);
   });
   catalogAssetsPrepared = true;
@@ -1272,19 +1485,21 @@ function isNoImageVariant(asset) {
 function getCardVariants(cardName) {
   const normalized = normalizePokemonKey(cardName);
 
-  // Índice O(1) após o load do catálogo (só 135 nomes possíveis na grade).
+  // Índice O(1) após o load do catálogo (só 202 nomes possíveis na grade).
   if (catalogAssetsPrepared && variantsCache.has(normalized)) {
     return variantsCache.get(normalized);
   }
 
+  // Só o Pokémon EXATO: nada de substring (era como "abra" pescar as cartas do
+  // Kadabra — "kadabra" contém "abra"). Casam o nome impresso, o nome da API,
+  // a pasta, ou um token exato do nome do arquivo (duplas "magikarp-wailord").
   const variants = cardAssets.filter((asset) => {
-    const candidates = asset.__candidates || [
+    const keys = asset.__keys || new Set([
       normalizePokemonKey(asset?.pokemon),
       normalizePokemonKey(asset?.folder),
-      normalizePokemonKey(asset?.file)
-    ];
-
-    return candidates.some((candidate) => candidate.includes(normalized));
+      normalizePokemonKey(asset?.printedPokemon)
+    ]);
+    return keys.has(normalized);
   });
 
   if (catalogAssetsPrepared) {
@@ -2318,7 +2533,10 @@ function setMobileMenuOpen(open) {
 
   mobileMenuBtn.addEventListener("click", (event) => {
     event.stopPropagation();
-    setMobileMenuOpen(!document.body.classList.contains("menu-open"));
+    const open = !document.body.classList.contains("menu-open");
+    setMobileMenuOpen(open);
+    // No mobile a lista de presets fica embutida no painel: precisa já vir pintada.
+    if (open) renderPresetMenu();
   });
 
   // Tocar fora do painel fecha; escolher uma opção (exceto abrir o submenu de
@@ -2342,8 +2560,16 @@ function setMobileMenuOpen(open) {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (presetAskModal && !presetAskModal.classList.contains("hidden")) {
+      closePresetAskModal();
+      return;
+    }
     if (document.body.classList.contains("menu-open")) {
       setMobileMenuOpen(false);
+      return;
+    }
+    if (presetMenu && presetMenu.classList.contains("open")) {
+      closePresetMenu();
       return;
     }
     if (resetModal && !resetModal.classList.contains("hidden")) {
@@ -2489,10 +2715,12 @@ if (searchToggleBtn) {
 
   loadCards();
   refreshSavedSnapshot();
-  // Link compartilhado é vitrine: nada de reset (e o Plan já sai escondido).
+  // Link compartilhado é vitrine: nada de reset nem carregar/salvar presets
+  // (o Plan já sai escondido).
   if (sharedMode) {
     if (planToggle) planToggle.hidden = true;
     if (resetAllBtn) resetAllBtn.hidden = true;
+    if (presetBtn) presetBtn.hidden = true;
   }
   renderSharedBanner();
   applyI18n();  // resolve rótulos estáticos + re-renderiza com o idioma salvo

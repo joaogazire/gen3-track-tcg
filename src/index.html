@@ -44,6 +44,17 @@
             </div>
           </div>
 
+          <div class="preset-menu" id="presetMenu">
+            <button id="presetBtn" class="pill-btn preset-icon-btn" type="button" data-i18n-title="presetTitle" data-i18n-aria="presetAria" aria-label="Salvar presets" title="Salvar presets" aria-haspopup="true" aria-expanded="false">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <path d="M17 21v-8H7v8" />
+                <path d="M7 3v5h8" />
+              </svg>
+            </button>
+            <div id="presetMenuList" class="preset-menu-list" role="menu" aria-label="Presets"></div>
+          </div>
+
           <button id="shareBtn" class="pill-btn share-btn share-icon-btn" type="button" data-i18n-title="shareTitle" data-i18n-aria="shareAria" aria-label="Compartilhar coleção" title="Gerar um link para mostrar sua coleção">
             <svg class="share-link-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -184,6 +195,19 @@
         <div class="modal-actions">
           <button id="shareCloseBtn" class="btn btn-secondary" type="button" data-i18n="shareClose">Fechar</button>
           <button id="shareCopyBtn" class="btn btn-primary" type="button" data-i18n="shareCopy">Copiar link</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="presetAskModal" aria-hidden="true">
+      <div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="presetAskTitle">
+        <h2 id="presetAskTitle" data-i18n="presetConfirmTitle">Salvar este preset?</h2>
+        <p class="share-hint" data-i18n="presetConfirmMsg">Confirma que quer salvar a coleção atual como preset? Ele aparecerá logo abaixo de "Salvar novo".</p>
+        <input id="presetNameInput" class="search-input preset-name-input" type="text" maxlength="40" spellcheck="false"
+          data-i18n-placeholder="presetNamePlaceholder" placeholder="Nome do preset" data-i18n-aria="presetNameAria" aria-label="Nome do preset" />
+        <div class="modal-actions">
+          <button id="presetAskNo" class="btn btn-secondary" type="button" data-i18n="resetNo">Não</button>
+          <button id="presetAskYes" class="btn btn-primary" type="button" data-i18n="presetConfirmYes">Sim, salvar</button>
         </div>
       </div>
     </div>

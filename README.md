@@ -77,9 +77,16 @@ gen3-track-tcg/
   um botão de menu (⋮) que abre as ações do header (lápis, filtro, compartilhar,
   idioma, sincronizar) num painel suspenso; na linha das cartas, valor + lupa +
   busca compartilham a mesma linha
+- **Preferências de coleção (presets)** — botão de disquete no header (à esquerda do
+  compartilhar): "Salvar novo" pede confirmação com nome e o preset aparece logo
+  abaixo; clicar no nome carrega aquela coleção (em Plan, carrega como rascunho sem
+  salvar); cada preset pode ser excluído pelo ×; salvos em `localStorage`
 - **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
   trocam a pré-visualização para a arte daquele idioma (TCGdex PT-BR/JP, sondada sob
   demanda e cacheada; sem versão localizada, usa a arte EN local)
+- **Seletor por nome exato** — cada lista de variantes mostra só cartas cujo nome
+  impresso bate exatamente com o Pokémon (nada de Abra aparecer no Kadabra; cards
+  duplos tipo Magikarp/Wailord aparecem nos dois)
 - **Ações do fim da página** — seta volta ao topo; o X ao lado zera todas as cartas
   do checklist, com modal de confirmação (não aparece em link compartilhado)
 - **Barra de progresso animada** — passe o mouse ou clique na porcentagem para alternar entre
