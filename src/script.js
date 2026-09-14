@@ -207,6 +207,10 @@ const TOTAL_CARDS = hoennPokemon.length;
 const STORAGE_KEY = "pokemon_emerald_tcg_tracker_v1";
 const LAST_SYNC_KEY = "pokemon_emerald_tcg_last_sync_v1";
 const LANG_KEY = "pokemon_emerald_tcg_lang_v1";
+// Idioma da ARTE da carta no preview do modal ("en" | "pt" | "ja") e o olho do
+// total do painel (true = valor escondido). Ambos persistem no localStorage.
+const CARD_LANG_KEY = "pokemon_emerald_tcg_cardlang_v1";
+const TOTAL_HIDDEN_KEY = "pokemon_emerald_tcg_total_hidden_v1";
 
 // ---- i18n -------------------------------------------------------------------
 // Toda a UI segue o idioma escolhido nas bandeiras (padrão EN, como os rótulos
@@ -287,7 +291,21 @@ const I18N = {
     understood: "Got it",
     sharedViewing: "You are viewing a collection shared by a link — editing is blocked.",
     sharedMine: "View my collection",
-    priceLinkSuffix: " · click to open the store"
+    priceLinkSuffix: " · click to open the store",
+    totalLabel: "Sum of selected cards",
+    totalShown: "Hide the total value",
+    totalHidden: "Show the total value",
+    cardLangAria: "Card language",
+    cardLangPt: "Brasil (PT)",
+    cardLangJa: "Japão (JA)",
+    cardLangEn: "EUA (EN)",
+    backToTop: "Back to top",
+    pageActions: "Page actions",
+    resetAll: "Reset all cards",
+    resetConfirmTitle: "Reset collection?",
+    resetConfirmMsg: "This unmarks ALL cards and clears your saved variants. This action cannot be undone.",
+    resetYes: "Yes, reset",
+    resetNo: "No"
   },
   pt: {
     seeAll: "Todas",
@@ -362,7 +380,21 @@ const I18N = {
     understood: "Entendi",
     sharedViewing: "Você está vendo a coleção compartilhada por um link — edição bloqueada.",
     sharedMine: "Ver minha coleção",
-    priceLinkSuffix: " · clique para abrir na loja"
+    priceLinkSuffix: " · clique para abrir na loja",
+    totalLabel: "Soma das cartas selecionadas",
+    totalShown: "Ocultar o valor total",
+    totalHidden: "Mostrar o valor total",
+    cardLangAria: "Idioma da carta",
+    cardLangPt: "Brasil (PT)",
+    cardLangJa: "Japão (JA)",
+    cardLangEn: "EUA (EN)",
+    backToTop: "Voltar ao topo",
+    pageActions: "Ações da página",
+    resetAll: "Resetar todas as cartas",
+    resetConfirmTitle: "Resetar coleção?",
+    resetConfirmMsg: "Isso desmarca TODAS as cartas e apaga suas variantes salvas. Essa ação não pode ser desfeita.",
+    resetYes: "Sim, resetar",
+    resetNo: "Não"
   }
 };
 
@@ -405,6 +437,8 @@ function applyI18n() {
   loadLastSync();
   updateProgressBar();
   paintFilterTrigger();
+  paintCardLangPicker();
+  paintTotalEye();
   renderCards();
   if (currentCardId !== null) {
     modalTitle.textContent = removeBtn && !removeBtn.classList.contains("hidden") ? t("editCard") : t("addCard");
@@ -459,6 +493,16 @@ const langToggleBtn = document.getElementById("langToggle");
 const searchToggleBtn = document.getElementById("searchToggle");
 const sharePlanNote = document.getElementById("sharePlanNote");
 const shareHintEl = document.getElementById("shareHint");
+const collectionTotalEl = document.getElementById("collectionTotal");
+const totalEyeBtn = document.getElementById("totalEye");
+const eyeSlash = document.getElementById("eyeSlash");
+const cardLangPicker = document.getElementById("cardLangPicker");
+const backTopBtn = document.getElementById("backTopBtn");
+const resetAllBtn = document.getElementById("resetAllBtn");
+const resetModal = document.getElementById("resetModal");
+const resetConfirmYes = document.getElementById("resetConfirmYes");
+const resetConfirmNo = document.getElementById("resetConfirmNo");
+const fabActions = document.querySelector(".fab-actions");
 
 let cards = [];
 let currentCardId = null;
@@ -746,6 +790,209 @@ async function refreshFx() {
   } finally {
     clearTimeout(timer);
   }
+}
+
+// ---- Idioma da arte da carta no preview (BR / JP / EUA) ---------------------
+// Artes PT-JP (TCGdex `ja`) NÃO são deriváveis do id EN: os sets japoneses têm
+// ids próprios (SV3 ≠ sv03) e a numeração coincide só às vezes (verificado via
+// probes — en sv03-114 é Crabrawler, ja SV3-114 é Tyranitar). Trocar de idioma
+// então só vale quando o set EN casa exatamente com um id JP, ou para PT-BR
+// (TCGdex tem arte PT por carta). Sempre com probe preguiçoso + cache por
+// arquivo e fallback para a arte local EN em qualquer erro.
+const TCGDEX_API = "https://api.tcgdex.net/v2";
+const CARD_LOCALES = ["en", "pt", "ja"];
+let cardLang = "en";
+const localizedArtCache = new Map();   // "loc|file" -> url remota válida | "" (sem arte)
+const localizedArtPending = new Set(); // probes em voo (não re-hitamos o mesmo)
+
+function setCardLang(next) {
+  if (!CARD_LOCALES.includes(next) || next === cardLang) return;
+  cardLang = next;
+  try {
+    localStorage.setItem(CARD_LANG_KEY, next);
+  } catch (error) {
+    /* storage indisponível — idioma da arte só desta página */
+  }
+  paintCardLangPicker();
+  if (selectedAsset) renderSelectedPreview(selectedAsset);
+}
+
+// Estado visual do seletor de bandeirinhas do modal + tooltip/aria por idioma.
+function paintCardLangPicker() {
+  if (!cardLangPicker) return;
+  cardLangPicker.setAttribute("aria-label", t("cardLangAria"));
+  const labels = { pt: "cardLangPt", ja: "cardLangJa", en: "cardLangEn" };
+  cardLangPicker.querySelectorAll(".card-lang-flag").forEach((button) => {
+    const loc = button.dataset.loc;
+    const active = loc === cardLang;
+    button.setAttribute("aria-pressed", String(active));
+    const label = labels[loc] ? t(labels[loc]) : loc;
+    button.title = label;
+    button.setAttribute("aria-label", label);
+  });
+}
+
+// Sonda a TCGdex para a arte localizada da variante; resolve a URL (ou "").
+// Nunca bloqueia a UI: a imagem local aparece na hora, a remota troca quando
+// chega (e um <img onerror> volta para a local se a CDN falhar).
+// PT: o id por carta é o mesmo do EN (`sv03-114`). JA: sets japoneses usam ids
+// próprios e a numeração NÃO coincide com a EN (ja SV3-114 é outra carta),
+// então só aceitamos quando ilustrador e HP batem com a variante local.
+function normalizeIllustrator(value) {
+  return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function probeLocalizedArt(loc, asset) {
+  const file = asset?.file || "";
+  const set = String(asset?.set || "").trim();
+  let number = String(asset?.number || "").trim();
+  if (!file || !set || !number) return Promise.resolve("");
+  // Sub-numeração de arquivo ("5-064") não existe na API; o id real usa o fim.
+  if (/^\d+-\d+$/.test(number)) number = number.split("-", 1)[1];
+  const cardId = `${set}-${number}`.toLowerCase();
+  const url = `${TCGDEX_API}/${loc}/cards/${encodeURIComponent(cardId)}`;
+
+  return fetch(url)
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      const base = typeof data?.image === "string" ? data.image : "";
+      if (!base) return "";
+      if (loc === "ja") {
+        const localIll = normalizeIllustrator(asset.illustrator);
+        const remoteIll = normalizeIllustrator(data.illustrator);
+        const sameIll = localIll && remoteIll && localIll === remoteIll;
+        const sameHp = !asset.hp || !data.hp || Number(asset.hp) === Number(data.hp);
+        if (!sameIll || !sameHp) return "";
+      }
+      return `${base}/high.png`;
+    })
+    .catch(() => "");
+}
+
+function localizedPreviewSrc(asset, onRemote) {
+  const localSrc = getAssetPath(asset?.file || "");
+  if (cardLang === "en" || isNoImageVariant(asset)) return localSrc;
+
+  const key = `${cardLang}|${asset?.file || ""}`;
+  const probeLocale = cardLang;
+  const cached = localizedArtCache.get(key);
+  if (cached === "") return localSrc;
+  if (cached) return cached;
+
+  if (!localizedArtPending.has(key)) {
+    localizedArtPending.add(key);
+    probeLocalizedArt(probeLocale, asset)
+      .then((remote) => {
+        localizedArtCache.set(key, remote || "");
+        // Preview ainda nesta variante/idioma quando a sonda voltou: troca a arte.
+        if (remote && selectedAsset?.file === asset?.file && cardLang === probeLocale) onRemote?.(remote);
+      })
+      .finally(() => localizedArtPending.delete(key));
+  }
+  return localSrc;
+}
+
+// ---- Soma do painel (total das coletadas / do rascunho em Plan) -------------
+// Trocou o header "Checklist": mostra o somatório em R$ (moeda nativa sem
+// câmbio) das cartas marcadas — ou só do RASCUNHO, no modo planejamento. O
+// olhinho esconde/revela o valor (persistido).
+let totalHidden = false;
+
+function updateCollectionTotal() {
+  if (!collectionTotalEl) return;
+
+  if (totalHidden) {
+    collectionTotalEl.textContent = "••••••";
+    collectionTotalEl.title = t("totalHidden");
+    return;
+  }
+
+  // Em Plan soma só as marcações desta sessão ainda não salvas; fora dele, a
+  // coleção (rascunho e salvo coincidem — `cards` é o estado persistido).
+  const counted = planMode
+    ? cards.filter((card) => card.collected && !savedCollected.get(card.id))
+    : cards.filter((card) => card.collected);
+
+  let sum = 0;
+  let currency = "BRL";
+  let any = false;
+  counted.forEach((card) => {
+    const price = cardPriceFor(cardAssetFile(card), card.finish);
+    if (!price) return;
+    // Com câmbio tudo chega em BRL e soma junto; sem câmbio, moedas diferentes
+    // não se somam — a carta fica fora do total até ter uma taxa.
+    if (!any) currency = price.currency;
+    else if (price.currency !== currency) return;
+    sum += price.amount;
+    any = true;
+  });
+
+  collectionTotalEl.textContent = any ? formatMoney(sum, currency) : formatMoney(0, "BRL");
+  collectionTotalEl.title = planMode ? `${t("totalLabel")} — ${t("planTitle")}` : t("totalLabel");
+}
+
+function paintTotalEye() {
+  if (!totalEyeBtn) return;
+  totalEyeBtn.setAttribute("aria-pressed", String(totalHidden));
+  const label = totalHidden ? t("totalHidden") : t("totalShown");
+  totalEyeBtn.title = label;
+  totalEyeBtn.setAttribute("aria-label", label);
+  if (eyeSlash) eyeSlash.hidden = !totalHidden;
+}
+
+function setTotalHidden(hidden) {
+  totalHidden = Boolean(hidden);
+  try {
+    localStorage.setItem(TOTAL_HIDDEN_KEY, totalHidden ? "1" : "0");
+  } catch (error) {
+    /* storage indisponível — visibilidade só desta página */
+  }
+  paintTotalEye();
+  updateCollectionTotal();
+}
+
+// ---- Reset total (botão X do fim da página) ---------------------------------
+// Desmarca todas as cartas do roster e apaga variante/acabamento; pede
+// confirmação num modal dedicado. No Plan mode o reset limpa o rascunho e o
+// snapshot salvo junto (é voltar ao padrão de fábrica).
+function openResetModal() {
+  if (!resetModal) return;
+  resetModal.classList.remove("hidden");
+  resetModal.setAttribute("aria-hidden", "false");
+}
+
+function closeResetModal() {
+  if (!resetModal) return;
+  resetModal.classList.add("hidden");
+  resetModal.setAttribute("aria-hidden", "true");
+}
+
+function resetAllCards() {
+  cards.forEach((card) => {
+    card.collected = false;
+    card.variant = "";
+    card.label = "";
+    card.finish = "";
+    card.collection = "";
+    card.file = "";
+    card.artPath = "";
+  });
+  if (planMode && planSnapshot) {
+    planSnapshot.forEach((card) => {
+      card.collected = false;
+      card.variant = "";
+      card.label = "";
+      card.finish = "";
+      card.collection = "";
+      card.file = "";
+      card.artPath = "";
+    });
+  }
+  saveCards();
+  refreshSavedSnapshot();
+  if (currentCardId !== null) closeModal();
+  closeResetModal();
+  renderCards();
 }
 
 // Resolve variantes do link após o catálogo chegar (índices → arquivos).
@@ -1614,6 +1861,7 @@ function renderCards() {
   cardGrid.innerHTML = cards.filter(cardMatchesFilter).map(createCardMarkup).join("");
   document.querySelectorAll(".card").forEach(setupCardTilt);
   updateProgressBar();
+  updateCollectionTotal();
 }
 
 (function initSearchInput() {
@@ -1676,7 +1924,16 @@ function renderSelectedPreview(asset) {
   if (!modalSummary) return;
 
   const hasNoImage = isNoImageVariant(asset);
-  const imageSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
+  const localSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
+  // Arte no idioma escolhido no modal (BR/JP/EUA); cai para a local quando não
+  // há versão, a sonda falha, ou o remoto some (onerror abaixo).
+  const imageSrc = hasNoImage ? localSrc : localizedPreviewSrc(asset, (remote) => {
+    const img = modalSummary?.querySelector(".preview-image");
+    if (img && img.dataset.src !== remote) {
+      img.src = remote;
+      img.dataset.src = remote;
+    }
+  });
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
   const collectionLabel = localizedCollectionName(asset);
   const variantLabel = asset?.number ? `#${asset.number}` : t("versionFallback");
@@ -1693,7 +1950,7 @@ function renderSelectedPreview(asset) {
     <div class="preview-shell">
       <button type="button" class="preview-nav prev" data-nav="prev" aria-label="${escapeHtml(t("prevCard"))}">&#8249;</button>
       <div class="preview-stage${hasNoImage ? " no-image" : ""}${shineClass ? ` ${shineClass}` : ""}" aria-label="${escapeHtml(t("previewAria"))}">
-        <img class="preview-image" src="${imageSrc}" alt="${escapeHtml(card.name)}" />
+        <img class="preview-image" src="${imageSrc}" data-src="${imageSrc}" data-local="${escapeHtml(localSrc)}" alt="${escapeHtml(card.name)}" />
         ${hasNoImage ? `<span class="no-image-badge">${escapeHtml(t("noImage"))}</span>` : ""}
       </div>
       <button type="button" class="preview-nav next" data-nav="next" aria-label="${escapeHtml(t("nextCard"))}">&#8250;</button>
@@ -1706,6 +1963,19 @@ function renderSelectedPreview(asset) {
       ${hasNoImage ? '<span class="summary-pill no-image-pill">promo ex5.5</span>' : ""}
     </div>
   `;
+
+  // Arte remota não carregou (CDN mudou, rate limit, set sem versão): volta
+  // para a local sem quebrar o preview.
+  const previewImg = modalSummary.querySelector(".preview-image");
+  if (previewImg) {
+    previewImg.addEventListener("error", () => {
+      const local = previewImg.dataset.local;
+      if (local && previewImg.src !== new URL(local, window.location.href).href) {
+        previewImg.src = local;
+        previewImg.dataset.src = local;
+      }
+    }, { once: true });
+  }
 
   const navButtons = modalSummary.querySelectorAll(".preview-nav");
   navButtons.forEach((button) => {
@@ -1986,8 +2256,58 @@ if (planToggle) {
   planToggle.addEventListener("click", () => setPlanMode(!planMode));
 }
 
+// Seletor de idioma da arte (bandeirinhas no lugar do título do modal).
+if (cardLangPicker) {
+  cardLangPicker.querySelectorAll(".card-lang-flag").forEach((button) => {
+    button.addEventListener("click", () => setCardLang(button.dataset.loc));
+  });
+}
+
+// Olhinho: esconde/revela a soma do painel (o olho aberto é o estado padrão).
+if (totalEyeBtn) {
+  totalEyeBtn.addEventListener("click", () => setTotalHidden(!totalHidden));
+}
+
+// FAB do fim da página: voltar ao topo + resetar tudo (com confirmação).
+if (backTopBtn) {
+  backTopBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
+
+if (resetAllBtn) {
+  resetAllBtn.addEventListener("click", openResetModal);
+}
+
+if (resetConfirmYes) {
+  resetConfirmYes.addEventListener("click", resetAllCards);
+}
+
+if (resetConfirmNo) {
+  resetConfirmNo.addEventListener("click", closeResetModal);
+}
+
+if (resetModal) {
+  resetModal.addEventListener("click", (event) => {
+    if (event.target === resetModal) closeResetModal();
+  });
+}
+
+// Esconde o back-to-top quando já está no topo (o reset fica sempre visível).
+if (fabActions) {
+  const syncBackTopVisibility = () => {
+    fabActions.classList.toggle("at-top", window.scrollY < 320);
+  };
+  window.addEventListener("scroll", syncBackTopVisibility, { passive: true });
+  syncBackTopVisibility();
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (resetModal && !resetModal.classList.contains("hidden")) {
+      closeResetModal();
+      return;
+    }
     if (shareModal && !shareModal.classList.contains("hidden")) {
       closeShareModal();
       return;
@@ -2118,13 +2438,20 @@ if (searchToggleBtn) {
   try {
     const stored = localStorage.getItem(LANG_KEY);
     if (stored === "pt" || stored === "en") locale = stored;
+    const storedArt = localStorage.getItem(CARD_LANG_KEY);
+    if (CARD_LOCALES.includes(storedArt)) cardLang = storedArt;
+    totalHidden = localStorage.getItem(TOTAL_HIDDEN_KEY) === "1";
   } catch (error) {
     /* storage indisponível — segue no padrão EN */
   }
 
   loadCards();
   refreshSavedSnapshot();
-  if (sharedMode && planToggle) planToggle.hidden = true;
+  // Link compartilhado é vitrine: nada de reset (e o Plan já sai escondido).
+  if (sharedMode) {
+    if (planToggle) planToggle.hidden = true;
+    if (resetAllBtn) resetAllBtn.hidden = true;
+  }
   renderSharedBanner();
   applyI18n();  // resolve rótulos estáticos + re-renderiza com o idioma salvo
   // A grade não depende do catálogo: pinta já; a base chega em background.

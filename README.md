@@ -64,11 +64,20 @@ gen3-track-tcg/
   do seletor; fonte TCGplayer (US$)/Cardmarket (€) via TCGdex, convertidos para R$ com o
   câmbio do dia (AwesomeAPI, cache de 12h no navegador); sem câmbio, exibe a moeda original.
   Clicar em qualquer preço abre a página da carta na loja (TCGplayer/Cardmarket) em nova aba
-- **Modo planejamento** — botão "Plan" no header (à esquerda do Rayquaza): marque/solte
-  cartas à vontade sem salvar (nada toca o `localStorage`, a porcentagem continua mostrando
+- **Modo planejamento** — botão de lápis no header (à esquerda do dropdown "Todas"):
+  marque/solte cartas à vontade sem salvar (nada toca o `localStorage`, a porcentagem
+  continua mostrando
   o checklist salvo e as artes ficam translúcidas); sair do modo descarta o rascunho. Em
   Plan, o botão de compartilhar gera o link do **rascunho** da sessão (com aviso no modal)
-- Barra de progresso animada — passe o mouse ou clique na porcentagem para alternar entre
+- **Soma da coleção no painel** — no lugar do antigo "Checklist", o header do painel
+  mostra o total em R$ das cartas marcadas (no modo Plan, soma só o rascunho da
+  sessão); o olhinho ao lado esconde/revela o valor (a escolha persiste)
+- **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
+  trocam a pré-visualização para a arte daquele idioma (TCGdex PT-BR/JP, sondada sob
+  demanda e cacheada; sem versão localizada, usa a arte EN local)
+- **Ações do fim da página** — seta volta ao topo; o X ao lado zera todas as cartas
+  do checklist, com modal de confirmação (não aparece em link compartilhado)
+- **Barra de progresso animada** — passe o mouse ou clique na porcentagem para alternar entre
   percentual e "cartas coletadas / total"
 - **Filtro por dropdown** — "Todas" no header abre, no hover ou clique, as opções
   Mega Evolution e Special Art

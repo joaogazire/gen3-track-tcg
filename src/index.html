@@ -18,14 +18,6 @@
     <header class="topbar">
       <div class="header-inner">
         <div class="brand-group" aria-label="Emerald TCG">
-          <button id="planToggle" class="plan-toggle" type="button" aria-pressed="false"
-            data-i18n-title="planTitle" data-i18n-aria="planAria" aria-label="Plan mode"
-            title="Planeje sem salvar: marcações valem só nesta sessão e somem ao sair">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-              <path d="m15 5 4 4" />
-            </svg>
-          </button>
           <a id="rayquazaLink" class="brand-badge" href="https://github.com/joaogazire" target="_blank" rel="noopener noreferrer" aria-label="GitHub do autor">
             <img id="rayquazaImg" src="../assets/site/png-transparent-pixel-art-rayquaza-groudon-kyogre-sprite-kyogre-et-groudon-dragon-swampert-leaf.png?v=20260909" alt="Rayquaza" />
           </a>
@@ -35,6 +27,14 @@
         </div>
 
         <div class="header-right">
+          <button id="planToggle" class="plan-toggle" type="button" aria-pressed="false"
+            data-i18n-title="planTitle" data-i18n-aria="planAria" aria-label="Plan mode"
+            title="Planeje sem salvar: marcações valem só nesta sessão e somem ao sair">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              <path d="m15 5 4 4" />
+            </svg>
+          </button>
           <div class="filter-menu" id="filterMenu" aria-label="Navegação rápida">
             <button type="button" id="filterTrigger" class="pill-btn active" aria-haspopup="true" aria-expanded="false" data-i18n="seeAll">All</button>
             <div class="filter-menu-list" id="filterMenuList" role="menu">
@@ -80,7 +80,17 @@
     <main class="page-shell">
       <section id="catalogo" class="collection-panel">
         <div class="panel-header">
-          <span class="section-tag" data-i18n="checklist">Checklist</span>
+          <span class="panel-total" id="panelTotal">
+            <span class="sr-only" data-i18n="totalLabel">Soma das cartas selecionadas</span>
+            <span class="section-tag total-value" id="collectionTotal" title="Total das cartas coletadas">R$ 0,00</span>
+            <button id="totalEye" class="total-eye" type="button" aria-pressed="false" aria-label="Ocultar o valor total" title="Ocultar o valor total">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="2.6" />
+                <path id="eyeSlash" d="M4 20 20 4" hidden />
+              </svg>
+            </button>
+          </span>
           <div class="panel-search">
             <input
               id="searchInput"
@@ -103,12 +113,39 @@
         </div>
 
         <section id="cardGrid" class="card-grid" aria-live="polite"></section>
+
+        <div class="fab-actions" role="group" data-i18n-aria="pageActions" aria-label="Ações da página">
+          <button id="backTopBtn" class="fab-btn fab-top" type="button" data-i18n-title="backToTop" data-i18n-aria="backToTop" title="Voltar ao topo" aria-label="Voltar ao topo">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20V5" />
+              <path d="m5 12 7-7 7 7" />
+            </svg>
+          </button>
+          <button id="resetAllBtn" class="fab-btn fab-reset" type="button" data-i18n-title="resetAll" data-i18n-aria="resetAll" title="Resetar todas as cartas" aria-label="Resetar todas as cartas">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
       </section>
     </main>
 
     <div class="modal-backdrop hidden" id="cardModal" aria-hidden="true">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <h2 id="modalTitle">Adicionar carta</h2>
+        <div class="modal-title-row">
+          <h2 id="modalTitle" class="sr-only">Adicionar carta</h2>
+          <div class="card-lang-picker" id="cardLangPicker" role="group" aria-label="Idioma da carta">
+            <button id="cardLangPt" class="card-lang-flag" type="button" data-loc="pt" aria-pressed="false">
+              <svg viewBox="0 0 28 20" width="22" height="16" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#009c3b" /><path d="M14 2.4 25.4 10 14 17.6 2.6 10Z" fill="#ffdf00" /><circle cx="14" cy="10" r="4.1" fill="#002776" /></svg>
+            </button>
+            <button id="cardLangJa" class="card-lang-flag" type="button" data-loc="ja" aria-pressed="false">
+              <svg viewBox="0 0 28 20" width="22" height="16" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#fff" /><circle cx="14" cy="10" r="5.6" fill="#bc002d" /></svg>
+            </button>
+            <button id="cardLangEn" class="card-lang-flag" type="button" data-loc="en" aria-pressed="true">
+              <svg viewBox="0 0 28 20" width="22" height="16" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#b22234" /><g fill="#fff"><rect y="3.1" width="28" height="1.55" /><rect y="6.2" width="28" height="1.55" /><rect y="9.3" width="28" height="1.55" /><rect y="12.4" width="28" height="1.55" /><rect y="15.5" width="28" height="1.55" /></g><rect width="12.5" height="10.8" rx="2" fill="#3c3b6e" /></svg>
+            </button>
+          </div>
+        </div>
 
         <div class="modal-summary" id="modalSummary"></div>
 
@@ -149,6 +186,17 @@
         <div class="modal-actions">
           <button id="shareCloseBtn" class="btn btn-secondary" type="button" data-i18n="shareClose">Fechar</button>
           <button id="shareCopyBtn" class="btn btn-primary" type="button" data-i18n="shareCopy">Copiar link</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="resetModal" aria-hidden="true">
+      <div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+        <h2 id="resetModalTitle" data-i18n="resetConfirmTitle">Resetar coleção?</h2>
+        <p class="share-hint" data-i18n="resetConfirmMsg">Isso desmarca TODAS as cartas e apaga suas variantes salvas. Essa ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+          <button id="resetConfirmNo" class="btn btn-secondary" type="button" data-i18n="resetNo">Não</button>
+          <button id="resetConfirmYes" class="btn btn-danger" type="button" data-i18n="resetYes">Sim, resetar</button>
         </div>
       </div>
     </div>
