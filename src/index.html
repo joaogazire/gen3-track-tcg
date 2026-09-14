@@ -19,12 +19,14 @@
       <div class="header-inner">
         <div class="brand-group" aria-label="Emerald TCG">
           <button id="planToggle" class="plan-toggle" type="button" aria-pressed="false"
-            data-i18n-title="planTitle"
+            data-i18n-title="planTitle" data-i18n-aria="planAria" aria-label="Plan mode"
             title="Planeje sem salvar: marcações valem só nesta sessão e somem ao sair">
-            <span class="plan-dot" aria-hidden="true"></span>
-            <span class="plan-toggle-label">Plan</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              <path d="m15 5 4 4" />
+            </svg>
           </button>
-          <a id="rayquazaLink" class="brand-badge" href="https://github.com/joaogazire" target="_blank" rel="noopener noreferrer" title="DO NOT CLICK" aria-label="DO NOT CLICK — GitHub do autor">
+          <a id="rayquazaLink" class="brand-badge" href="https://github.com/joaogazire" target="_blank" rel="noopener noreferrer" aria-label="GitHub do autor">
             <img id="rayquazaImg" src="../assets/site/png-transparent-pixel-art-rayquaza-groudon-kyogre-sprite-kyogre-et-groudon-dragon-swampert-leaf.png?v=20260909" alt="Rayquaza" />
           </a>
           <div class="brand-copy">
@@ -34,9 +36,9 @@
 
         <div class="header-right">
           <div class="filter-menu" id="filterMenu" aria-label="Navegação rápida">
-            <button type="button" id="filterTrigger" class="pill-btn active" aria-haspopup="true" aria-expanded="false" data-i18n="seeAll">See all</button>
+            <button type="button" id="filterTrigger" class="pill-btn active" aria-haspopup="true" aria-expanded="false" data-i18n="seeAll">All</button>
             <div class="filter-menu-list" id="filterMenuList" role="menu">
-              <button type="button" role="menuitemradio" aria-checked="true" class="filter-option selected" data-filter="all" data-i18n="seeAll">See all</button>
+              <button type="button" role="menuitemradio" aria-checked="true" class="filter-option selected" data-filter="all" data-i18n="seeAll">All</button>
               <button type="button" role="menuitemradio" aria-checked="false" class="filter-option" data-filter="mega" data-i18n="mega">Mega Evolution</button>
               <button type="button" role="menuitemradio" aria-checked="false" class="filter-option" data-filter="special" data-i18n="special">Special Art</button>
             </div>
@@ -49,19 +51,14 @@
             </svg>
           </button>
 
-          <div class="lang-switch" role="group" aria-label="Idioma / Language">
-            <button id="langPt" class="lang-flag" type="button" title="Português (Brasil)" aria-label="Português (Brasil)" aria-pressed="true">
-              <svg viewBox="0 0 28 20" width="26" height="19" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#009c3b" /><path d="M14 2.4 25.4 10 14 17.6 2.6 10Z" fill="#ffdf00" /><circle cx="14" cy="10" r="4.1" fill="#002776" /></svg>
-            </button>
-            <button id="langEn" class="lang-flag" type="button" title="English (US)" aria-label="English (US)" aria-pressed="false">
-              <svg viewBox="0 0 28 20" width="26" height="19" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#b22234" /><g fill="#fff"><rect y="3.1" width="28" height="1.55" /><rect y="6.2" width="28" height="1.55" /><rect y="9.3" width="28" height="1.55" /><rect y="12.4" width="28" height="1.55" /><rect y="15.5" width="28" height="1.55" /></g><rect width="12.5" height="10.8" rx="2" fill="#3c3b6e" /></svg>
-            </button>
-          </div>
+          <button id="langToggle" class="lang-flag" type="button" data-locale="en" aria-label="Português (Brasil)" title="Português (Brasil)">
+            <svg class="flag-svg flag-svg-pt" viewBox="0 0 28 20" width="26" height="19" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#009c3b" /><path d="M14 2.4 25.4 10 14 17.6 2.6 10Z" fill="#ffdf00" /><circle cx="14" cy="10" r="4.1" fill="#002776" /></svg>
+            <svg class="flag-svg flag-svg-en" viewBox="0 0 28 20" width="26" height="19" aria-hidden="true"><rect width="28" height="20" rx="3" fill="#b22234" /><g fill="#fff"><rect y="3.1" width="28" height="1.55" /><rect y="6.2" width="28" height="1.55" /><rect y="9.3" width="28" height="1.55" /><rect y="12.4" width="28" height="1.55" /><rect y="15.5" width="28" height="1.55" /></g><rect width="12.5" height="10.8" rx="2" fill="#3c3b6e" /></svg>
+          </button>
 
           <button id="syncCheckBtn" class="header-refresh-btn" type="button" data-i18n-aria="syncAria" aria-label="Verificar sincronização das cartas" title="Verificar sincronização com o banco de dados">
             <img src="../assets/site/refresh-icon.png?v=20260909" alt="Atualizar" />
           </button>
-          <span id="syncLastUpdated" class="sync-last-updated" aria-live="polite">nunca</span>
         </div>
       </div>
 

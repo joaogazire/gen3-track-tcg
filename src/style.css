@@ -35,7 +35,7 @@ body {
   color: var(--slate-50);
   background:
     linear-gradient(180deg, rgba(10, 19, 16, 0.58), rgba(10, 19, 16, 0.7)),
-    url("../assets/site/background.jpg?v=20260913") center/cover no-repeat fixed;
+    url("../assets/site/background.jpg?v=20260913b") center/cover no-repeat fixed;
 }
 
 body::before {
@@ -106,26 +106,6 @@ select {
 
 .brand-badge:hover {
   transform: scale(1.08) rotate(-3deg);
-}
-
-.brand-badge::after {
-  content: "DO NOT CLICK";
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.5rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: var(--danger);
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-}
-
-.brand-badge:hover::after {
-  opacity: 1;
 }
 
 .brand-badge img {
@@ -217,16 +197,8 @@ h1 {
 }
 
 /* ---- Seletor de idioma (bandeiras) ---------------------------------------- */
-.lang-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(14, 86, 72, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(14, 86, 72, 0.25);
-}
-
+/* Bandeira única de idioma: mostra o idioma atual; o clique vira a bandeira
+   para o país do próximo idioma (BR→EUA = inglês; EUA→BR = PT-BR). */
 .lang-flag {
   appearance: none;
   border: 2px solid transparent;
@@ -235,24 +207,30 @@ h1 {
   padding: 0;
   line-height: 0;
   cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.85;
+  display: inline-flex;
   transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .lang-flag svg {
   border-radius: 999px;
+  display: none;
+}
+
+/* Mostra só a bandeira do idioma ativo (data-locale vem do JS). */
+.lang-flag[data-locale="pt"] .flag-svg-pt,
+.lang-flag[data-locale="en"] .flag-svg-en {
   display: block;
 }
 
 .lang-flag:hover {
-  opacity: 0.85;
+  opacity: 1;
   transform: translateY(-1px);
 }
 
-.lang-flag[aria-pressed="true"] {
-  opacity: 1;
-  border-color: var(--gold-700);
-  box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35);
+.lang-flag:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 2px;
 }
 
 /* Botão de compartilhar: agora só o ícone de link. */
@@ -290,14 +268,6 @@ h1 {
   object-fit: contain;
   display: block;
   background: transparent;
-}
-
-.sync-last-updated {
-  font-size: 0.62rem;
-  letter-spacing: 0.04em;
-  color: #3d5a52;
-  white-space: nowrap;
-  align-self: center;
 }
 
 .pill-btn {
@@ -600,7 +570,8 @@ h1 {
 }
 
 .card:hover {
-  transform: translateY(-7px) rotateX(2deg) rotateY(-4deg) scale(1.012);
+  /* Sem rotate aqui: o rodapé (# número) fica estático; só a imagem inclina. */
+  transform: translateY(-7px) scale(1.012);
   box-shadow: 0 18px 28px rgba(0,0,0,0.18), 0 0 0 1px rgba(14, 76, 63, 0.2);
 }
 
@@ -618,7 +589,10 @@ h1 {
   width: 100%;
   height: 100%;
   min-height: 0;
-  border: 3px solid rgba(34, 44, 39, 0.9);
+  /* Moldura transparente: antes era uma borda preta grossa; agora só a leve
+     linha interna (::after) e a sombra definem o card. O tilt do ponteiro
+     vive AQUI — só a imagem inclina; o rodapé com o # fica estático. */
+  border: 3px solid transparent;
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 8px 18px rgba(0,0,0,0.15), inset 0 0 16px rgba(255,255,255,0.04);
@@ -814,26 +788,15 @@ a.price-pill:focus-visible {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   background: rgba(12, 18, 18, 0.55);
   color: #cfe0d6;
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  padding: 6px 12px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.plan-toggle .plan-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .plan-toggle:hover {
@@ -845,11 +808,6 @@ a.price-pill:focus-visible {
   background: linear-gradient(180deg, var(--gold-500), var(--gold-700));
   color: #0b1010;
   box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35);
-}
-
-.plan-toggle.active .plan-dot {
-  background: #0b1010;
-  box-shadow: 0 0 6px rgba(11, 16, 16, 0.6);
 }
 
 body.plan-mode .card.revealed .card-photo {
@@ -996,7 +954,7 @@ body.plan-mode .card.revealed .card-art::after {
   display: none;
 }
 
-.card.is-flipping {
+.card.is-flipping .card-visual {
   animation: flipCard 0.8s ease;
 }
 

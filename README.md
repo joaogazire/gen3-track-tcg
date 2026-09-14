@@ -70,10 +70,11 @@ gen3-track-tcg/
   Plan, o botão de compartilhar gera o link do **rascunho** da sessão (com aviso no modal)
 - Barra de progresso animada — passe o mouse ou clique na porcentagem para alternar entre
   percentual e "cartas coletadas / total"
-- **Filtro por dropdown** — "See all" no header abre, no hover ou clique, as opções
+- **Filtro por dropdown** — "Todas" no header abre, no hover ou clique, as opções
   Mega Evolution e Special Art
-- **Idioma PT-BR / EN-US** — bandeiras no canto superior direito trocam todo o texto da
-  interface (nome das cartas do catálogo permanecem em EN, fonte TCGdex); escolha persiste
+- **Idioma PT-BR / EN-US** — bandeira no canto superior direito alterna todo o texto da
+  interface ao clicar (BR ↔ EUA); em PT-BR os **nomes das coleções** saem traduzidos
+  (name_pt da TCGdex); escolha persiste
 - **Busca mobile** — lupa ao lado do "CHECKLIST" abre o campo de busca só em telas pequenas
 - **Link de compartilhamento** — botão de ícone (link) gera uma URL com a coleção
   codificada no hash (LZString, sem servidor); quem abre vê as cartas marcadas

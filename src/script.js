@@ -215,9 +215,11 @@ const LANG_KEY = "pokemon_emerald_tcg_lang_v1";
 // atributos data-i18n* resolvidos em applyI18n().
 const I18N = {
   en: {
-    seeAll: "See all",
+    seeAll: "All",
     mega: "Mega Evolution",
     special: "Special Art",
+    planAria: "Plan mode",
+    langSwitch: "Português (Brasil)",
     checklist: "Checklist",
     searchPlaceholder: "Search Pokémon...",
     searchAria: "Search Pokémon by name",
@@ -288,9 +290,11 @@ const I18N = {
     priceLinkSuffix: " · click to open the store"
   },
   pt: {
-    seeAll: "Ver todas",
+    seeAll: "Todas",
     mega: "Mega Evolution",
     special: "Special Art",
+    planAria: "Modo planejamento",
+    langSwitch: "English (US)",
     checklist: "Checklist",
     searchPlaceholder: "Buscar Pokémon...",
     searchAria: "Buscar Pokémon por nome",
@@ -390,8 +394,14 @@ function applyI18n() {
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     el.placeholder = t(el.dataset.i18nPlaceholder);
   });
-  if (langPtBtn) langPtBtn.setAttribute("aria-pressed", String(locale === "pt"));
-  if (langEnBtn) langEnBtn.setAttribute("aria-pressed", String(locale === "en"));
+  // Bandeira única: mostra a bandeira do idioma atual; o clique alterna para o
+  // outro (BR vira EUA e o site vai para inglês, EUA vira Brasil e PT-BR).
+  // Tooltip/aria dizem para onde o clique leva.
+  if (langToggleBtn) {
+    langToggleBtn.dataset.locale = locale;
+    langToggleBtn.title = t("langSwitch");
+    langToggleBtn.setAttribute("aria-label", t("langSwitch"));
+  }
   loadLastSync();
   updateProgressBar();
   paintFilterTrigger();
@@ -426,7 +436,6 @@ const syncProgressPercent = document.getElementById("syncProgressPercent");
 const syncProgressFill = document.getElementById("syncProgressFill");
 const syncStatusText = document.getElementById("syncStatusText");
 const syncCloseBtn = document.getElementById("syncCloseBtn");
-const syncLastUpdated = document.getElementById("syncLastUpdated");
 const syncLastUpdatedStatus = document.getElementById("syncLastUpdatedStatus");
 const syncDetailsLink = document.getElementById("syncDetailsLink");
 const modal = document.getElementById("cardModal");
@@ -446,8 +455,7 @@ const planToggle = document.getElementById("planToggle");
 const progressBar = document.getElementById("progressBar");
 const filterMenu = document.getElementById("filterMenu");
 const filterTrigger = document.getElementById("filterTrigger");
-const langPtBtn = document.getElementById("langPt");
-const langEnBtn = document.getElementById("langEn");
+const langToggleBtn = document.getElementById("langToggle");
 const searchToggleBtn = document.getElementById("searchToggle");
 const sharePlanNote = document.getElementById("sharePlanNote");
 const shareHintEl = document.getElementById("shareHint");
@@ -456,6 +464,9 @@ let cards = [];
 let currentCardId = null;
 let selectedAsset = null;
 let cardAssets = [];
+// Dicionário de sets do catálogo (name EN + name_pt da TCGdex) — usado para
+// localizar o nome das coleções quando o idioma PT-BR está ativo.
+let setsIndex = null;
 let currentVariantOptions = [];
 let currentVariantIndex = 0;
 let touchStartX = 0;
@@ -899,14 +910,17 @@ async function loadCardAssets() {
     if (payload) {
       cardAssets = Array.isArray(payload.cards) ? payload.cards : [];
       catalogStamp = String(payload.generatedAt || "");
+      setsIndex = payload.sets && typeof payload.sets === "object" ? payload.sets : null;
     } else {
       const response = await fetch("../assets/data/catalog.min.json");
       const data = response.ok ? await response.json() : null;
       cardAssets = Array.isArray(data?.cards) ? data.cards : [];
       catalogStamp = String(data?.generatedAt || "");
+      setsIndex = data?.sets && typeof data.sets === "object" ? data.sets : null;
     }
   } catch (error) {
     cardAssets = [];
+    setsIndex = null;
   }
 
   // Repõe folder (derivável) e pré-computa candidatos normalizados uma única
@@ -1245,10 +1259,10 @@ function formatSyncTimestamp(isoString) {
 }
 
 function updateLastSyncDisplay(isoString) {
+  // A data vive só no tooltip do botão de reload (fora do header).
   const label = isoString ? formatSyncTimestamp(isoString) : t("never");
 
   if (syncCheckBtn) syncCheckBtn.title = `${t("syncTitleFull")}\n${label}`;
-  if (syncLastUpdated) syncLastUpdated.textContent = label;
   if (syncLastUpdatedStatus) syncLastUpdatedStatus.textContent = label;
 }
 
@@ -1450,8 +1464,17 @@ function paintConfirmBtn(isEdit) {
   confirmBtn.setAttribute("aria-label", label);
 }
 
+// Nome da coleção no idioma ativo: PT usa name_pt do dicionário de sets do
+// catálogo (quando existe); EN usa o nome original. Fallback: campo da variante.
+function localizedCollectionName(asset) {
+  const fallback = asset?.collection || asset?.set || t("collectionFallback");
+  if (locale !== "pt" || !setsIndex) return fallback;
+  const setInfo = setsIndex[String(asset?.set || "").toLowerCase()];
+  return (setInfo && setInfo.name_pt) || fallback;
+}
+
 function formatVariantLabel(asset) {
-  const collectionLabel = asset?.collection || asset?.set || t("collectionFallback");
+  const collectionLabel = localizedCollectionName(asset);
   const finishLabel = formatCardFinish(asset?.finish || "normal");
   const numberLabel = asset?.number ? ` · #${asset.number}` : "";
 
@@ -1655,7 +1678,7 @@ function renderSelectedPreview(asset) {
   const hasNoImage = isNoImageVariant(asset);
   const imageSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
-  const collectionLabel = asset?.collection || asset?.set || t("collectionFallback");
+  const collectionLabel = localizedCollectionName(asset);
   const variantLabel = asset?.number ? `#${asset.number}` : t("versionFallback");
   const rarityLabel = formatCardFinish(getCurrentFinish());
   const shineClass = finishShineClass(getCurrentFinish());
@@ -1798,6 +1821,13 @@ function renderVariantList(defaultAsset = null) {
 
     variantList.appendChild(button);
   });
+
+  // A variante selecionada é sempre mantida visível: ao trocar com as setas/
+  // swipe, a barra de rolagem horizontal desliza suavemente até ela.
+  const selectedButton = variantList.children[currentVariantIndex];
+  if (selectedButton && typeof selectedButton.scrollIntoView === "function") {
+    selectedButton.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }
 }
 
 function openModal(cardId, mode = "collect") {
@@ -2055,8 +2085,7 @@ if (syncDetailsLink) {
 })();
 
 // Bandeiras de idioma: PT-BR ↔ EN-US, refletido em toda a UI.
-if (langPtBtn) langPtBtn.addEventListener("click", () => setLocale("pt"));
-if (langEnBtn) langEnBtn.addEventListener("click", () => setLocale("en"));
+if (langToggleBtn) langToggleBtn.addEventListener("click", () => setLocale(locale === "pt" ? "en" : "pt"));
 
 // Barra de progresso: hover espreita o outro modo; clique/Enter fixa.
 if (progressBar) {
