@@ -243,7 +243,6 @@ const I18N = {
     shareWarn: "Very long link — some chat apps may cut it. If it doesn't open, try pasting it directly in the browser.",
     shareClose: "Close",
     shareCopy: "Copy link",
-    shareCopied: "Copied!",
     shareLinkAria: "Collection link to copy",
     sharePlanNote: "You are in Plan mode: this link shares the session DRAFT — your saved collection is not included.",
     syncAria: "Check card synchronization",
@@ -345,7 +344,6 @@ const I18N = {
     shareWarn: "Link bem longo — alguns apps de chat podem cortá-lo. Se não abrir, tente colar no navegador direto.",
     shareClose: "Fechar",
     shareCopy: "Copiar link",
-    shareCopied: "Copiado!",
     shareLinkAria: "Link da coleção para copiar",
     sharePlanNote: "Você está no modo planejamento: o link vai compartilhar o RASCUNHO desta sessão — sua coleção salva não muda.",
     syncAria: "Verificar sincronização das cartas",
@@ -608,14 +606,18 @@ function setPlanMode(enabled) {
 
 // ---- Compartilhamento de coleção via link (hash na URL) --------------------
 // O estado viaja na URL comprimido com LZString (vendor) — site 100% estático,
-// sem backend. Formato por carta: [índice-na-roster] (só coletada),
-// [roster, índice-da-variante-no-catálogo] ou [roster, variante, acabamento]
-// quando o acabamento escolhido difere o registrado na variante. Os índices
-// são do MESMO catalog.min.json versionado que os dois lados carregam; a
-// estampa `g` (generatedAt do build) denuncia links antigos após um rebuild —
-// aí as coletadas ainda aparecem (roster é código), mas sem variante.
+// sem backend. Payload v2 é uma string compacta própria (não JSON): "2:<estampa
+// em base36>:<entradas>", entradas separadas por vírgula. Cada entrada é
+// "<delta-do-índice-na-roster em base36>[.<índice-da-variante em base36>[.<código
+// do acabamento>]]" — delta porque as cartas coletadas são varridas em ordem
+// crescente da roster, então o delta costuma caber num único caractere.
+// A estampa (epoch em segundos, base36) substitui a data ISO inteira: denuncia
+// links antigos após um rebuild do catálogo — aí as coletadas ainda aparecem
+// (roster é código), mas sem variante. Links v1 (formato antigo, JSON completo)
+// continuam sendo lidos para não quebrar links já compartilhados.
 const SHARE_HASH_PREFIX = "c=";
 const SHARE_FINISH_CODES = ["normal", "holo", "reverse", "reverse holo", "full art", "secret", "shiny"];
+const SHARE_FORMAT_VERSION = "2";
 
 let sharedMode = false;          // renderizando coleção de um link
 let sharedMap = null;            // índice na roster -> { asset, finish }
@@ -624,26 +626,30 @@ let sharedIgnored = false;       // #c= presente mas ilegível → avisar
 let catalogStamp = "";           // "generatedAt" do catálogo (impressão do build)
 let assetIndexByFile = null;     // file -> posição no catálogo (montado no load)
 
-function parseSharedState() {
-  const raw = (window.location.hash || "").slice(1);
-  if (!raw.startsWith(SHARE_HASH_PREFIX)) return false;
+function num36(n) {
+  return Math.max(0, Math.trunc(n)).toString(36);
+}
 
-  const compact = raw.slice(SHARE_HASH_PREFIX.length);
+function encodeShareStamp(iso) {
+  const ms = Date.parse(iso);
+  return Number.isFinite(ms) ? Math.floor(ms / 1000).toString(36) : "";
+}
+
+function decodeShareStamp(token) {
+  const seconds = parseInt(token, 36);
+  if (!token || !Number.isFinite(seconds)) return "";
+  return new Date(seconds * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+function parseSharedStateV1(json) {
+  // Formato legado: {v:1, g:"<ISO>", c:[[roster, asset?, acabamento?], ...]}
   let state = null;
   try {
-    // Sem LZString (vendor não carregou), aceita JSON puro como fallback.
-    const json = typeof LZString !== "undefined"
-      ? LZString.decompressFromEncodedURIComponent(compact)
-      : decodeURIComponent(compact);
     state = JSON.parse(json || "");
   } catch (error) {
     state = null;
   }
-
-  if (!state || state.v !== 1 || !Array.isArray(state.c)) {
-    sharedIgnored = true;
-    return false;
-  }
+  if (!state || state.v !== 1 || !Array.isArray(state.c)) return null;
 
   const map = new Map();
   state.c.forEach((entry) => {
@@ -653,14 +659,65 @@ function parseSharedState() {
       finish: entry.length >= 3 ? SHARE_FINISH_CODES[entry[2]] || "" : ""
     });
   });
+  if (!map.size) return null;
+  return { map, stamp: String(state.g || "") };
+}
 
-  if (!map.size) {
+function parseSharedStateV2(payload) {
+  // "2:<estampa>:<entradas>" — ver comentário no topo da seção.
+  const body = payload.slice(SHARE_FORMAT_VERSION.length + 1);
+  const sep = body.indexOf(":");
+  const stampToken = sep >= 0 ? body.slice(0, sep) : "";
+  const entriesRaw = sep >= 0 ? body.slice(sep + 1) : "";
+
+  const map = new Map();
+  let prevRoster = 0;
+  entriesRaw.split(",").forEach((token) => {
+    if (!token) return;
+    const [deltaStr, assetStr, finishStr] = token.split(".");
+    const delta = parseInt(deltaStr, 36);
+    if (!Number.isFinite(delta)) return;
+    const rosterIndex = prevRoster + delta;
+    prevRoster = rosterIndex;
+
+    const asset = assetStr !== undefined ? parseInt(assetStr, 36) : NaN;
+    const finishCode = finishStr !== undefined ? parseInt(finishStr, 36) : NaN;
+    map.set(rosterIndex, {
+      asset: Number.isFinite(asset) ? asset : -1,
+      finish: Number.isFinite(finishCode) ? (SHARE_FINISH_CODES[finishCode] || "") : ""
+    });
+  });
+  if (!map.size) return null;
+  return { map, stamp: decodeShareStamp(stampToken) };
+}
+
+function parseSharedState() {
+  const raw = (window.location.hash || "").slice(1);
+  if (!raw.startsWith(SHARE_HASH_PREFIX)) return false;
+
+  const compact = raw.slice(SHARE_HASH_PREFIX.length);
+  let payload = null;
+  try {
+    // Sem LZString (vendor não carregou), aceita o payload puro como fallback.
+    payload = typeof LZString !== "undefined"
+      ? LZString.decompressFromEncodedURIComponent(compact)
+      : decodeURIComponent(compact);
+  } catch (error) {
+    payload = null;
+  }
+
+  const result = !payload ? null
+    : payload.startsWith("{") ? parseSharedStateV1(payload)
+    : payload.startsWith(`${SHARE_FORMAT_VERSION}:`) ? parseSharedStateV2(payload)
+    : null;
+
+  if (!result) {
     sharedIgnored = true;
     return false;
   }
 
-  sharedMap = map;
-  sharedPayloadStamp = String(state.g || "");
+  sharedMap = result.map;
+  sharedPayloadStamp = result.stamp;
   return true;
 }
 
@@ -673,37 +730,51 @@ function cardAssetFile(card) {
   return match ? match[1] : "";
 }
 
-function buildShareState() {
+function buildShareEntries() {
+  // rosterIndex sai em ordem crescente (forEach na roster) — permite
+  // delta-encoding no createShareUrl.
   const entries = [];
   cards.forEach((card, rosterIndex) => {
     if (!card.collected) return;
 
-    const entry = [rosterIndex];
+    let assetIndex = -1;
+    let finishCode = -1;
     const file = cardAssetFile(card);
-    const assetIndex = file && assetIndexByFile ? assetIndexByFile.get(file) : undefined;
-    if (assetIndex !== undefined) {
-      entry.push(assetIndex);
-      const assetFinish = String(cardAssets[assetIndex].finish || "normal").toLowerCase();
+    const asset = file && assetIndexByFile ? assetIndexByFile.get(file) : undefined;
+    if (asset !== undefined) {
+      assetIndex = asset;
+      const assetFinish = String(cardAssets[asset].finish || "normal").toLowerCase();
       if (card.finish && card.finish !== assetFinish) {
         const code = SHARE_FINISH_CODES.indexOf(card.finish);
-        if (code > 0) entry.push(code);
+        if (code > 0) finishCode = code;
       }
     }
-    entries.push(entry);
+    entries.push({ rosterIndex, assetIndex, finishCode });
   });
-  return entries.length ? { v: 1, g: catalogStamp, c: entries } : null;
+  return entries;
 }
 
 function createShareUrl() {
-  const state = buildShareState();
-  if (!state) return null;
+  const entries = buildShareEntries();
+  if (!entries.length) return null;
 
-  const json = JSON.stringify(state);
-  // compressToEncodedURIComponent usa alfabeto URL-safe; sem a lib, JSON
+  let prevRoster = 0;
+  const parts = entries.map(({ rosterIndex, assetIndex, finishCode }) => {
+    let token = num36(rosterIndex - prevRoster);
+    prevRoster = rosterIndex;
+    if (assetIndex >= 0) {
+      token += `.${num36(assetIndex)}`;
+      if (finishCode > 0) token += `.${num36(finishCode)}`;
+    }
+    return token;
+  });
+
+  const payload = `${SHARE_FORMAT_VERSION}:${encodeShareStamp(catalogStamp)}:${parts.join(",")}`;
+  // compressToEncodedURIComponent usa alfabeto URL-safe; sem a lib, o payload
   // percent-encoded funciona (link maior, mesma semântica).
   const encoded = typeof LZString !== "undefined"
-    ? LZString.compressToEncodedURIComponent(json)
-    : encodeURIComponent(json);
+    ? LZString.compressToEncodedURIComponent(payload)
+    : encodeURIComponent(payload);
 
   const url = new URL(window.location.href);
   url.hash = `${SHARE_HASH_PREFIX}${encoded}`;
@@ -1327,11 +1398,11 @@ if (presetAskModal) {
 
 function flashShareCopied() {
   if (!shareCopyBtn) return;
-  shareCopyBtn.textContent = t("shareCopied");
+  shareCopyBtn.classList.add("copied");
   clearTimeout(flashShareCopied.timer);
   flashShareCopied.timer = setTimeout(() => {
-    shareCopyBtn.textContent = t("shareCopy");
-  }, 1800);
+    shareCopyBtn.classList.remove("copied");
+  }, 2000);
 }
 
 function setupCardTilt(cardElement) {

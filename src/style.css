@@ -1375,6 +1375,25 @@ body.plan-mode .card.revealed .card-art::after {
   display: block;
 }
 
+/* Botão de copiar link do modal de compartilhamento: ícone de corrente por
+   padrão; ao copiar, vira certinho branco num fundo verde por 2s. */
+.share-copy-btn .share-copied-icon {
+  display: none;
+}
+
+.share-copy-btn.copied {
+  background: var(--emerald-500);
+  color: #fff;
+}
+
+.share-copy-btn.copied .share-copy-icon {
+  display: none;
+}
+
+.share-copy-btn.copied .share-copied-icon {
+  display: block;
+}
+
 .sync-notification {
   position: fixed;
   right: 18px;
