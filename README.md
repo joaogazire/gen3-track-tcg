@@ -83,7 +83,10 @@ gen3-track-tcg/
   salvar); cada preset pode ser excluído pelo ×; salvos em `localStorage`
 - **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
   trocam a pré-visualização para a arte daquele idioma (TCGdex PT-BR/JP, sondada sob
-  demanda e cacheada; sem versão localizada, usa a arte EN local)
+  demanda e cacheada; sem versão localizada, usa a arte EN local). A arte JP busca
+  todos os prints do Pokémon pela Pokédex Nacional (sets japoneses têm ids próprios,
+  incompatíveis com os ids em inglês) e confere ilustrador + HP contra a carta local
+  pra achar o print exato — funciona pra qualquer uma das 202 cartas do checklist
 - **Seletor por nome exato** — cada lista de variantes mostra só cartas cujo nome
   impresso bate exatamente com o Pokémon (nada de Abra aparecer no Kadabra; cards
   duplos tipo Magikarp/Wailord aparecem nos dois)

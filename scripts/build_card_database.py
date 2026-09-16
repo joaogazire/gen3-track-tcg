@@ -31,6 +31,7 @@ PRICES_PATH = DATA_DIR / "prices.min.json"
 CACHE_PATH = Path(__file__).resolve().parent / ".tcgdex_cache.json"
 API_BASE = "https://api.tcgdex.net/v2/en"
 API_BASE_PT = "https://api.tcgdex.net/v2/pt"
+API_BASE_JA = "https://api.tcgdex.net/v2/ja"
 REQUEST_TIMEOUT = 45
 DETAIL_PAUSE = 0.15
 
@@ -128,17 +129,33 @@ def fetch_card_detail(card_id):
     return fetch_with_retry(f"{API_BASE}/cards/{quote(card_id, safe='')}")
 
 
+def fetch_card_detail_ja(card_id):
+    """Fallback pra sets sem versão em inglês (ex.: promos/especiais lançados
+    só no Japão, como o M6 "Storm Emeralda") — mesmo id, locale japonês.
+    Attacks/abilities saem em japonês, mas a UI não exibe esses campos."""
+    return fetch_with_retry(f"{API_BASE_JA}/cards/{quote(card_id, safe='')}")
+
+
 def build_sets_dictionary(cache, set_ids):
     """Nome/release/série (EN) + nome PT por set id, via /sets/{id} (com cache).
 
-    Entradas antigas de cache sem name_pt são re-buscadas uma vez (PT)."""
+    `pt_checked` marca que já tentamos a versão PT pelo menos uma vez — sets
+    antigos (era ex, sem tradução na TCGdex) sempre resolviam name_pt=None e
+    entravam de novo em TODA execução (EN+JA+PT com retry cada), ~15-20min
+    perdidos por rodada. Uma tentativa falha já é resposta definitiva o
+    bastante (mesmo raciocínio do cache de carta: falha conhecida não re-hita)."""
     sets_out = {}
     for set_id in sorted(set_ids):
         cached = cache["sets"].get(set_id)
-        if isinstance(cached, dict) and cached.get("name_pt"):
+        if isinstance(cached, dict) and cached.get("pt_checked"):
             sets_out[set_id] = cached
             continue
         payload = fetch_with_retry(f"{API_BASE}/sets/{quote(set_id, safe='')}")
+        # Sets sem versão em inglês (ex.: M6 "Storm Emeralda", só no Japão) —
+        # usa o nome japonês mesmo; melhor um nome real não traduzido do que
+        # nenhum nome.
+        if not isinstance(payload, dict):
+            payload = fetch_with_retry(f"{API_BASE_JA}/sets/{quote(set_id, safe='')}")
         if isinstance(payload, dict):
             info = {
                 "name": payload.get("name"),
@@ -151,6 +168,7 @@ def build_sets_dictionary(cache, set_ids):
             info = {"name": None, "release": None, "serie": None}
         payload_pt = fetch_with_retry(f"{API_BASE_PT}/sets/{quote(set_id, safe='')}")
         info["name_pt"] = payload_pt.get("name") if isinstance(payload_pt, dict) else None
+        info["pt_checked"] = True
         cache["sets"][set_id] = info
         sets_out[set_id] = info
         time.sleep(0.2)
@@ -304,6 +322,8 @@ def main():
             else:
                 # miss puro ou cache antigo (sem variantes brutas) → re-busca
                 payload = fetch_card_detail(card_id)
+                if not isinstance(payload, dict):
+                    payload = fetch_card_detail_ja(card_id)
                 if isinstance(payload, dict):
                     detail = {
                         "rarity": payload.get("rarity"),

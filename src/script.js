@@ -235,8 +235,8 @@ const I18N = {
     progressCount: "{n} / {total} cards",
     progressTooltip: "{n}/{total} complete · {missing} to go",
     planTitle: "Plan without saving: marks last only this session and vanish on exit",
-    shareAria: "Share collection",
-    shareTitle: "Generate a link to show your collection",
+    shareAria: "Copy collection link",
+    shareTitle: "Copy a link to your collection",
     shareTitleH: "Share collection",
     shareHint: "The link loads the site with <strong>exactly the cards you marked</strong> — whoever opens it sees your collection, but nothing changes here. Your marks stay saved only in this browser.",
     sharePlaceholder: "Mark at least one card to generate a link.",
@@ -336,8 +336,8 @@ const I18N = {
     progressCount: "{n} / {total} cartas",
     progressTooltip: "{n}/{total} completas · {missing} faltando",
     planTitle: "Planeje sem salvar: marcações valem só nesta sessão e somem ao sair",
-    shareAria: "Compartilhar coleção",
-    shareTitle: "Gerar um link para mostrar sua coleção",
+    shareAria: "Copiar link da coleção",
+    shareTitle: "Copiar link da sua coleção",
     shareTitleH: "Compartilhar coleção",
     shareHint: "O link carrega o site com <strong>exatamente as cartas que você marcou</strong> — quem abrir vê sua coleção, mas nada muda por aqui. Suas marcações continuam salvas só neste navegador.",
     sharePlaceholder: "Marque pelo menos uma carta para gerar um link.",
@@ -898,17 +898,63 @@ async function refreshFx() {
 }
 
 // ---- Idioma da arte da carta no preview (BR / JP / EUA) ---------------------
-// Artes PT-JP (TCGdex `ja`) NÃO são deriváveis do id EN: os sets japoneses têm
-// ids próprios (SV3 ≠ sv03) e a numeração coincide só às vezes (verificado via
-// probes — en sv03-114 é Crabrawler, ja SV3-114 é Tyranitar). Trocar de idioma
-// então só vale quando o set EN casa exatamente com um id JP, ou para PT-BR
-// (TCGdex tem arte PT por carta). Sempre com probe preguiçoso + cache por
-// arquivo e fallback para a arte local EN em qualquer erro.
+// PT: o id da carta é o mesmo do EN (`sv03-114`), a TCGdex tem arte PT por
+// carta. JA: sets japoneses têm ids próprios (SV3 ≠ sv03) e a numeração NÃO
+// coincide com a EN (ja SV3-114 é outra carta) — não dá pra adivinhar o id.
+// Em vez disso, filtra os candidatos pelo Pokédex Nacional (dexId, única
+// chave estável entre idiomas na TCGdex) e confirma o print exato batendo
+// ilustrador + HP com a carta local (ver probeJapaneseArt). Sempre com probe
+// preguiçoso + cache e fallback para a arte local EN em qualquer erro.
 const TCGDEX_API = "https://api.tcgdex.net/v2";
 const CARD_LOCALES = ["en", "pt", "ja"];
 let cardLang = "en";
 const localizedArtCache = new Map();   // "loc|file" -> url remota válida | "" (sem arte)
 const localizedArtPending = new Set(); // probes em voo (não re-hitamos o mesmo)
+
+// Pokédex Nacional (dado estático de jogo) — única chave estável pra cruzar
+// o mesmo Pokémon entre os idiomas na TCGdex (sets/ids japoneses não
+// correspondem aos ids em inglês, ver probeJapaneseArt abaixo)
+const POKEMON_DEX_ID = {
+  Pikachu: 25, Raichu: 26, Sandshrew: 27, Sandslash: 28, Vulpix: 37, Ninetales: 38,
+  Jigglypuff: 39, Wigglytuff: 40, Zubat: 41, Golbat: 42, Oddish: 43, Gloom: 44,
+  Vileplume: 45, Psyduck: 54, Golduck: 55, Abra: 63, Kadabra: 64, Alakazam: 65,
+  Machop: 66, Machoke: 67, Machamp: 68, Tentacool: 72, Tentacruel: 73, Geodude: 74,
+  Graveler: 75, Golem: 76, Magnemite: 81, Magneton: 82, Doduo: 84, Dodrio: 85,
+  Grimer: 88, Muk: 89, Voltorb: 100, Electrode: 101, Koffing: 109, Weezing: 110,
+  Rhyhorn: 111, Rhydon: 112, Horsea: 116, Seadra: 117, Goldeen: 118, Seaking: 119,
+  Staryu: 120, Starmie: 121, Pinsir: 127, Magikarp: 129, Gyarados: 130, Crobat: 169,
+  Chinchou: 170, Lanturn: 171, Pichu: 172, Igglybuff: 174, Natu: 177, Xatu: 178,
+  Bellossom: 182, Marill: 183, Azumarill: 184, Wobbuffet: 202, Girafarig: 203,
+  Heracross: 214, Slugma: 218, Magcargo: 219, Corsola: 222, Skarmory: 227,
+  Kingdra: 230, Phanpy: 231, Donphan: 232, Treecko: 252, Grovyle: 253, Sceptile: 254,
+  Torchic: 255, Combusken: 256, Blaziken: 257, Mudkip: 258, Marshtomp: 259,
+  Swampert: 260, Poochyena: 261, Mightyena: 262, Zigzagoon: 263, Linoone: 264,
+  Wurmple: 265, Silcoon: 266, Beautifly: 267, Cascoon: 268, Dustox: 269, Lotad: 270,
+  Lombre: 271, Ludicolo: 272, Seedot: 273, Nuzleaf: 274, Shiftry: 275, Taillow: 276,
+  Swellow: 277, Wingull: 278, Pelipper: 279, Ralts: 280, Kirlia: 281, Gardevoir: 282,
+  Surskit: 283, Masquerain: 284, Shroomish: 285, Breloom: 286, Slakoth: 287,
+  Vigoroth: 288, Slaking: 289, Nincada: 290, Ninjask: 291, Shedinja: 292,
+  Whismur: 293, Loudred: 294, Exploud: 295, Makuhita: 296, Hariyama: 297,
+  Azurill: 298, Nosepass: 299, Skitty: 300, Delcatty: 301, Sableye: 302, Mawile: 303,
+  Aron: 304, Lairon: 305, Aggron: 306, Meditite: 307, Medicham: 308, Electrike: 309,
+  Manectric: 310, Plusle: 311, Minun: 312, Volbeat: 313, Illumise: 314, Roselia: 315,
+  Gulpin: 316, Swalot: 317, Carvanha: 318, Sharpedo: 319, Wailmer: 320, Wailord: 321,
+  Numel: 322, Camerupt: 323, Torkoal: 324, Spoink: 325, Grumpig: 326, Spinda: 327,
+  Trapinch: 328, Vibrava: 329, Flygon: 330, Cacnea: 331, Cacturne: 332, Swablu: 333,
+  Altaria: 334, Zangoose: 335, Seviper: 336, Lunatone: 337, Solrock: 338,
+  Barboach: 339, Whiscash: 340, Corphish: 341, Crawdaunt: 342, Baltoy: 343,
+  Claydol: 344, Lileep: 345, Cradily: 346, Anorith: 347, Armaldo: 348, Feebas: 349,
+  Milotic: 350, Castform: 351, Kecleon: 352, Shuppet: 353, Banette: 354,
+  Duskull: 355, Dusclops: 356, Tropius: 357, Chimecho: 358, Absol: 359, Wynaut: 360,
+  Snorunt: 361, Glalie: 362, Spheal: 363, Sealeo: 364, Walrein: 365, Clamperl: 366,
+  Huntail: 367, Gorebyss: 368, Relicanth: 369, Luvdisc: 370, Bagon: 371,
+  Shelgon: 372, Salamence: 373, Beldum: 374, Metang: 375, Metagross: 376,
+  Regirock: 377, Regice: 378, Registeel: 379, Latias: 380, Latios: 381, Kyogre: 382,
+  Groudon: 383, Rayquaza: 384, Jirachi: 385, Deoxys: 386,
+};
+
+const jaCandidatesCache = new Map();       // dexId -> Promise<[{id,name}, ...]>
+const jaCardDetailCache = new Map();       // "ja-cards/<id>" -> Promise<detalhe | null>
 
 function setCardLang(next) {
   if (!CARD_LOCALES.includes(next) || next === cardLang) return;
@@ -939,12 +985,67 @@ function paintCardLangPicker() {
 
 // Sonda a TCGdex para a arte localizada da variante; resolve a URL (ou "").
 // Nunca bloqueia a UI: a imagem local aparece na hora, a remota troca quando
-// chega (e um <img onerror> volta para a local se a CDN falhar).
-// PT: o id por carta é o mesmo do EN (`sv03-114`). JA: sets japoneses usam ids
-// próprios e a numeração NÃO coincide com a EN (ja SV3-114 é outra carta),
-// então só aceitamos quando ilustrador e HP batem com a variante local.
+// chega (e um <img onerror> volta para a local se a CDN falhar). PT busca
+// direto pelo id (mesmo id do EN); JA busca por dexId + confere ilustrador/HP
+// (ver probeJapaneseArt) — normaliza acento pra comparar nomes com segurança.
 function normalizeIllustrator(value) {
   return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+// Busca (e cacheia) todos os prints japoneses de um Pokémon pelo dexId —
+// filtro nativo da TCGdex (`dexId=eq:N`), a única chave que cruza os idiomas
+// de forma confiável (sets japoneses não têm id equivalente ao set em inglês).
+function fetchJaCandidates(dexId) {
+  if (!jaCandidatesCache.has(dexId)) {
+    jaCandidatesCache.set(
+      dexId,
+      fetch(`${TCGDEX_API}/ja/cards?dexId=eq:${dexId}`)
+        .then((response) => (response.ok ? response.json() : []))
+        .then((list) => (Array.isArray(list) ? list : []))
+        .catch(() => [])
+    );
+  }
+  return jaCandidatesCache.get(dexId);
+}
+
+function fetchJaCardDetail(cardId) {
+  if (!jaCardDetailCache.has(cardId)) {
+    jaCardDetailCache.set(
+      cardId,
+      fetch(`${TCGDEX_API}/ja/cards/${encodeURIComponent(cardId)}`)
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null)
+    );
+  }
+  return jaCardDetailCache.get(cardId);
+}
+
+// Arte japonesa: como o id não é adivinhável, busca todos os prints do
+// Pokémon pelo Pokédex Nacional e confirma o print exato batendo ilustrador
+// (chave primária) + HP (desempate) com a carta local. Sem dexId mapeado, ou
+// sem candidato que bata, cai pra arte local EN (mesmo comportamento de erro).
+async function probeJapaneseArt(asset) {
+  const dexId = POKEMON_DEX_ID[asset?.pokemon];
+  if (!dexId) return "";
+
+  const candidates = await fetchJaCandidates(dexId);
+  if (candidates.length === 0) return "";
+
+  const details = await Promise.all(candidates.map((candidate) => fetchJaCardDetail(candidate.id)));
+
+  const localIll = normalizeIllustrator(asset.illustrator);
+  const localHp = asset.hp != null ? Number(asset.hp) : null;
+
+  const match = details.find((detail) => {
+    if (!detail) return false;
+    const remoteIll = normalizeIllustrator(detail.illustrator);
+    const sameIll = localIll && remoteIll && localIll === remoteIll;
+    const sameHp = localHp == null || detail.hp == null || Number(detail.hp) === localHp;
+    return sameIll && sameHp;
+  });
+
+  const base = match && typeof match.image === "string" ? match.image : "";
+  return base ? `${base}/high.png` : "";
 }
 
 function probeLocalizedArt(loc, asset) {
@@ -952,6 +1053,10 @@ function probeLocalizedArt(loc, asset) {
   const set = String(asset?.set || "").trim();
   let number = String(asset?.number || "").trim();
   if (!file || !set || !number) return Promise.resolve("");
+
+  if (loc === "ja") return probeJapaneseArt(asset).catch(() => "");
+
+  // PT: o id por carta é o mesmo do EN (`sv03-114`), então dá pra buscar direto.
   // Sub-numeração de arquivo ("5-064") não existe na API; o id real usa o fim.
   if (/^\d+-\d+$/.test(number)) number = number.split("-", 1)[1];
   const cardId = `${set}-${number}`.toLowerCase();
@@ -961,15 +1066,7 @@ function probeLocalizedArt(loc, asset) {
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
       const base = typeof data?.image === "string" ? data.image : "";
-      if (!base) return "";
-      if (loc === "ja") {
-        const localIll = normalizeIllustrator(asset.illustrator);
-        const remoteIll = normalizeIllustrator(data.illustrator);
-        const sameIll = localIll && remoteIll && localIll === remoteIll;
-        const sameHp = !asset.hp || !data.hp || Number(asset.hp) === Number(data.hp);
-        if (!sameIll || !sameHp) return "";
-      }
-      return `${base}/high.png`;
+      return base ? `${base}/high.png` : "";
     })
     .catch(() => "");
 }
@@ -1396,13 +1493,50 @@ if (presetAskModal) {
   }
 }
 
-function flashShareCopied() {
-  if (!shareCopyBtn) return;
-  shareCopyBtn.classList.add("copied");
-  clearTimeout(flashShareCopied.timer);
-  flashShareCopied.timer = setTimeout(() => {
-    shareCopyBtn.classList.remove("copied");
+function flashCopied(button) {
+  if (!button) return;
+  button.classList.add("copied");
+  clearTimeout(button._copiedTimer);
+  button._copiedTimer = setTimeout(() => {
+    button.classList.remove("copied");
   }, 2000);
+}
+
+function flashShareCopied() {
+  flashCopied(shareCopyBtn);
+}
+
+// Botão de link do header: copia direto (sem abrir o modal) e mostra o mesmo
+// certinho do botão de copiar do modal. Sem textarea visível pra selecionar,
+// então o fallback (clipboard API bloqueada) usa um textarea temporário.
+async function copyHeaderShareLink() {
+  const url = createShareUrl();
+  if (!url) return;
+
+  try {
+    await navigator.clipboard.writeText(url);
+    flashCopied(shareBtn);
+    return;
+  } catch (error) {
+    /* clipboard API bloqueada (http sem localhost) — cai no fallback */
+  }
+
+  const temp = document.createElement("textarea");
+  temp.value = url;
+  temp.setAttribute("readonly", "");
+  temp.style.position = "fixed";
+  temp.style.opacity = "0";
+  temp.style.pointerEvents = "none";
+  document.body.appendChild(temp);
+  temp.select();
+  temp.setSelectionRange(0, url.length);
+  try {
+    document.execCommand("copy");
+    flashCopied(shareBtn);
+  } catch (error) {
+    /* se até aqui falhar, não há mais fallback silencioso possível */
+  }
+  document.body.removeChild(temp);
 }
 
 function setupCardTilt(cardElement) {
@@ -2520,8 +2654,11 @@ modal.addEventListener("click", (event) => {
 
 // ---- Ligações do modal de compartilhamento ----------------------------------
 
+// O botão do header não abre mais o modal — copia o link direto (o modal
+// interno com textarea/aviso de link longo fica só como fallback de
+// referência, sem ponto de entrada na UI por enquanto).
 if (shareBtn) {
-  shareBtn.addEventListener("click", openShareModal);
+  shareBtn.addEventListener("click", copyHeaderShareLink);
 }
 
 if (shareCloseBtn) {

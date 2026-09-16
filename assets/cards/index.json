@@ -92342,6 +92342,26 @@
   {
     "name": "Wobbuffet",
     "pokemon": "Wobbuffet",
+    "set": "svp",
+    "number": "203",
+    "file": "wobbuffet/team-rocket-s-wobbuffet_svp-203.png",
+    "source": "local",
+    "folder": "wobbuffet",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "wobbuffet_svp_203"
+  },
+  {
+    "name": "Wobbuffet",
+    "pokemon": "Wobbuffet",
     "set": "swsh1",
     "number": "191",
     "file": "wobbuffet/wobbuffet-v_swsh1-191.png",
