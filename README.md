@@ -95,7 +95,8 @@ gen3-track-tcg/
 - **Barra de progresso animada** — passe o mouse ou clique na porcentagem para alternar entre
   percentual e "cartas coletadas / total"
 - **Filtro por dropdown** — "Todas" no header abre, no hover ou clique, as opções
-  Mega Evolution e Special Art
+  Mega Evolution, Special Art e Full Art (Ultra Rare / VMAX / VSTAR — arte
+  sangrada sem moldura tradicional)
 - **Idioma PT-BR / EN-US** — bandeira no canto superior direito alterna todo o texto da
   interface ao clicar (BR ↔ EUA); em PT-BR os **nomes das coleções** saem traduzidos
   (name_pt da TCGdex); escolha persiste

@@ -94318,5 +94318,265 @@
     ],
     "rarity": "common",
     "standardName": "zubat_xy4_31"
+  },
+  {
+    "name": "Surskit",
+    "pokemon": "Surskit",
+    "set": "m6",
+    "number": "002",
+    "file": "surskit/surskit_m6-002.png",
+    "source": "local",
+    "folder": "surskit",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "surskit_m6_002"
+  },
+  {
+    "name": "Masquerain",
+    "pokemon": "Masquerain",
+    "set": "m6",
+    "number": "003",
+    "file": "masquerain/masquerain_m6-003.png",
+    "source": "local",
+    "folder": "masquerain",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "masquerain_m6_003"
+  },
+  {
+    "name": "Cacnea",
+    "pokemon": "Cacnea",
+    "set": "m6",
+    "number": "004",
+    "file": "cacnea/cacnea_m6-004.png",
+    "source": "local",
+    "folder": "cacnea",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "cacnea_m6_004"
+  },
+  {
+    "name": "Cacturne",
+    "pokemon": "Cacturne",
+    "set": "m6",
+    "number": "005",
+    "file": "cacturne/cacturne_m6-005.png",
+    "source": "local",
+    "folder": "cacturne",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "cacturne_m6_005"
+  },
+  {
+    "name": "Torkoal",
+    "pokemon": "Torkoal",
+    "set": "m6",
+    "number": "014",
+    "file": "torkoal/torkoal_m6-014.png",
+    "source": "local",
+    "folder": "torkoal",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "torkoal_m6_014"
+  },
+  {
+    "name": "Kyogre",
+    "pokemon": "Kyogre",
+    "set": "m6",
+    "number": "018",
+    "file": "kyogre/kyogre_m6-018.png",
+    "source": "local",
+    "folder": "kyogre",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "kyogre_m6_018"
+  },
+  {
+    "name": "Groudon",
+    "pokemon": "Groudon",
+    "set": "m6",
+    "number": "039",
+    "file": "groudon/groudon_m6-039.png",
+    "source": "local",
+    "folder": "groudon",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "groudon_m6_039"
+  },
+  {
+    "name": "Sableye",
+    "pokemon": "Sableye",
+    "set": "m6",
+    "number": "046",
+    "file": "sableye/sableye_m6-046.png",
+    "source": "local",
+    "folder": "sableye",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "sableye_m6_046"
+  },
+  {
+    "name": "Azurill",
+    "pokemon": "Azurill",
+    "set": "m6",
+    "number": "054",
+    "file": "azurill/azurill_m6-054.png",
+    "source": "local",
+    "folder": "azurill",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "azurill_m6_054"
+  },
+  {
+    "name": "Swablu",
+    "pokemon": "Swablu",
+    "set": "m6",
+    "number": "055",
+    "file": "swablu/swablu_m6-055.png",
+    "source": "local",
+    "folder": "swablu",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "swablu_m6_055"
+  },
+  {
+    "name": "Altaria",
+    "pokemon": "Altaria",
+    "set": "m6",
+    "number": "056",
+    "file": "altaria/altaria_m6-056.png",
+    "source": "local",
+    "folder": "altaria",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "altaria_m6_056"
+  },
+  {
+    "name": "Kecleon",
+    "pokemon": "Kecleon",
+    "set": "m6",
+    "number": "057",
+    "file": "kecleon/kecleon_m6-057.png",
+    "source": "local",
+    "folder": "kecleon",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "kecleon_m6_057"
+  },
+  {
+    "name": "Rayquaza",
+    "pokemon": "Rayquaza",
+    "set": "m6",
+    "number": "058",
+    "file": "rayquaza/rayquaza_m6-058.png",
+    "source": "local",
+    "folder": "rayquaza",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "rayquaza_m6_058"
   }
 ]

@@ -224,6 +224,7 @@ const I18N = {
     seeAll: "All",
     mega: "Mega Evolution",
     special: "Special Art",
+    fullart: "Full Art",
     planAria: "Plan mode",
     langSwitch: "Português (Brasil)",
     checklist: "Checklist",
@@ -325,6 +326,7 @@ const I18N = {
     seeAll: "Todas",
     mega: "Mega Evolution",
     special: "Special Art",
+    fullart: "Full Art",
     planAria: "Modo planejamento",
     langSwitch: "English (US)",
     checklist: "Checklist",
@@ -424,7 +426,7 @@ const I18N = {
   }
 };
 
-const FILTER_LABEL_KEYS = { all: "seeAll", mega: "mega", special: "special" };
+const FILTER_LABEL_KEYS = { all: "seeAll", mega: "mega", special: "special", fullart: "fullart" };
 let locale = "en";
 
 function t(key, params = null) {
@@ -556,7 +558,7 @@ let catalogReady = window.__catalogPromise || null;
 const variantsCache = new Map();
 let catalogAssetsPrepared = false;
 
-// Filtro ativo da grade ("all" | "mega" | "special"), controlado pelos pills do header.
+// Filtro ativo da grade ("all" | "mega" | "special" | "fullart"), controlado pelos pills do header.
 let activeFilter = "all";
 
 // Busca por nome (input do painel): qualquer digitação já restringe a grade.
@@ -1725,6 +1727,17 @@ const SPECIAL_ART_RARITIES = new Set([
   "mega hyper rare",
   "amazing rare"
 ]);
+// "Full art" = arte sangrada sem moldura tradicional (ex/V/VMAX/VSTAR em alt
+// art). Verificado visualmente: "Ultra Rare"/"Holo Rare VMAX"/"Holo Rare
+// VSTAR" são full art nesse catálogo; "Holo Rare V" comum, "Rare Holo LV.X",
+// "Rare PRIME" e "Radiant Rare" têm moldura normal e ficam de fora.
+const FULL_ART_RARITIES = new Set([
+  "ultra rare",
+  "holo rare vmax",
+  "holo rare vstar",
+  "shiny rare v",
+  "shiny rare vmax"
+]);
 
 function pokemonHasMegaVariant(cardName) {
   return getCardVariants(cardName).some((asset) =>
@@ -1736,9 +1749,15 @@ function pokemonHasSpecialArtVariant(cardName) {
     SPECIAL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase()));
 }
 
+function pokemonHasFullArtVariant(cardName) {
+  return getCardVariants(cardName).some((asset) =>
+    FULL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase()));
+}
+
 function cardMatchesFilter(card) {
   if (activeFilter === "mega" && !pokemonHasMegaVariant(card.name)) return false;
   if (activeFilter === "special" && !pokemonHasSpecialArtVariant(card.name)) return false;
+  if (activeFilter === "fullart" && !pokemonHasFullArtVariant(card.name)) return false;
   if (searchQuery && !normalizePokemonKey(card.name).includes(searchQuery)) return false;
   return true;
 }
