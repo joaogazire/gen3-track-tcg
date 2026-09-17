@@ -1739,19 +1739,40 @@ const FULL_ART_RARITIES = new Set([
   "shiny rare vmax"
 ]);
 
+// Predicado por variante — usado tanto para qualificar o Pokémon (grade)
+// quanto para restringir as opções mostradas dentro do modal.
+function assetMatchesFilter(asset, filter) {
+  if (filter === "mega") {
+    return MEGA_PREFIXES.some((prefix) => String(asset.printedPokemon || "").toLowerCase().startsWith(prefix));
+  }
+  if (filter === "special") {
+    return SPECIAL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase());
+  }
+  if (filter === "fullart") {
+    return FULL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase());
+  }
+  return true;
+}
+
 function pokemonHasMegaVariant(cardName) {
-  return getCardVariants(cardName).some((asset) =>
-    MEGA_PREFIXES.some((prefix) => String(asset.printedPokemon || "").toLowerCase().startsWith(prefix)));
+  return getCardVariants(cardName).some((asset) => assetMatchesFilter(asset, "mega"));
 }
 
 function pokemonHasSpecialArtVariant(cardName) {
-  return getCardVariants(cardName).some((asset) =>
-    SPECIAL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase()));
+  return getCardVariants(cardName).some((asset) => assetMatchesFilter(asset, "special"));
 }
 
 function pokemonHasFullArtVariant(cardName) {
-  return getCardVariants(cardName).some((asset) =>
-    FULL_ART_RARITIES.has(String(asset.rarity || "").trim().toLowerCase()));
+  return getCardVariants(cardName).some((asset) => assetMatchesFilter(asset, "fullart"));
+}
+
+// Variantes do Pokémon restritas ao filtro ativo (mega/special/fullart);
+// com "all" ou sem nenhuma variante compatível, devolve a lista completa.
+function getFilteredCardVariants(cardName) {
+  const variants = getCardVariants(cardName);
+  if (activeFilter === "all") return variants;
+  const filtered = variants.filter((asset) => assetMatchesFilter(asset, activeFilter));
+  return filtered.length ? filtered : variants;
 }
 
 function cardMatchesFilter(card) {
@@ -2448,7 +2469,7 @@ function renderVariantList(defaultAsset = null) {
   const card = cards.find((item) => item.id === currentCardId);
   if (!card) return;
 
-  const variants = getCardVariants(card.name);
+  const variants = getFilteredCardVariants(card.name);
   const options = variants.length ? [...variants] : [{ name: card.name, set: "base", number: card.number, file: "" }];
   // Mais barato → mais caro (preço exibido, já convertido p/ R$ quando há
   // câmbio). Sem preço conhecido vai para o fim, em ordem original.
@@ -2546,7 +2567,7 @@ function openModal(cardId, mode = "collect") {
   currentCardId = cardId;
   modalTitle.textContent = mode === "collect" ? t("addCard") : t("editCard");
 
-  const variants = getCardVariants(card.name);
+  const variants = getFilteredCardVariants(card.name);
   // Na edição, reabrir na variante que a carta mostra hoje (fallback: primeira).
   const savedAsset = mode === "edit" && card.file
     ? variants.find((asset) => asset.file === card.file)
