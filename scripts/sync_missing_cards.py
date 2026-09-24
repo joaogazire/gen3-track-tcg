@@ -22,6 +22,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_local_card_index import is_on_species  # noqa: E402
+import limitless  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD_ROOT = ROOT / "assets" / "cards"
@@ -111,9 +112,20 @@ PTCG_SET_IDS = {
 }
 
 
+# Set id TCGdex → código Limitless TCG (CDN com as promos da era SV/Mega que
+# nem a TCGdex nem a pokemontcg.io têm em inglês). Número com 3 dígitos.
+LIMITLESS_SET_IDS = {
+    "svp": "SVP",
+    "mep": "MEP",
+}
+LIMITLESS_CDN = "https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpci"
+
+
 def image_candidates(card):
     """URLs da arte em ordem de preferência: listagem TCGdex, detalhe TCGdex
-    (a listagem às vezes omite a imagem), CDN da pokemontcg.io."""
+    (a listagem às vezes omite a imagem), CDN da pokemontcg.io, CDN da Limitless
+    (promos SVP/MEP pelo código fixo; demais sets pela lista EN da Limitless,
+    conferindo o nome — cobre 30th Classic Collection, Celebrations CC etc.)."""
     image = card.get("image")
     if isinstance(image, str) and image.startswith("http"):
         yield f"{image.rstrip('/')}/high.png"
@@ -125,6 +137,14 @@ def image_candidates(card):
     ptcg_set = PTCG_SET_IDS.get(set_id.lower())
     if ptcg_set:
         yield f"https://images.pokemontcg.io/{ptcg_set}/{number.lstrip('0') or '0'}_hires.png"
+    limitless_set = LIMITLESS_SET_IDS.get(set_id.lower())
+    if limitless_set and number.isdigit():
+        yield f"{LIMITLESS_CDN}/{limitless_set}/{limitless_set}_{int(number):03d}_R_EN_LG.png"
+    set_name = (detail.get("set") or {}).get("name") if isinstance(detail.get("set"), dict) else None
+    code = limitless.tcgdex_to_limitless(set_id.lower(), set_name)
+    row = limitless.find_card(code, number, card.get("name")) if code else None
+    if row and "_R_EN" in row["image"]:
+        yield limitless.sized(row["image"], "")
 
 
 def download(card, folder):
@@ -164,6 +184,7 @@ def main():
                 downloaded += 1
             time.sleep(0.1)
 
+    limitless.save_cache()
     print(f"faltantes={total}")
     if do_download:
         print(f"baixadas={downloaded}")

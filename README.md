@@ -29,6 +29,7 @@ gen3-track-tcg/
 │   ├── data/             # Base de dados do app (gerada por build_card_database.py)
 │   │   ├── catalog.min.json    # Tier 1 — catálogo leve usado pela UI
 │   │   ├── prices.min.json     # Preços compactos por carta (USD/EUR, por foil)
+│   │   ├── art.min.json        # Arte da carta em PT/JA (URLs) para o seletor de idioma
 │   │   └── details/<pk>.json   # Tier 2 — detalhes pesados (fetch sob demanda)
 │   └── site/             # Background, verso de carta, ícones, cry do Rayquaza
 ├── scripts/              # Ferramentas Python (manutenção do catálogo)
@@ -82,11 +83,15 @@ gen3-track-tcg/
   abaixo; clicar no nome carrega aquela coleção (em Plan, carrega como rascunho sem
   salvar); cada preset pode ser excluído pelo ×; salvos em `localStorage`
 - **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
-  trocam a pré-visualização para a arte daquele idioma (TCGdex PT-BR/JP, sondada sob
-  demanda e cacheada; sem versão localizada, usa a arte EN local). A arte JP busca
-  todos os prints do Pokémon pela Pokédex Nacional (sets japoneses têm ids próprios,
-  incompatíveis com os ids em inglês) e confere ilustrador + HP contra a carta local
-  pra achar o print exato — funciona pra qualquer uma das 202 cartas do checklist
+  trocam a pré-visualização para a mesma carta naquele idioma. A correspondência vem
+  pronta do build (`assets/data/art.min.json`, carregado na primeira abertura do
+  modal): PT pelo mesmo id na TCGdex ou pelo mesmo print no CDN da Limitless; JA pelo
+  vínculo "Int. Prints" da Limitless (print japonês ↔ internacional, conferindo o
+  ilustrador). Bandeira de idioma sem versão da carta aberta fica apagada e o preview
+  continua na arte EN
+- **Exclusivas do Japão** — prints JP (era BW em diante) sem versão internacional
+  entram no checklist como variantes próprias, com a coleção marcada "(JP)" e arte
+  remota (CDN da Limitless, sem PNG no repositório)
 - **Seletor por nome exato** — cada lista de variantes mostra só cartas cujo nome
   impresso bate exatamente com o Pokémon (nada de Abra aparecer no Kadabra; cards
   duplos tipo Magikarp/Wailord aparecem nos dois)
@@ -117,7 +122,12 @@ gen3-track-tcg/
 | `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
 | `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
 | `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |
-| `sync_missing_cards.py` | Lista (ou baixa com `--download`) cartas da TCGdex que faltam nas pastas, sem Pocket; artes ausentes na TCGdex caem no CDN da pokemontcg.io |
+| `sync_missing_cards.py` | Lista (ou baixa com `--download`) cartas da TCGdex que faltam nas pastas, sem Pocket; artes ausentes na TCGdex caem nos CDNs da pokemontcg.io e da Limitless TCG |
+| `build_language_art.py` | Roda depois do `build_card_database.py`: gera `art.min.json` (arte PT/JA de cada carta) e anexa ao catálogo as exclusivas JP |
+| `limitless.py` | Módulo de leitura da Limitless TCG (sets EN/JP, cartas, prints internacionais), com cache em `scripts/.limitless_cache.json` |
+
+Ordem para atualizar tudo: `sync_missing_cards.py --download` → `build_local_card_index.py`
+→ `build_card_database.py` → `build_language_art.py`.
 | `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
 | `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
 | `normalize_card_catalog.py` | Normaliza metadados das entradas do catálogo |

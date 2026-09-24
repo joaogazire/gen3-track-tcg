@@ -1701,6 +1701,13 @@ button.total-value[aria-pressed="true"] {
   box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.35);
 }
 
+/* Variante aberta não existe nesse idioma: bandeira apagada (ainda clicável —
+   a preferência de idioma vale para as próximas cartas). */
+.card-lang-flag.is-unavailable {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+}
+
 .card-lang-flag svg {
   display: block;
   border-radius: 4px;

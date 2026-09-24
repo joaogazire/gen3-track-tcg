@@ -2022,6 +2022,46 @@
   {
     "name": "Alakazam",
     "pokemon": "Alakazam",
+    "set": "mep",
+    "number": "003",
+    "file": "alakazam/alakazam_mep-003.png",
+    "source": "local",
+    "folder": "alakazam",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "alakazam_mep_003"
+  },
+  {
+    "name": "Alakazam",
+    "pokemon": "Alakazam",
+    "set": "mep",
+    "number": "009",
+    "file": "alakazam/alakazam_mep-009.png",
+    "source": "local",
+    "folder": "alakazam",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "alakazam_mep_009"
+  },
+  {
+    "name": "Alakazam",
+    "pokemon": "Alakazam",
     "set": "pl2",
     "number": "103",
     "file": "alakazam/alakazam-e4-lv-x_pl2-103.png",
@@ -11422,6 +11462,26 @@
   {
     "name": "Claydol",
     "pokemon": "Claydol",
+    "set": "cel25cc",
+    "number": "CC016",
+    "file": "claydol/claydol_cel25cc-CC016.png",
+    "source": "local",
+    "folder": "claydol",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "claydol_cel25cc_CC016"
+  },
+  {
+    "name": "Claydol",
+    "pokemon": "Claydol",
     "set": "dc1",
     "number": "11",
     "file": "claydol/team-magma-s-claydol_dc1-11.png",
@@ -13402,6 +13462,26 @@
   {
     "name": "Crobat",
     "pokemon": "Crobat",
+    "set": "30th",
+    "number": "c-011",
+    "file": "crobat/crobat-g_30th-c-011.png",
+    "source": "local",
+    "folder": "crobat",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "crobat_30th_c-011"
+  },
+  {
+    "name": "Crobat",
+    "pokemon": "Crobat",
     "set": "bw8",
     "number": "55",
     "file": "crobat/crobat_bw8-55.png",
@@ -13658,6 +13738,26 @@
     ],
     "rarity": "common",
     "standardName": "crobat_me04_093"
+  },
+  {
+    "name": "Crobat",
+    "pokemon": "Crobat",
+    "set": "mep",
+    "number": "076",
+    "file": "crobat/crobat_mep-076.png",
+    "source": "local",
+    "folder": "crobat",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "crobat_mep_076"
   },
   {
     "name": "Crobat",
@@ -14118,6 +14218,26 @@
     ],
     "rarity": "common",
     "standardName": "crobat_xyp_XY181"
+  },
+  {
+    "name": "Delcatty",
+    "pokemon": "Delcatty",
+    "set": "30th",
+    "number": "c-002",
+    "file": "delcatty/delcatty_30th-c-002.png",
+    "source": "local",
+    "folder": "delcatty",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "delcatty_30th_c-002"
   },
   {
     "name": "Delcatty",
@@ -16718,6 +16838,26 @@
     ],
     "rarity": "common",
     "standardName": "donphan_bw8_72"
+  },
+  {
+    "name": "Donphan",
+    "pokemon": "Donphan",
+    "set": "cel25cc",
+    "number": "CC019",
+    "file": "donphan/donphan_cel25cc-CC019.png",
+    "source": "local",
+    "folder": "donphan",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "donphan_cel25cc_CC019"
   },
   {
     "name": "Donphan",
@@ -20482,6 +20622,26 @@
   {
     "name": "Flygon",
     "pokemon": "Flygon",
+    "set": "mep",
+    "number": "016",
+    "file": "flygon/flygon_mep-016.png",
+    "source": "local",
+    "folder": "flygon",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "flygon_mep_016"
+  },
+  {
+    "name": "Flygon",
+    "pokemon": "Flygon",
     "set": "np",
     "number": "25",
     "file": "flygon/flygon_np-25.png",
@@ -20822,6 +20982,26 @@
   {
     "name": "Gardevoir",
     "pokemon": "Gardevoir",
+    "set": "30th",
+    "number": "c-023",
+    "file": "gardevoir/m-gardevoir-ex_30th-c-023.png",
+    "source": "local",
+    "folder": "gardevoir",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "gardevoir_30th_c-023"
+  },
+  {
+    "name": "Gardevoir",
+    "pokemon": "Gardevoir",
     "set": "bw11",
     "number": "RC10",
     "file": "gardevoir/gardevoir_bw11-RC10.png",
@@ -20878,6 +21058,26 @@
     ],
     "rarity": "common",
     "standardName": "gardevoir_bw5_109"
+  },
+  {
+    "name": "Gardevoir",
+    "pokemon": "Gardevoir",
+    "set": "cel25cc",
+    "number": "CC014",
+    "file": "gardevoir/gardevoir-ex_cel25cc-CC014.png",
+    "source": "local",
+    "folder": "gardevoir",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "gardevoir_cel25cc_CC014"
   },
   {
     "name": "Gardevoir",
@@ -21178,6 +21378,26 @@
     ],
     "rarity": "common",
     "standardName": "gardevoir_me02.5_089"
+  },
+  {
+    "name": "Gardevoir",
+    "pokemon": "Gardevoir",
+    "set": "mep",
+    "number": "032",
+    "file": "gardevoir/mega-gardevoir-ex_mep-032.png",
+    "source": "local",
+    "folder": "gardevoir",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "gardevoir_mep_032"
   },
   {
     "name": "Gardevoir",
@@ -24682,6 +24902,26 @@
   {
     "name": "Golduck",
     "pokemon": "Golduck",
+    "set": "mep",
+    "number": "008",
+    "file": "golduck/golduck_mep-008.png",
+    "source": "local",
+    "folder": "golduck",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "golduck_mep_008"
+  },
+  {
+    "name": "Golduck",
+    "pokemon": "Golduck",
     "set": "neo4",
     "number": "47",
     "file": "golduck/light-golduck_neo4-47.png",
@@ -26618,6 +26858,26 @@
     ],
     "rarity": "common",
     "standardName": "groudon_cel25_17"
+  },
+  {
+    "name": "Groudon",
+    "pokemon": "Groudon",
+    "set": "cel25cc",
+    "number": "CC011",
+    "file": "groudon/team-magma-s-groudon_cel25cc-CC011.png",
+    "source": "local",
+    "folder": "groudon",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "groudon_cel25cc_CC011"
   },
   {
     "name": "Groudon",
@@ -28638,6 +28898,26 @@
     ],
     "rarity": "common",
     "standardName": "gyarados_bw6_24"
+  },
+  {
+    "name": "Gyarados",
+    "pokemon": "Gyarados",
+    "set": "cel25cc",
+    "number": "CC005",
+    "file": "gyarados/dark-gyarados_cel25cc-CC005.png",
+    "source": "local",
+    "folder": "gyarados",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "gyarados_cel25cc_CC005"
   },
   {
     "name": "Gyarados",
@@ -31598,6 +31878,26 @@
     ],
     "rarity": "common",
     "standardName": "illumise_xy5_18"
+  },
+  {
+    "name": "Jigglypuff",
+    "pokemon": "Jigglypuff",
+    "set": "30th",
+    "number": "c-015",
+    "file": "jigglypuff/erika-s-jigglypuff_30th-c-015.png",
+    "source": "local",
+    "folder": "jigglypuff",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "jigglypuff_30th_c-015"
   },
   {
     "name": "Jigglypuff",
@@ -38042,6 +38342,26 @@
   {
     "name": "Latias",
     "pokemon": "Latias",
+    "set": "mep",
+    "number": "011",
+    "file": "latias/mega-latias-ex_mep-011.png",
+    "source": "local",
+    "folder": "latias",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "latias_mep_011"
+  },
+  {
+    "name": "Latias",
+    "pokemon": "Latias",
     "set": "np",
     "number": "14",
     "file": "latias/latias_np-14.png",
@@ -41622,6 +41942,26 @@
   {
     "name": "Lunatone",
     "pokemon": "Lunatone",
+    "set": "mep",
+    "number": "004",
+    "file": "lunatone/lunatone_mep-004.png",
+    "source": "local",
+    "folder": "lunatone",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "lunatone_mep_004"
+  },
+  {
+    "name": "Lunatone",
+    "pokemon": "Lunatone",
     "set": "pl3",
     "number": "32",
     "file": "lunatone/lunatone_pl3-32.png",
@@ -44562,6 +44902,26 @@
   {
     "name": "Magikarp",
     "pokemon": "Magikarp",
+    "set": "30th",
+    "number": "c-030",
+    "file": "magikarp/magikarp_30th-c-030.png",
+    "source": "local",
+    "folder": "magikarp",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "magikarp_30th_c-030"
+  },
+  {
+    "name": "Magikarp",
+    "pokemon": "Magikarp",
     "set": "base1",
     "number": "35",
     "file": "magikarp/magikarp_base1-35.png",
@@ -44658,6 +45018,26 @@
     ],
     "rarity": "common",
     "standardName": "magikarp_bw6_23"
+  },
+  {
+    "name": "Magikarp",
+    "pokemon": "Magikarp",
+    "set": "cel25cc",
+    "number": "CC010",
+    "file": "magikarp/shining-magikarp_cel25cc-CC010.png",
+    "source": "local",
+    "folder": "magikarp",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "magikarp_cel25cc_CC010"
   },
   {
     "name": "Magikarp",
@@ -47422,6 +47802,26 @@
   {
     "name": "Makuhita",
     "pokemon": "Makuhita",
+    "set": "mep",
+    "number": "068",
+    "file": "makuhita/makuhita_mep-068.png",
+    "source": "local",
+    "folder": "makuhita",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "makuhita_mep_068"
+  },
+  {
+    "name": "Makuhita",
+    "pokemon": "Makuhita",
     "set": "pl4",
     "number": "68",
     "file": "makuhita/makuhita_pl4-68.png",
@@ -49882,6 +50282,26 @@
   {
     "name": "Mawile",
     "pokemon": "Mawile",
+    "set": "swsh12tg",
+    "number": "TG17",
+    "file": "mawile/mawile-v_swsh12tg-TG17.png",
+    "source": "local",
+    "folder": "mawile",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "mawile_swsh12tg_TG17"
+  },
+  {
+    "name": "Mawile",
+    "pokemon": "Mawile",
     "set": "swsh5",
     "number": "100",
     "file": "mawile/mawile_swsh5-100.png",
@@ -50918,6 +51338,26 @@
     ],
     "rarity": "common",
     "standardName": "meditite_xy5_79"
+  },
+  {
+    "name": "Metagross",
+    "pokemon": "Metagross",
+    "set": "30th",
+    "number": "c-003",
+    "file": "metagross/metagross_30th-c-003.png",
+    "source": "local",
+    "folder": "metagross",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "metagross_30th_c-003"
   },
   {
     "name": "Metagross",
@@ -54098,6 +54538,26 @@
     ],
     "rarity": "common",
     "standardName": "mudkip_ex9_56"
+  },
+  {
+    "name": "Mudkip",
+    "pokemon": "Mudkip",
+    "set": "mep",
+    "number": "057",
+    "file": "mudkip/mudkip_mep-057.png",
+    "source": "local",
+    "folder": "mudkip",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "mudkip_mep_057"
   },
   {
     "name": "Mudkip",
@@ -58582,6 +59042,26 @@
   {
     "name": "Oddish",
     "pokemon": "Oddish",
+    "set": "svp",
+    "number": "102",
+    "file": "oddish/oddish_svp-102.png",
+    "source": "local",
+    "folder": "oddish",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "oddish_svp_102"
+  },
+  {
+    "name": "Oddish",
+    "pokemon": "Oddish",
     "set": "swsh11",
     "number": "001",
     "file": "oddish/oddish_swsh11-001.png",
@@ -60402,6 +60882,26 @@
   {
     "name": "Pikachu",
     "pokemon": "Pikachu",
+    "set": "30th",
+    "number": "c-008",
+    "file": "pikachu/pikachu-zekrom-gx_30th-c-008.png",
+    "source": "local",
+    "folder": "pikachu",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "pikachu_30th_c-008"
+  },
+  {
+    "name": "Pikachu",
+    "pokemon": "Pikachu",
     "set": "base1",
     "number": "58",
     "file": "pikachu/pikachu_base1-58.png",
@@ -60818,6 +61318,26 @@
     ],
     "rarity": "common",
     "standardName": "pikachu_cel25_9"
+  },
+  {
+    "name": "Pikachu",
+    "pokemon": "Pikachu",
+    "set": "cel25cc",
+    "number": "CC008",
+    "file": "pikachu/s-pikachu_cel25cc-CC008.png",
+    "source": "local",
+    "folder": "pikachu",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "pikachu_cel25cc_CC008"
   },
   {
     "name": "Pikachu",
@@ -65502,6 +66022,26 @@
   {
     "name": "Psyduck",
     "pokemon": "Psyduck",
+    "set": "mep",
+    "number": "007",
+    "file": "psyduck/psyduck_mep-007.png",
+    "source": "local",
+    "folder": "psyduck",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "psyduck_mep_007"
+  },
+  {
+    "name": "Psyduck",
+    "pokemon": "Psyduck",
     "set": "neo4",
     "number": "79",
     "file": "psyduck/psyduck_neo4-79.png",
@@ -67922,6 +68462,26 @@
   {
     "name": "Rayquaza",
     "pokemon": "Rayquaza",
+    "set": "30th",
+    "number": "c-016",
+    "file": "rayquaza/rayquaza-ex_30th-c-016.png",
+    "source": "local",
+    "folder": "rayquaza",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "rayquaza_30th_c-016"
+  },
+  {
+    "name": "Rayquaza",
+    "pokemon": "Rayquaza",
     "set": "bw11",
     "number": "93",
     "file": "rayquaza/rayquaza_bw11-93.png",
@@ -68078,6 +68638,26 @@
     ],
     "rarity": "common",
     "standardName": "rayquaza_bwp_bw47"
+  },
+  {
+    "name": "Rayquaza",
+    "pokemon": "Rayquaza",
+    "set": "cel25cc",
+    "number": "CC024",
+    "file": "rayquaza/m-rayquaza-ex_cel25cc-CC024.png",
+    "source": "local",
+    "folder": "rayquaza",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "rayquaza_cel25cc_CC024"
   },
   {
     "name": "Rayquaza",
@@ -87862,6 +88442,26 @@
   {
     "name": "Torchic",
     "pokemon": "Torchic",
+    "set": "mep",
+    "number": "056",
+    "file": "torchic/torchic_mep-056.png",
+    "source": "local",
+    "folder": "torchic",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "torchic_mep_056"
+  },
+  {
+    "name": "Torchic",
+    "pokemon": "Torchic",
     "set": "np",
     "number": "17",
     "file": "torchic/torchic_np-17.png",
@@ -89278,6 +89878,26 @@
     ],
     "rarity": "common",
     "standardName": "treecko_ex9_70"
+  },
+  {
+    "name": "Treecko",
+    "pokemon": "Treecko",
+    "set": "mep",
+    "number": "055",
+    "file": "treecko/treecko_mep-055.png",
+    "source": "local",
+    "folder": "treecko",
+    "collection": "",
+    "finish": "normal",
+    "cardType": "Pokemon",
+    "subtype": "Pokemon",
+    "category": "Standard",
+    "tags": [
+      "hoenn",
+      "generation-3"
+    ],
+    "rarity": "common",
+    "standardName": "treecko_mep_055"
   },
   {
     "name": "Treecko",

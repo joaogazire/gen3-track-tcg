@@ -300,6 +300,7 @@ const I18N = {
     cardLangPt: "Brasil (PT)",
     cardLangJa: "Japão (JA)",
     cardLangEn: "EUA (EN)",
+    cardLangMissing: "no version in this language",
     backToTop: "Back to top",
     pageActions: "Page actions",
     menuAria: "Open menu",
@@ -402,6 +403,7 @@ const I18N = {
     cardLangPt: "Brasil (PT)",
     cardLangJa: "Japão (JA)",
     cardLangEn: "EUA (EN)",
+    cardLangMissing: "sem versão neste idioma",
     backToTop: "Voltar ao topo",
     pageActions: "Ações da página",
     menuAria: "Abrir menu",
@@ -627,6 +629,7 @@ let sharedPayloadStamp = "";     // estampa de catálogo embutida no link
 let sharedIgnored = false;       // #c= presente mas ilegível → avisar
 let catalogStamp = "";           // "generatedAt" do catálogo (impressão do build)
 let assetIndexByFile = null;     // file -> posição no catálogo (montado no load)
+let remoteImageByFile = new Map(); // file -> URL remota (cartas exclusivas JP, sem PNG local)
 
 function num36(n) {
   return Math.max(0, Math.trunc(n)).toString(36);
@@ -900,63 +903,52 @@ async function refreshFx() {
 }
 
 // ---- Idioma da arte da carta no preview (BR / JP / EUA) ---------------------
-// PT: o id da carta é o mesmo do EN (`sv03-114`), a TCGdex tem arte PT por
-// carta. JA: sets japoneses têm ids próprios (SV3 ≠ sv03) e a numeração NÃO
-// coincide com a EN (ja SV3-114 é outra carta) — não dá pra adivinhar o id.
-// Em vez disso, filtra os candidatos pelo Pokédex Nacional (dexId, única
-// chave estável entre idiomas na TCGdex) e confirma o print exato batendo
-// ilustrador + HP com a carta local (ver probeJapaneseArt). Sempre com probe
-// preguiçoso + cache e fallback para a arte local EN em qualquer erro.
-const TCGDEX_API = "https://api.tcgdex.net/v2";
+// A correspondência entre idiomas vem pronta do build (build_language_art.py →
+// art.min.json): por arquivo do catálogo, a URL da arte em PT e em JA. PT usa
+// o mesmo id da TCGdex (ou o mesmo print no CDN da Limitless); JA vem do
+// vínculo "Int. Prints" da Limitless (print japonês ↔ internacional). Sem
+// versão no idioma, o preview fica na arte local e a bandeira aparece apagada.
+// Cartas exclusivas do Japão (asset.lang = "ja") só têm a arte japonesa.
+const ART_URL = "../assets/data/art.min.json";
 const CARD_LOCALES = ["en", "pt", "ja"];
 let cardLang = "en";
-const localizedArtCache = new Map();   // "loc|file" -> url remota válida | "" (sem arte)
-const localizedArtPending = new Set(); // probes em voo (não re-hitamos o mesmo)
+let artIndex = null;          // file -> { pt, ja } com URLs já expandidas
+let artIndexPromise = null;
 
-// Pokédex Nacional (dado estático de jogo) — única chave estável pra cruzar
-// o mesmo Pokémon entre os idiomas na TCGdex (sets/ids japoneses não
-// correspondem aos ids em inglês, ver probeJapaneseArt abaixo)
-const POKEMON_DEX_ID = {
-  Pikachu: 25, Raichu: 26, Sandshrew: 27, Sandslash: 28, Vulpix: 37, Ninetales: 38,
-  Jigglypuff: 39, Wigglytuff: 40, Zubat: 41, Golbat: 42, Oddish: 43, Gloom: 44,
-  Vileplume: 45, Psyduck: 54, Golduck: 55, Abra: 63, Kadabra: 64, Alakazam: 65,
-  Machop: 66, Machoke: 67, Machamp: 68, Tentacool: 72, Tentacruel: 73, Geodude: 74,
-  Graveler: 75, Golem: 76, Magnemite: 81, Magneton: 82, Doduo: 84, Dodrio: 85,
-  Grimer: 88, Muk: 89, Voltorb: 100, Electrode: 101, Koffing: 109, Weezing: 110,
-  Rhyhorn: 111, Rhydon: 112, Horsea: 116, Seadra: 117, Goldeen: 118, Seaking: 119,
-  Staryu: 120, Starmie: 121, Pinsir: 127, Magikarp: 129, Gyarados: 130, Crobat: 169,
-  Chinchou: 170, Lanturn: 171, Pichu: 172, Igglybuff: 174, Natu: 177, Xatu: 178,
-  Bellossom: 182, Marill: 183, Azumarill: 184, Wobbuffet: 202, Girafarig: 203,
-  Heracross: 214, Slugma: 218, Magcargo: 219, Corsola: 222, Skarmory: 227,
-  Kingdra: 230, Phanpy: 231, Donphan: 232, Treecko: 252, Grovyle: 253, Sceptile: 254,
-  Torchic: 255, Combusken: 256, Blaziken: 257, Mudkip: 258, Marshtomp: 259,
-  Swampert: 260, Poochyena: 261, Mightyena: 262, Zigzagoon: 263, Linoone: 264,
-  Wurmple: 265, Silcoon: 266, Beautifly: 267, Cascoon: 268, Dustox: 269, Lotad: 270,
-  Lombre: 271, Ludicolo: 272, Seedot: 273, Nuzleaf: 274, Shiftry: 275, Taillow: 276,
-  Swellow: 277, Wingull: 278, Pelipper: 279, Ralts: 280, Kirlia: 281, Gardevoir: 282,
-  Surskit: 283, Masquerain: 284, Shroomish: 285, Breloom: 286, Slakoth: 287,
-  Vigoroth: 288, Slaking: 289, Nincada: 290, Ninjask: 291, Shedinja: 292,
-  Whismur: 293, Loudred: 294, Exploud: 295, Makuhita: 296, Hariyama: 297,
-  Azurill: 298, Nosepass: 299, Skitty: 300, Delcatty: 301, Sableye: 302, Mawile: 303,
-  Aron: 304, Lairon: 305, Aggron: 306, Meditite: 307, Medicham: 308, Electrike: 309,
-  Manectric: 310, Plusle: 311, Minun: 312, Volbeat: 313, Illumise: 314, Roselia: 315,
-  Gulpin: 316, Swalot: 317, Carvanha: 318, Sharpedo: 319, Wailmer: 320, Wailord: 321,
-  Numel: 322, Camerupt: 323, Torkoal: 324, Spoink: 325, Grumpig: 326, Spinda: 327,
-  Trapinch: 328, Vibrava: 329, Flygon: 330, Cacnea: 331, Cacturne: 332, Swablu: 333,
-  Altaria: 334, Zangoose: 335, Seviper: 336, Lunatone: 337, Solrock: 338,
-  Barboach: 339, Whiscash: 340, Corphish: 341, Crawdaunt: 342, Baltoy: 343,
-  Claydol: 344, Lileep: 345, Cradily: 346, Anorith: 347, Armaldo: 348, Feebas: 349,
-  Milotic: 350, Castform: 351, Kecleon: 352, Shuppet: 353, Banette: 354,
-  Duskull: 355, Dusclops: 356, Tropius: 357, Chimecho: 358, Absol: 359, Wynaut: 360,
-  Snorunt: 361, Glalie: 362, Spheal: 363, Sealeo: 364, Walrein: 365, Clamperl: 366,
-  Huntail: 367, Gorebyss: 368, Relicanth: 369, Luvdisc: 370, Bagon: 371,
-  Shelgon: 372, Salamence: 373, Beldum: 374, Metang: 375, Metagross: 376,
-  Regirock: 377, Regice: 378, Registeel: 379, Latias: 380, Latios: 381, Kyogre: 382,
-  Groudon: 383, Rayquaza: 384, Jirachi: 385, Deoxys: 386,
-};
+// "L:tpc/SV7/…" → base do CDN + caminho (o build encurta as URLs por prefixo).
+function expandArtUrl(value, bases) {
+  const match = /^([A-Z]):(.*)$/.exec(String(value || ""));
+  return match && bases?.[match[1]] ? bases[match[1]] + match[2] : String(value || "");
+}
 
-const jaCandidatesCache = new Map();       // dexId -> Promise<[{id,name}, ...]>
-const jaCardDetailCache = new Map();       // "ja-cards/<id>" -> Promise<detalhe | null>
+function loadArtIndex() {
+  if (!artIndexPromise) {
+    artIndexPromise = fetch(ART_URL)
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null)
+      .then((data) => {
+        artIndex = new Map();
+        Object.entries(data?.art || {}).forEach(([file, langs]) => {
+          artIndex.set(file, {
+            pt: langs.pt ? expandArtUrl(langs.pt, data.base) : "",
+            ja: langs.ja ? expandArtUrl(langs.ja, data.base) : ""
+          });
+        });
+        return artIndex;
+      });
+  }
+  return artIndexPromise;
+}
+
+// URL da arte da variante no idioma `loc`; "" = não existe nesse idioma;
+// undefined = índice de idiomas ainda carregando.
+function localizedArtFor(asset, loc) {
+  if (!asset?.file || isNoImageVariant(asset)) return "";
+  if (asset.lang) return loc === asset.lang ? getAssetPath(asset.file) : "";
+  if (loc === "en") return getAssetPath(asset.file);
+  if (!artIndex) return undefined;
+  return artIndex.get(asset.file)?.[loc] || "";
+}
 
 function setCardLang(next) {
   if (!CARD_LOCALES.includes(next) || next === cardLang) return;
@@ -971,129 +963,43 @@ function setCardLang(next) {
 }
 
 // Estado visual do seletor de bandeirinhas do modal + tooltip/aria por idioma.
+// Bandeira de idioma sem versão da variante aberta fica apagada.
 function paintCardLangPicker() {
   if (!cardLangPicker) return;
+  if (!artIndex && selectedAsset) loadArtIndex().then(() => paintCardLangPicker());
   cardLangPicker.setAttribute("aria-label", t("cardLangAria"));
   const labels = { pt: "cardLangPt", ja: "cardLangJa", en: "cardLangEn" };
   cardLangPicker.querySelectorAll(".card-lang-flag").forEach((button) => {
     const loc = button.dataset.loc;
     const active = loc === cardLang;
+    const available = !selectedAsset || localizedArtFor(selectedAsset, loc) !== "";
     button.setAttribute("aria-pressed", String(active));
+    button.classList.toggle("is-unavailable", !available);
     const label = labels[loc] ? t(labels[loc]) : loc;
-    button.title = label;
-    button.setAttribute("aria-label", label);
+    const title = available ? label : `${label} — ${t("cardLangMissing")}`;
+    button.title = title;
+    button.setAttribute("aria-label", title);
   });
 }
 
-// Sonda a TCGdex para a arte localizada da variante; resolve a URL (ou "").
-// Nunca bloqueia a UI: a imagem local aparece na hora, a remota troca quando
-// chega (e um <img onerror> volta para a local se a CDN falhar). PT busca
-// direto pelo id (mesmo id do EN); JA busca por dexId + confere ilustrador/HP
-// (ver probeJapaneseArt) — normaliza acento pra comparar nomes com segurança.
-function normalizeIllustrator(value) {
-  return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-// Busca (e cacheia) todos os prints japoneses de um Pokémon pelo dexId —
-// filtro nativo da TCGdex (`dexId=eq:N`), a única chave que cruza os idiomas
-// de forma confiável (sets japoneses não têm id equivalente ao set em inglês).
-function fetchJaCandidates(dexId) {
-  if (!jaCandidatesCache.has(dexId)) {
-    jaCandidatesCache.set(
-      dexId,
-      fetch(`${TCGDEX_API}/ja/cards?dexId=eq:${dexId}`)
-        .then((response) => (response.ok ? response.json() : []))
-        .then((list) => (Array.isArray(list) ? list : []))
-        .catch(() => [])
-    );
-  }
-  return jaCandidatesCache.get(dexId);
-}
-
-function fetchJaCardDetail(cardId) {
-  if (!jaCardDetailCache.has(cardId)) {
-    jaCardDetailCache.set(
-      cardId,
-      fetch(`${TCGDEX_API}/ja/cards/${encodeURIComponent(cardId)}`)
-        .then((response) => (response.ok ? response.json() : null))
-        .catch(() => null)
-    );
-  }
-  return jaCardDetailCache.get(cardId);
-}
-
-// Arte japonesa: como o id não é adivinhável, busca todos os prints do
-// Pokémon pelo Pokédex Nacional e confirma o print exato batendo ilustrador
-// (chave primária) + HP (desempate) com a carta local. Sem dexId mapeado, ou
-// sem candidato que bata, cai pra arte local EN (mesmo comportamento de erro).
-async function probeJapaneseArt(asset) {
-  const dexId = POKEMON_DEX_ID[asset?.pokemon];
-  if (!dexId) return "";
-
-  const candidates = await fetchJaCandidates(dexId);
-  if (candidates.length === 0) return "";
-
-  const details = await Promise.all(candidates.map((candidate) => fetchJaCardDetail(candidate.id)));
-
-  const localIll = normalizeIllustrator(asset.illustrator);
-  const localHp = asset.hp != null ? Number(asset.hp) : null;
-
-  const match = details.find((detail) => {
-    if (!detail) return false;
-    const remoteIll = normalizeIllustrator(detail.illustrator);
-    const sameIll = localIll && remoteIll && localIll === remoteIll;
-    const sameHp = localHp == null || detail.hp == null || Number(detail.hp) === localHp;
-    return sameIll && sameHp;
-  });
-
-  const base = match && typeof match.image === "string" ? match.image : "";
-  return base ? `${base}/high.png` : "";
-}
-
-function probeLocalizedArt(loc, asset) {
-  const file = asset?.file || "";
-  const set = String(asset?.set || "").trim();
-  let number = String(asset?.number || "").trim();
-  if (!file || !set || !number) return Promise.resolve("");
-
-  if (loc === "ja") return probeJapaneseArt(asset).catch(() => "");
-
-  // PT: o id por carta é o mesmo do EN (`sv03-114`), então dá pra buscar direto.
-  // Sub-numeração de arquivo ("5-064") não existe na API; o id real usa o fim.
-  if (/^\d+-\d+$/.test(number)) number = number.split("-", 1)[1];
-  const cardId = `${set}-${number}`.toLowerCase();
-  const url = `${TCGDEX_API}/${loc}/cards/${encodeURIComponent(cardId)}`;
-
-  return fetch(url)
-    .then((response) => (response.ok ? response.json() : null))
-    .then((data) => {
-      const base = typeof data?.image === "string" ? data.image : "";
-      return base ? `${base}/high.png` : "";
-    })
-    .catch(() => "");
-}
-
+// Arte do preview no idioma escolhido. Nunca bloqueia: sem o índice ainda,
+// mostra a local e troca quando ele chega (onRemote); sem versão no idioma,
+// fica na local (a arte do próprio asset — EN, ou JA nas exclusivas).
 function localizedPreviewSrc(asset, onRemote) {
   const localSrc = getAssetPath(asset?.file || "");
-  if (cardLang === "en" || isNoImageVariant(asset)) return localSrc;
-
-  const key = `${cardLang}|${asset?.file || ""}`;
-  const probeLocale = cardLang;
-  const cached = localizedArtCache.get(key);
-  if (cached === "") return localSrc;
-  if (cached) return cached;
-
-  if (!localizedArtPending.has(key)) {
-    localizedArtPending.add(key);
-    probeLocalizedArt(probeLocale, asset)
-      .then((remote) => {
-        localizedArtCache.set(key, remote || "");
-        // Preview ainda nesta variante/idioma quando a sonda voltou: troca a arte.
-        if (remote && selectedAsset?.file === asset?.file && cardLang === probeLocale) onRemote?.(remote);
-      })
-      .finally(() => localizedArtPending.delete(key));
+  const src = localizedArtFor(asset, cardLang);
+  if (src === undefined) {
+    const file = asset?.file;
+    const probeLocale = cardLang;
+    loadArtIndex().then(() => {
+      if (selectedAsset?.file !== file || cardLang !== probeLocale) return;
+      paintCardLangPicker();
+      const remote = localizedArtFor(asset, probeLocale);
+      if (remote) onRemote?.(remote);
+    });
+    return localSrc;
   }
-  return localSrc;
+  return src || localSrc;
 }
 
 // ---- Soma do painel (total das coletadas / do rascunho em Plan) -------------
@@ -1568,6 +1474,7 @@ function setupCardTilt(cardElement) {
 }
 
 async function loadCardAssets() {
+  let catalogBases = null;
   try {
     // Payload null = early fetch falhou (404/rede); refaz o fetch aqui.
     const payload = await catalogReady;
@@ -1575,12 +1482,14 @@ async function loadCardAssets() {
       cardAssets = Array.isArray(payload.cards) ? payload.cards : [];
       catalogStamp = String(payload.generatedAt || "");
       setsIndex = payload.sets && typeof payload.sets === "object" ? payload.sets : null;
+      catalogBases = payload.base || null;
     } else {
       const response = await fetch("../assets/data/catalog.min.json");
       const data = response.ok ? await response.json() : null;
       cardAssets = Array.isArray(data?.cards) ? data.cards : [];
       catalogStamp = String(data?.generatedAt || "");
       setsIndex = data?.sets && typeof data.sets === "object" ? data.sets : null;
+      catalogBases = data?.base || null;
     }
   } catch (error) {
     cardAssets = [];
@@ -1590,7 +1499,9 @@ async function loadCardAssets() {
   // Repõe folder (derivável) e pré-computa as chaves EXATAS de nome uma única
   // vez — getCardVariants deixa de normalizar 5 campos por entrada a cada call.
   assetIndexByFile = new Map();
+  remoteImageByFile = new Map();
   cardAssets.forEach((asset, index) => {
+    if (asset.img) remoteImageByFile.set(asset.file, expandArtUrl(asset.img, catalogBases));
     asset.folder = String(asset.file || "").split("/")[0];
     asset.__keys = new Set([
       normalizePokemonKey(asset.pokemon),
@@ -1604,6 +1515,20 @@ async function loadCardAssets() {
     assetIndexByFile.set(asset.file, index);
   });
   catalogAssetsPrepared = true;
+
+  // Cartas marcadas numa exclusiva JP: o artPath salvo foi montado antes do
+  // catálogo chegar (sem a URL remota) — corrige agora.
+  if (remoteImageByFile.size) {
+    let repaint = false;
+    cards.forEach((card) => {
+      const remote = card.file && remoteImageByFile.get(card.file);
+      if (remote && card.artPath !== remote) {
+        card.artPath = remote;
+        repaint = true;
+      }
+    });
+    if (repaint) renderCards();
+  }
 
   // O catálogo não traz mais cartas do Pokémon TCG Pocket: marcações antigas do
   // localStorage que apontavam para aquelas artes perdem a variante (a carta
@@ -1647,6 +1572,8 @@ async function loadCardAssets() {
 
 function getAssetPath(fileName) {
   if (!fileName) return "../assets/site/pokemon-tcg-card-back.png";
+  const remote = remoteImageByFile.get(fileName);
+  if (remote) return remote;
 
   const normalized = String(fileName).trim().replace(/^\.?\//, "").replace(/^\/+/, "");
   const candidates = [
@@ -2382,6 +2309,7 @@ function changeSelectedVariant(step) {
 
 function renderSelectedPreview(asset) {
   if (!modalSummary) return;
+  paintCardLangPicker();
 
   const hasNoImage = isNoImageVariant(asset);
   const localSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
