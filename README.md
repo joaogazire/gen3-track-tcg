@@ -117,6 +117,7 @@ gen3-track-tcg/
 | `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
 | `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
 | `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |
+| `sync_missing_cards.py` | Lista (ou baixa com `--download`) cartas da TCGdex que faltam nas pastas, sem Pocket; artes ausentes na TCGdex caem no CDN da pokemontcg.io |
 | `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
 | `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
 | `normalize_card_catalog.py` | Normaliza metadados das entradas do catálogo |
