@@ -294,6 +294,23 @@ const I18N = {
     sharedViewing: "You are viewing a collection shared by a link — editing is blocked.",
     sharedMine: "View my collection",
     priceLinkSuffix: " · click to open the store",
+    ligaLoadingSuffix: " · looking up the Liga Pokemon price…",
+    ligaMissingSuffix: " · no price on Liga Pokemon for this print",
+    ligaBlocked: "Liga Pokemon asked for a human check — click, pass it and reopen the card",
+    ligaTitle: "Liga Pokemon — lowest price {min} (avg {avg} · max {max}; any language/condition) · click to open",
+    ligaLive: "live",
+    ligaMixed: "all variants mixed",
+    ligaListingTitle: "Liga Pokemon — lowest {lang} listing, {wanted} or better: {price} ({quality}, {variant}) · click to open",
+    ligaNoListing: "no {lang} listing in {quality} or better — lowest of any language/condition",
+    ligaIncomplete: "some hidden Liga prices could not be read",
+    qualityField: "Card condition (price)",
+    qualityM: "Mint (M)",
+    qualityNM: "Near Mint (NM)",
+    qualitySP: "Slightly Played (SP)",
+    qualityMP: "Moderately Played (MP)",
+    qualityHP: "Heavily Played (HP)",
+    qualityD: "Damaged (D)",
+    ligaOtherVariant: "no {wanted} price on Liga — showing {used}",
     totalShown: "Hide the total value",
     totalHidden: "Show the total value",
     cardLangAria: "Card language",
@@ -397,6 +414,23 @@ const I18N = {
     sharedViewing: "Você está vendo a coleção compartilhada por um link — edição bloqueada.",
     sharedMine: "Ver minha coleção",
     priceLinkSuffix: " · clique para abrir na loja",
+    ligaLoadingSuffix: " · buscando o preço na Liga Pokemon…",
+    ligaMissingSuffix: " · a Liga Pokemon não tem preço desta impressão",
+    ligaBlocked: "A Liga Pokemon pediu verificação — clique, passe por ela e reabra a carta",
+    ligaTitle: "Liga Pokemon — menor preço {min} (méd. {avg} · máx. {max}; qualquer idioma/estado) · clique para abrir",
+    ligaLive: "ao vivo",
+    ligaMixed: "variantes misturadas",
+    ligaListingTitle: "Liga Pokemon — menor anúncio {lang} {wanted} ou melhor: {price} ({quality}, {variant}) · clique para abrir",
+    ligaNoListing: "sem anúncio {lang} {quality} ou melhor — menor de qualquer idioma/estado",
+    ligaIncomplete: "alguns preços ocultos da Liga não foram lidos",
+    qualityField: "Qualidade da carta (preço)",
+    qualityM: "Nova (M)",
+    qualityNM: "Praticamente Nova (NM)",
+    qualitySP: "Usada Levemente (SP)",
+    qualityMP: "Usada Moderadamente (MP)",
+    qualityHP: "Muito Usada (HP)",
+    qualityD: "Danificada (D)",
+    ligaOtherVariant: "a Liga não tem preço {wanted} — mostrando {used}",
     totalShown: "Ocultar o valor total",
     totalHidden: "Mostrar o valor total",
     cardLangAria: "Idioma da carta",
@@ -809,7 +843,8 @@ function formatMoney(amount, currency) {
       style: "currency",
       currency: code,
       currencyDisplay: "narrowSymbol",
-      maximumFractionDigits: amount < 10 ? 2 : 0
+      // Centavos até R$ 1.000 (o menor anúncio da Liga é "R$ 104,90", não "R$ 105")
+      maximumFractionDigits: amount < 1000 ? 2 : 0
     }).format(amount);
   } catch (error) {
     return `${amount.toFixed(2)} ${code}`;
@@ -838,16 +873,35 @@ function cardPriceFor(file, finish) {
 }
 
 function priceTitle(price) {
+  if (price.listing) {
+    const { lang, quality, extras } = price.listing;
+    return t("ligaListingTitle", {
+      price: formatMoney(price.amount, "BRL"),
+      lang,
+      quality,
+      wanted: cardQuality,
+      variant: LIGA_EXTRAS_LABEL[extras] || extras
+    }) + (price.ligaNote ? ` · ${price.ligaNote}` : "") + (price.updated ? ` · ${price.updated}` : "");
+  }
+  if (price.liga) {
+    return t("ligaTitle", {
+      min: formatMoney(price.liga.min, "BRL"),
+      avg: formatMoney(price.liga.avg, "BRL"),
+      max: formatMoney(price.liga.max, "BRL")
+    }) + (price.ligaNote ? ` · ${price.ligaNote}` : "") + (price.updated ? ` · ${price.updated}` : "");
+  }
+  const liga = price.ligaState === "loading" ? t("ligaLoadingSuffix")
+    : (price.ligaState === "missing" ? t("ligaMissingSuffix") : "");
   const native = formatMoney(price.nativeAmount, price.nativeCurrency);
   const when = price.updated ? ` · ${price.updated}` : "";
   const link = price.url ? t("priceLinkSuffix") : "";
-  return `${price.source}: ${native}${when}${link}`;
+  return `${price.source}: ${native}${when}${liga}${link}`;
 }
 
 // Chave de ordenação da lista de variantes: preço na moeda exibida; sem preço
 // conhecido vira Infinity (vai para o fim da lista).
-function variantSortPrice(asset) {
-  const hit = cardPriceFor(asset.file || "", asset.finish);
+function variantSortPrice(asset, pokemonName) {
+  const hit = displayPriceFor(asset.file || "", asset.finish, pokemonName);
   return hit ? hit.amount : Number.POSITIVE_INFINITY;
 }
 
@@ -865,6 +919,298 @@ async function loadPriceData() {
     /* preços são enfeite — sem eles o app segue igual */
   }
 }
+
+// ---- Preços da Liga Pokemon ---------------------------------------------------
+// A Liga Pokemon é a fonte do preço exibido (grade, total, modal, ordenação).
+// O site é estático e não consegue buscar na Liga (Cloudflare + CORS), então o
+// preço vem de liga-prices.min.json, gerado por scripts/fetch_liga_prices.py
+// (Chrome headless na máquina de quem mantém o site). Se o visitante tiver a
+// extensão Emerald TCG Finder, ela busca ao vivo (mesma busca por Pokémon,
+// ?view=cards/search) e o valor fresco substitui o do arquivo. Cada variante
+// é casada pelo número E total da coleção (só o número mistura coleções).
+// Sem preço na Liga para a impressão, vale o TCGplayer/Cardmarket.
+const LIGA_PRICES_URL = "../assets/data/liga-prices.min.json";
+let ligaSnapshot = new Map();      // file -> {u, s: [mín, méd, máx], p?: {"0"|"2"|"3": [mín, méd, máx]}}
+let ligaSnapshotDate = "";
+const LIGA_PREFIXED_NUMBER = /^[A-Za-z]+\d+$/;
+const LIGA_CODE_PATTERN = /\(\s*(#?[A-Z]{0,4}\d{1,4}[A-Za-z]{0,3})\s*\/\s*([A-Z]{0,4}\d{1,4}|∞)\s*\)/i;
+const LIGA_REPAINT_DELAY_MS = 400;
+
+let ligaBridge = false;
+let ligaRequestSeq = 0;
+const ligaSearches = new Map();    // palavras do Pokémon -> {status, entries, blockedUrl}
+const ligaRequests = new Map();    // requestId -> palavras do Pokémon
+// Fila do site: uma busca por vez na extensão, e a carta aberta no modal fura
+// a fila (senão esperaria as ~200 da grade na primeira carga)
+const ligaQueue = [];
+let ligaInFlight = false;
+const ligaChanged = new Set();
+let ligaRepaintTimer = null;
+
+function ligaWords(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[-_&/]/g, " ")
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+// "057" / "#057" -> "57" (mesma chave da extensão)
+function ligaNumberKey(value) {
+  return String(value || "").replace(/^#/, "").replace(/^0+(?=\w)/, "").toUpperCase();
+}
+
+// `priority`: vai para a frente da fila (carta aberta no modal);
+// `retry`: tenta de novo uma busca que falhou ou pediu verificação
+function requestLigaPrices(pokemonName, { priority = false, retry = false } = {}) {
+  const key = ligaWords(pokemonName).join(" ");
+  if (!ligaBridge || !key) return;
+
+  const known = ligaSearches.get(key);
+  if (known?.status === "loading") {
+    const queued = ligaQueue.findIndex((job) => job.key === key);
+    if (priority && queued > 0) ligaQueue.unshift(...ligaQueue.splice(queued, 1));
+    return;
+  }
+  if (known && (known.status === "ok" || !retry)) return;
+
+  ligaSearches.set(key, { status: "loading", entries: [] });
+  const job = { key, query: pokemonName };
+  if (priority) ligaQueue.unshift(job);
+  else ligaQueue.push(job);
+  pumpLigaQueue();
+}
+
+function pumpLigaQueue() {
+  if (ligaInFlight || !ligaQueue.length) return;
+  const job = ligaQueue.shift();
+  ligaInFlight = true;
+  const requestId = ++ligaRequestSeq;
+  ligaRequests.set(requestId, job.key);
+  window.postMessage({ source: "emerald-tracker", type: "liga-search", requestId, query: job.query }, window.location.origin);
+}
+
+// Referência da Liga para uma variante do catálogo: null = sem a impressão na
+// Liga (ou sem extensão / busca falhou); senão {status: "loading" | "blocked" | "ok", ...}
+function ligaPriceFor(asset, pokemonName) {
+  if (!ligaBridge || !asset?.file) return null;
+  const words = ligaWords(pokemonName);
+  const search = ligaSearches.get(words.join(" "));
+  if (!search || search.status === "error") return null;
+  if (search.status !== "ok") return search;
+
+  // Sem total no catálogo (promos) só casa com os promos da Liga ("053/∞")
+  const total = setsIndex?.[asset.set]?.total;
+  const wantedCode = `${ligaNumberKey(asset.number)}/${total ? ligaNumberKey(total) : "∞"}`;
+  const candidates = search.entries.flatMap((entry) => {
+    if (!(entry.avg > 0)) return [];
+    const code = String(entry.name).match(LIGA_CODE_PATTERN);
+    if (!code) return [];
+    const entryWords = new Set(ligaWords(String(entry.name).replace(/\s*\(.*$/, "")));
+    if (!words.every((word) => entryWords.has(word))) return [];
+    return [{ entry, number: ligaNumberKey(code[1]), total: ligaNumberKey(code[2]) }];
+  });
+  let matches = candidates.filter((c) => `${c.number}/${c.total}` === wantedCode);
+  // Número com prefixo de letras (XY66, SWSH029, TG20) é praticamente único
+  // por Pokémon, mas a Liga usa outro total ("XY66/∞", "TG20/TG30"): casa
+  // pelo número se só um total aparece (mesma regra do fetch_liga_prices.py)
+  if (!matches.length && LIGA_PREFIXED_NUMBER.test(String(asset.number))) {
+    const byNumber = candidates.filter((c) => c.number === ligaNumberKey(asset.number));
+    if (new Set(byNumber.map((c) => c.total)).size === 1) matches = byNumber;
+  }
+  matches = matches.map((c) => c.entry);
+  if (!matches.length) return null;
+
+  // Mais de uma edição com o mesmo código: junta as faixas, como a extensão
+  return {
+    status: "ok",
+    min: Math.min(...matches.map((m) => m.min || m.avg)),
+    avg: matches.reduce((sum, m) => sum + m.avg, 0) / matches.length,
+    max: Math.max(...matches.map((m) => m.max || m.avg)),
+    url: matches[0].url
+  };
+}
+
+function ligaSearchState(pokemonName) {
+  return ligaSearches.get(ligaWords(pokemonName).join(" ")) || null;
+}
+
+function assetForFile(file) {
+  const index = file && assetIndexByFile ? assetIndexByFile.get(file) : undefined;
+  return index === undefined ? null : cardAssets[index];
+}
+
+// Preço exibido no site: médio da Liga Pokemon (R$) quando a extensão achou a
+// impressão; senão o TCGplayer/Cardmarket (cardPriceFor), marcado com o
+// motivo (`ligaState`) para o tooltip e o "carregando". Pedir o preço já põe
+// o Pokémon na fila da Liga.
+// Valor exibido = menor preço da Liga para a variante (o que dá para pagar
+// agora); médio e máximo ficam no tooltip
+function ligaDisplayPrice(liga, updated) {
+  return { amount: liga.min || liga.avg, currency: "BRL", source: "Liga Pokemon", url: liga.url, updated, liga };
+}
+
+// Variante da Liga para o acabamento escolhido: "0" normal, "2" Foil,
+// "3" Reverse Foil (ids de extras da Liga)
+const LIGA_EXTRAS_BY_FINISH = { normal: "0", holo: "2", reverse: "3" };
+const LIGA_EXTRAS_LABEL = { "0": "Normal", "2": "Foil", "3": "Reverse Foil" };
+
+// Preço do arquivo para o acabamento: a variante pedida; sem ela, a normal
+// (ou a única que houver) — o tooltip avisa. Sem a página da carta coletada,
+// cai na faixa da busca, que mistura as variantes.
+// Idioma da Liga para a bandeira do modal
+const LIGA_LANG_BY_LOCALE = { pt: "PT", ja: "JP", en: "EN" };
+
+// Menor anúncio no idioma escolhido, na qualidade escolhida ou melhor.
+// Tenta a variante do acabamento; sem anúncio dela nesse idioma, as outras
+// (a arte rara japonesa às vezes é anunciada como "normal").
+function ligaListingPrice(snap, wanted) {
+  const offers = snap.l && typeof snap.l === "object" ? snap.l : null;
+  if (!offers) return null;
+  const lang = LIGA_LANG_BY_LOCALE[cardLang] || "PT";
+  const accepted = CARD_QUALITIES.slice(0, CARD_QUALITIES.indexOf(cardQuality) + 1);
+  for (const extras of [...new Set([wanted, "0", "2", "3"])]) {
+    const byQuality = offers[extras]?.[lang];
+    if (!byQuality) continue;
+    let best = null;
+    accepted.forEach((quality) => {
+      const value = byQuality[quality];
+      if (value > 0 && (!best || value < best.value)) best = { value, quality };
+    });
+    if (best) return { ...best, lang, extras };
+  }
+  return null;
+}
+
+function ligaSnapshotPrice(snap, finish) {
+  const wanted = LIGA_EXTRAS_BY_FINISH[String(finish || "").toLowerCase()] || "0";
+
+  const listing = ligaListingPrice(snap, wanted);
+  if (listing) {
+    const price = {
+      amount: listing.value, currency: "BRL", source: "Liga Pokemon", url: snap.u,
+      updated: ligaSnapshotDate, listing
+    };
+    const parts = [];
+    if (listing.extras !== wanted) {
+      parts.push(t("ligaOtherVariant", { wanted: LIGA_EXTRAS_LABEL[wanted] || wanted, used: LIGA_EXTRAS_LABEL[listing.extras] || listing.extras }));
+    }
+    if (snap.o === 0) parts.push(t("ligaIncomplete"));
+    price.ligaNote = parts.join(" · ");
+    return price;
+  }
+  const noOffer = snap.l ? t("ligaNoListing", { lang: LIGA_LANG_BY_LOCALE[cardLang] || "PT", quality: cardQuality }) : "";
+  const variants = snap.p && typeof snap.p === "object" ? snap.p : null;
+  let range = null;
+  let note = "";
+  if (variants && Object.keys(variants).length) {
+    const key = variants[wanted] ? wanted : (variants["0"] ? "0" : Object.keys(variants)[0]);
+    range = variants[key];
+    note = key === wanted
+      ? LIGA_EXTRAS_LABEL[key] || ""
+      : t("ligaOtherVariant", { wanted: LIGA_EXTRAS_LABEL[wanted] || wanted, used: LIGA_EXTRAS_LABEL[key] || key });
+  } else if (Array.isArray(snap.s)) {
+    range = snap.s;
+    note = t("ligaMixed");
+  }
+  if (!range) return null;
+  const price = ligaDisplayPrice({ min: range[0], avg: range[1], max: range[2], url: snap.u }, ligaSnapshotDate);
+  price.ligaNote = [noOffer, note].filter(Boolean).join(" · ");
+  return price;
+}
+
+function displayPriceFor(file, finish, pokemonName) {
+  const snap = file ? ligaSnapshot.get(file) : null;
+  const snapPrice = snap ? ligaSnapshotPrice(snap, finish) : null;
+  // O arquivo tem o preço por variante; a busca ao vivo da extensão mistura
+  // as variantes — só entra quando o arquivo não tem a carta
+  if (snapPrice) return snapPrice;
+
+  let live = null;
+  if (ligaBridge && file) {
+    requestLigaPrices(pokemonName);
+    live = ligaPriceFor(assetForFile(file), pokemonName);
+    if (live?.status === "ok") {
+      const price = ligaDisplayPrice(live, t("ligaLive"));
+      price.ligaNote = t("ligaMixed");
+      return price;
+    }
+  }
+
+  const fallback = cardPriceFor(file, finish);
+  if (!fallback) return null;
+  return { ...fallback, ligaState: live?.status === "loading" ? "loading" : "missing" };
+}
+
+async function loadLigaSnapshot() {
+  try {
+    const response = await fetch(LIGA_PRICES_URL);
+    if (!response.ok) return;
+    const data = await response.json();
+    if (!data?.prices || typeof data.prices !== "object") return;
+    ligaSnapshot = new Map(Object.entries(data.prices));
+    ligaSnapshotDate = String(data.generatedAt || "").slice(0, 10);
+    renderCards();
+    if (currentCardId !== null) renderVariantList(selectedAsset);
+  } catch (error) {
+    /* sem o arquivo, vale o TCGplayer */
+  }
+}
+
+function priceLoadingClass(price) {
+  return price?.ligaState === "loading" ? " is-loading" : "";
+}
+
+function scheduleLigaRepaint(key) {
+  ligaChanged.add(key);
+  if (ligaRepaintTimer) return;
+  ligaRepaintTimer = setTimeout(() => {
+    ligaRepaintTimer = null;
+    const changed = new Set(ligaChanged);
+    ligaChanged.clear();
+    renderCards();
+    const card = cards.find((item) => item.id === currentCardId);
+    if (card && changed.has(ligaWords(card.name).join(" "))) renderVariantList(selectedAsset);
+  }, LIGA_REPAINT_DELAY_MS);
+}
+
+window.addEventListener("message", (event) => {
+  if (event.source !== window || event.origin !== window.location.origin) return;
+  const data = event.data;
+  if (!data || data.source !== "emerald-extension") return;
+
+  if (data.type === "hello") {
+    if (ligaBridge) return;
+    ligaBridge = true;
+    const card = cards.find((item) => item.id === currentCardId);
+    if (card) requestLigaPrices(card.name, { priority: true });
+    // Repinta: cada preço exibido pede o seu Pokémon à fila
+    renderCards();
+    if (card) renderVariantList(selectedAsset);
+    return;
+  }
+
+  if (data.type === "liga-search") {
+    const key = ligaRequests.get(data.requestId);
+    if (!key) return;
+    ligaRequests.delete(data.requestId);
+    ligaSearches.set(key, {
+      status: data.status === "ok" || data.status === "blocked" ? data.status : "error",
+      entries: Array.isArray(data.entries) ? data.entries : [],
+      blockedUrl: data.blockedUrl || null
+    });
+    ligaInFlight = false;
+    pumpLigaQueue();
+    scheduleLigaRepaint(key);
+  }
+});
+
+// A extensão pode ter carregado antes deste script (e o "hello" dela se
+// perdido): pergunta de novo
+window.postMessage({ source: "emerald-tracker", type: "ping" }, window.location.origin);
 
 function readFxCache() {
   try {
@@ -912,6 +1258,12 @@ async function refreshFx() {
 const ART_URL = "../assets/data/art.min.json";
 const CARD_LOCALES = ["en", "pt", "ja"];
 let cardLang = "en";
+// Qualidade para o preço da Liga (escala da Liga, da melhor para a pior): o
+// preço é o menor anúncio nessa qualidade ou melhor. Vale para o site todo,
+// como o idioma.
+const CARD_QUALITY_KEY = "pokemon_emerald_tcg_quality_v1";
+const CARD_QUALITIES = ["M", "NM", "SP", "MP", "HP", "D"];
+let cardQuality = "NM";
 let artIndex = null;          // file -> { pt, ja } com URLs já expandidas
 let artIndexPromise = null;
 
@@ -959,7 +1311,26 @@ function setCardLang(next) {
     /* storage indisponível — idioma da arte só desta página */
   }
   paintCardLangPicker();
-  if (selectedAsset) renderSelectedPreview(selectedAsset);
+  repaintPrices();
+}
+
+function setCardQuality(next) {
+  if (!CARD_QUALITIES.includes(next) || next === cardQuality) return;
+  cardQuality = next;
+  try {
+    localStorage.setItem(CARD_QUALITY_KEY, next);
+  } catch (error) {
+    /* storage indisponível — qualidade só desta página */
+  }
+  repaintPrices();
+}
+
+// O preço da Liga depende do idioma e da qualidade: repinta grade, total e
+// o modal aberto (que também reordena as variantes por preço)
+function repaintPrices() {
+  renderCards();
+  if (currentCardId !== null && selectedAsset) renderVariantList(selectedAsset);
+  else if (selectedAsset) renderSelectedPreview(selectedAsset);
 }
 
 // Estado visual do seletor de bandeirinhas do modal + tooltip/aria por idioma.
@@ -1026,7 +1397,7 @@ function updateCollectionTotal() {
   let currency = "BRL";
   let any = false;
   counted.forEach((card) => {
-    const price = cardPriceFor(cardAssetFile(card), card.finish);
+    const price = displayPriceFor(cardAssetFile(card), card.finish, card.name);
     if (!price) return;
     // Com câmbio tudo chega em BRL e soma junto; sem câmbio, moedas diferentes
     // não se somam — a carta fica fora do total até ter uma taxa.
@@ -2168,6 +2539,21 @@ function createRarityButtonsMarkup(currentFinish) {
   `;
 }
 
+function createQualityButtonsMarkup() {
+  const label = escapeHtml(t("qualityField"));
+  const buttons = CARD_QUALITIES.map((quality) => `
+    <button type="button" class="rarity-btn quality-btn${quality === cardQuality ? " selected" : ""}"
+      role="radio" aria-checked="${quality === cardQuality}" data-quality="${quality}"
+      title="${escapeHtml(t(`quality${quality}`))}">${quality}</button>
+  `).join("");
+  return `
+    <div class="rarity-field quality-field">
+      <span class="field-label">${label}</span>
+      <div class="rarity-group" role="radiogroup" aria-label="${label}">${buttons}</div>
+    </div>
+  `;
+}
+
 // Repinta pílula de raridade e o estado do shine no preview sem re-criar a
 // imagem (evita flicker de reload da arte ao clicar num botão).
 function syncFinishPreview() {
@@ -2179,12 +2565,14 @@ function syncFinishPreview() {
   // O preço do preview segue o acabamento escolhido (normal/holo/reverse têm
   // preços próprios no TCGplayer quando a carta possui as duas faces).
   const pricePill = modalSummary.querySelector(".price-pill");
-  const price = cardPriceFor(selectedAsset?.file || "", getCurrentFinish());
+  const currentCard = cards.find((item) => item.id === currentCardId);
+  const price = displayPriceFor(selectedAsset?.file || "", getCurrentFinish(), currentCard?.name || selectedAsset?.name);
   if (pricePill) {
     if (price) {
       pricePill.hidden = false;
       pricePill.textContent = formatMoney(price.amount, price.currency);
       pricePill.title = priceTitle(price);
+      pricePill.classList.toggle("is-loading", price.ligaState === "loading");
     } else {
       pricePill.hidden = true;
     }
@@ -2219,13 +2607,13 @@ function createCardMarkup(card) {
   const shineClass = card.collected ? finishShineClass(card.finish) : "";
   const photoMarkup = card.collected && card.artPath ? `<img class="card-photo" src="${card.artPath}" alt="${escapeHtml(card.name)}" />` : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
-  const price = card.collected && card.artPath ? cardPriceFor(card.file, card.finish) : null;
+  const price = card.collected && card.artPath ? displayPriceFor(card.file, card.finish, card.name) : null;
   // Badge com link vira âncora para a loja (TCGplayer/Cardmarket); sem URL,
   // segue sendo span (pointer-events:none) para não engolir o clique da carta.
   const priceMarkup = price
     ? (price.url
-      ? `<a class="card-price card-price-link" href="${escapeHtml(price.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</a>`
-      : `<span class="card-price" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`)
+      ? `<a class="card-price card-price-link${priceLoadingClass(price)}" href="${escapeHtml(price.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</a>`
+      : `<span class="card-price${priceLoadingClass(price)}" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`)
     : "";
 
   return `
@@ -2327,11 +2715,16 @@ function renderSelectedPreview(asset) {
   const variantLabel = asset?.number ? `#${asset.number}` : t("versionFallback");
   const rarityLabel = formatCardFinish(getCurrentFinish());
   const shineClass = finishShineClass(getCurrentFinish());
-  const previewPrice = cardPriceFor(asset?.file || "", getCurrentFinish());
+  const previewPrice = displayPriceFor(asset?.file || "", getCurrentFinish(), card.name);
+  // A Liga pediu a verificação do Cloudflare: link para passar por ela
+  const ligaState = ligaBridge ? ligaSearchState(card.name) : null;
+  const ligaBlockedPill = ligaState?.status === "blocked" && ligaState.blockedUrl
+    ? `<a class="summary-pill liga-pill" href="${escapeHtml(ligaState.blockedUrl)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(t("ligaBlocked"))}">Liga ⚠</a>`
+    : "";
   // <a> sem href = não clicável (mesma aparência); com URL vira link da loja.
   const priceHref = previewPrice?.url ? ` href="${escapeHtml(previewPrice.url)}" target="_blank" rel="noopener noreferrer"` : "";
   const pricePill = previewPrice
-    ? `<a class="summary-pill price-pill"${priceHref} title="${escapeHtml(priceTitle(previewPrice))}">${formatMoney(previewPrice.amount, previewPrice.currency)}</a>`
+    ? `<a class="summary-pill price-pill${priceLoadingClass(previewPrice)}"${priceHref} title="${escapeHtml(priceTitle(previewPrice))}">${formatMoney(previewPrice.amount, previewPrice.currency)}</a>`
     : "";
 
   modalSummary.innerHTML = `
@@ -2348,6 +2741,7 @@ function renderSelectedPreview(asset) {
       <strong>${escapeHtml(collectionLabel)}</strong>
       <span class="summary-pill rarity-pill">${escapeHtml(rarityLabel)}</span>
       ${pricePill}
+      ${ligaBlockedPill}
       ${hasNoImage ? '<span class="summary-pill no-image-pill">promo ex5.5</span>' : ""}
     </div>
   `;
@@ -2401,7 +2795,7 @@ function renderVariantList(defaultAsset = null) {
   const options = variants.length ? [...variants] : [{ name: card.name, set: "base", number: card.number, file: "" }];
   // Mais barato → mais caro (preço exibido, já convertido p/ R$ quando há
   // câmbio). Sem preço conhecido vai para o fim, em ordem original.
-  options.sort((a, b) => variantSortPrice(a) - variantSortPrice(b));
+  options.sort((a, b) => variantSortPrice(a, card.name) - variantSortPrice(b, card.name));
   currentVariantOptions = options;
 
   const targetIndex = defaultAsset
@@ -2427,12 +2821,15 @@ function renderVariantList(defaultAsset = null) {
   // Botões de raridade (seleção única) — persistem na carta ao confirmar.
   const finishHost = document.getElementById("finishFieldHost");
   if (finishHost) {
-    finishHost.innerHTML = createRarityButtonsMarkup(getCurrentFinish());
-    finishHost.querySelectorAll(".rarity-btn").forEach((button) => {
+    finishHost.innerHTML = createRarityButtonsMarkup(getCurrentFinish()) + createQualityButtonsMarkup();
+    finishHost.querySelectorAll(".quality-btn").forEach((button) => {
+      button.addEventListener("click", () => setCardQuality(button.dataset.quality));
+    });
+    finishHost.querySelectorAll(".rarity-btn[data-finish]").forEach((button) => {
       button.addEventListener("click", () => {
         pendingFinish = button.dataset.finish;
         rarityPinned = true;
-        finishHost.querySelectorAll(".rarity-btn").forEach((item) => {
+        finishHost.querySelectorAll(".rarity-btn[data-finish]").forEach((item) => {
           const active = item === button;
           item.classList.toggle("selected", active);
           item.setAttribute("aria-checked", String(active));
@@ -2448,11 +2845,11 @@ function renderVariantList(defaultAsset = null) {
     button.type = "button";
     button.className = `variant-option ${selectedAsset && selectedAsset.file === asset.file ? "selected" : ""}`;
     const variantText = formatVariantLabel(asset);
-    const price = cardPriceFor(asset.file || "", asset.finish);
+    const price = displayPriceFor(asset.file || "", asset.finish, card.name);
     // <a> dentro de <button> é HTML inválido — o preço da linha é span com
     // listener próprio que abre a loja sem deixar o clique selecionar a variante.
     const priceMarkup = price
-      ? `<span class="variant-price${price.url ? " variant-price-link" : ""}"${price.url ? ` data-store="${escapeHtml(price.url)}"` : ""} title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`
+      ? `<span class="variant-price${price.url ? " variant-price-link" : ""}${priceLoadingClass(price)}"${price.url ? ` data-store="${escapeHtml(price.url)}"` : ""} title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`
       : "";
 
     button.innerHTML = `
@@ -2468,14 +2865,15 @@ function renderVariantList(defaultAsset = null) {
       renderVariantList(asset);
     });
 
-    // Clicar no preço abre a loja em aba nova sem trocar a variante selecionada.
-    const priceEl = button.querySelector(".variant-price-link");
-    if (priceEl) {
+    // Clicar no preço abre a loja (ou a Liga) em aba nova sem trocar a
+    // variante selecionada.
+    button.querySelectorAll(".variant-price-link").forEach((priceEl) => {
       priceEl.addEventListener("click", (event) => {
+        if (!priceEl.dataset.store) return;
         event.stopPropagation();
         window.open(priceEl.dataset.store, "_blank", "noopener,noreferrer");
       });
-    }
+    });
 
     variantList.appendChild(button);
   });
@@ -2510,6 +2908,8 @@ function openModal(cardId, mode = "collect") {
     || "normal";
   rarityPinned = Boolean(card.collected && card.finish);
 
+  // Antes de renderizar: a carta aberta fura a fila da Liga
+  requestLigaPrices(card.name, { priority: true, retry: true });
   renderVariantList(defaultAsset);
 
   if (mode === "collect") {
@@ -2884,6 +3284,8 @@ if (searchToggleBtn) {
     if (stored === "pt" || stored === "en") locale = stored;
     const storedArt = localStorage.getItem(CARD_LANG_KEY);
     if (CARD_LOCALES.includes(storedArt)) cardLang = storedArt;
+    const storedQuality = localStorage.getItem(CARD_QUALITY_KEY);
+    if (CARD_QUALITIES.includes(storedQuality)) cardQuality = storedQuality;
     totalHidden = localStorage.getItem(TOTAL_HIDDEN_KEY) === "1";
   } catch (error) {
     /* storage indisponível — segue no padrão EN */
@@ -2905,5 +3307,6 @@ if (searchToggleBtn) {
   loadCardAssets();
   readFxCache();
   loadPriceData();
+  loadLigaSnapshot();
   refreshFx();
 })();

@@ -1918,3 +1918,33 @@ button.total-value[aria-pressed="true"] {
   border-color: var(--emerald-600);
   box-shadow: 0 0 0 3px rgba(42, 185, 119, 0.18);
 }
+
+/* ---- Preço da Liga Pokemon (via extensão Emerald TCG Finder) ---------------
+   O preço exibido vem da Liga; enquanto a busca não volta, o valor do
+   TCGplayer fica pulsando. O pill "Liga ⚠" do preview só aparece quando a
+   Liga pede a verificação do Cloudflare. */
+.summary-pill.liga-pill {
+  border: 1px solid rgba(217, 87, 87, 0.55);
+  background: rgba(217, 87, 87, 0.16);
+  color: var(--danger);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card-price.is-loading,
+.price-pill.is-loading,
+.variant-price.is-loading {
+  animation: liga-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes liga-pulse {
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-price.is-loading,
+  .price-pill.is-loading,
+  .variant-price.is-loading {
+    animation: none;
+  }
+}

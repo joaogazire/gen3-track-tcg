@@ -16,6 +16,32 @@ E abra `http://localhost:8765/src/`.
 > Abrir o `index.html` diretamente via `file://` não funciona: o app busca a base de
 > dados `assets/data/catalog.min.json` via `fetch`, que exige HTTP.
 
+## Atualizar os preços da Liga
+
+```bash
+pip install playwright          # uma vez (usa o Google Chrome instalado)
+python3 scripts/fetch_liga_prices.py
+git add assets/data/liga-prices.min.json && git commit -m "Update Liga prices" && git push
+```
+
+O script abre a Liga num Chrome headless (passa pelo desafio do Cloudflare como um
+navegador normal) em duas etapas, ~1 página a cada 2 s (a Liga bloqueia com erro 1015 se
+for mais rápido):
+
+1. **Busca por Pokémon** (202 buscas, clicando em "Exibir mais" até o fim, ~15 min):
+   casa as impressões do catálogo e dá uma faixa geral, que **mistura** Normal/Foil/Reverse
+2. **Página de cada impressão** e da versão japonesa dela (~6.500, ~6 h na primeira vez):
+   o preço por variante (`cards_editions`) e os **anúncios** (`cards_stock`: idioma,
+   qualidade, variante, preço). A Liga manda em texto só parte dos preços; o resto são
+   dígitos recortados de uma imagem, lidos pelo OCR da extensão (`scripts/liga_ocr/`,
+   cópia de `gen3-extension/ocr`) rodando no Chrome, com a mesma conferência (os preços
+   têm que subir na ordem que a Liga indica, senão a leitura da página é descartada)
+
+Interrompido, continua de onde parou (cache em `scripts/.liga_cache.json`). Buscas com
+menos de 20 h e páginas de carta com menos de 72 h não são refeitas (`--max-age`,
+`--card-max-age`; `0` refaz tudo). `--only Treecko Mudkip` roda só alguns;
+`--skip-cards` só a 1ª etapa.
+
 ## Arquitetura
 
 ```
@@ -61,10 +87,29 @@ gen3-track-tcg/
 - Grade responsiva (5 → 4 → 3 colunas) no estilo da galeria oficial do TCG
 - Modal de seleção de variante: pré-visualização grande, navegação por setas/swipe e lista
   de todas as versões (coleção, acabamento, número)
-- **Preços** — badge no canto da carta coletada, pill no preview e preço em cada variante
-  do seletor; fonte TCGplayer (US$)/Cardmarket (€) via TCGdex, convertidos para R$ com o
-  câmbio do dia (AwesomeAPI, cache de 12h no navegador); sem câmbio, exibe a moeda original.
-  Clicar em qualquer preço abre a página da carta na loja (TCGplayer/Cardmarket) em nova aba
+- **Preços** — badge no canto da carta coletada, pill no preview, preço em cada variante
+  do seletor (que ordena da mais barata à mais cara) e soma da coleção. A fonte é a
+  **Liga Pokemon**, lida de `assets/data/liga-prices.min.json` — sem extensão nem
+  backend (o site estático não alcança a Liga: Cloudflare com desafio em JS + sem CORS;
+  o arquivo é gerado por `scripts/fetch_liga_prices.py`, ver abaixo). O preço é o
+  **menor anúncio** na Liga para:
+  - a **variante** da raridade escolhida (Normal / Holo = Foil / Reverse Foil);
+  - o **idioma** da bandeira do modal (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN) — em japonês, os anúncios
+    vêm da carta japonesa correspondente na Liga (ex.: Ralts SV1 211/198 ↔ SV1S 083/078,
+    ligadas pela arte JP de `art.min.json`);
+  - a **qualidade** escolhida no modal (M / NM / SP / MP / HP / D, padrão NM), valendo
+    essa qualidade ou melhor. Idioma e qualidade valem para o site todo (grade e soma
+    também) e ficam salvos no navegador.
+
+  Sem anúncio nesse idioma/qualidade, mostra o menor de qualquer idioma/estado (o
+  tooltip avisa). A impressão é casada pelo número **e** total da coleção; números com
+  prefixo (`XY66`, `SWSH029`, `TG20`) casam pelo número quando ele é único. Tooltip com
+  o detalhe e a data da coleta; clique abre a carta na Liga.
+  - **Extensão (opcional):** com a Emerald TCG Finder instalada, ela busca na Liga ao vivo
+    e o valor fresco substitui o do arquivo (tooltip "ao vivo")
+  - **Fallback:** impressão sem preço na Liga usa o TCGplayer (US$)/Cardmarket (€) via
+    TCGdex, convertido para R$ com o câmbio do dia (AwesomeAPI, cache de 12h); o tooltip
+    diz a fonte
 - **Modo planejamento** — botão de lápis no header (à esquerda do dropdown "Todas"):
   marque/solte cartas à vontade sem salvar (nada toca o `localStorage`, a porcentagem
   continua mostrando
