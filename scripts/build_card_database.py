@@ -136,6 +136,24 @@ def fetch_card_detail_ja(card_id):
     return fetch_with_retry(f"{API_BASE_JA}/cards/{quote(card_id, safe='')}")
 
 
+def set_total_from_payload(payload):
+    """Total impresso da coleção (o "106" de "57/106") — cardCount.official
+    da TCGdex. A extensão usa pra casar a impressão da loja ("#057/106") com
+    a do Tracker: só o número não basta (1 em 5 impressões repete o número
+    de outra coleção do mesmo Pokémon)."""
+    count = payload.get("cardCount") if isinstance(payload, dict) else None
+    official = count.get("official") if isinstance(count, dict) else None
+    return official if isinstance(official, int) and official > 0 else None
+
+
+def fetch_set_total(set_id):
+    for base in (API_BASE, API_BASE_JA):
+        payload = fetch_with_retry(f"{base}/sets/{quote(set_id, safe='')}")
+        if isinstance(payload, dict):
+            return set_total_from_payload(payload)
+    return None
+
+
 def build_sets_dictionary(cache, set_ids):
     """Nome/release/série (EN) + nome PT por set id, via /sets/{id} (com cache).
 
@@ -148,6 +166,10 @@ def build_sets_dictionary(cache, set_ids):
     for set_id in sorted(set_ids):
         cached = cache["sets"].get(set_id)
         if isinstance(cached, dict) and cached.get("pt_checked"):
+            # Sets em cache de antes do `total` existir: busca só isso, uma vez
+            if "total" not in cached:
+                cached["total"] = fetch_set_total(set_id)
+                time.sleep(0.2)
             sets_out[set_id] = cached
             continue
         payload = fetch_with_retry(f"{API_BASE}/sets/{quote(set_id, safe='')}")
@@ -163,9 +185,10 @@ def build_sets_dictionary(cache, set_ids):
                 "serie": (payload.get("serie") or {}).get("id")
                 if isinstance(payload.get("serie"), dict)
                 else payload.get("serie"),
+                "total": set_total_from_payload(payload),
             }
         else:
-            info = {"name": None, "release": None, "serie": None}
+            info = {"name": None, "release": None, "serie": None, "total": None}
         payload_pt = fetch_with_retry(f"{API_BASE_PT}/sets/{quote(set_id, safe='')}")
         info["name_pt"] = payload_pt.get("name") if isinstance(payload_pt, dict) else None
         info["pt_checked"] = True
