@@ -84,6 +84,10 @@ RESULT_WAIT_S = 30
 COOLDOWN_START_S = 60
 COOLDOWN_MAX_S = 600
 RESULTS_PER_PAGE = 40
+# --daily: buscas com mais de 12 h são refeitas (a do dia anterior) e o resto
+# do catálogo, sem mudança na busca, se renova a cada 7 dias
+DAILY_SEARCH_MAX_AGE_H = 12
+WEEKLY_CARD_MAX_AGE_H = 168
 MAX_EXTRA_PAGES = 50  # Pikachu passa de 16 páginas (cartas + produtos lacrados)
 
 PREFIXED_NUMBER_RE = re.compile(r"^[A-Za-z]+\d+$")
@@ -277,6 +281,11 @@ def match_prices(pokemon, prints, sets, entries):
         if matches:
             out[asset["file"]] = matches
     return out
+
+
+def search_signature(entry):
+    """Mín./méd./máx. de um resultado da busca: se mudar, os anúncios mudaram."""
+    return [entry.get("min"), entry.get("avg"), entry.get("max")]
 
 
 def triple(values):
@@ -574,10 +583,27 @@ def main():
     parser.add_argument("--stale-before", type=float, default=0,
                         help="refaz também o que foi coletado antes deste instante (epoch em segundos) —"
                              " uma coleta completa interrompida retoma de onde parou passando o início dela")
+    parser.add_argument("--daily", action="store_true",
+                        help="atualização do dia: refaz as buscas (~15 min) e só abre as páginas das"
+                             " cartas cujo mín./méd./máx. mudou na busca, as da --collection e as com"
+                             " mais de --card-max-age (padrão 168 h nesse modo = o resto, semanal)")
+    parser.add_argument("--collection",
+                        help="arquivo JSON com a lista de `file` da coleção: essas páginas são refeitas"
+                             " todo dia no --daily")
     parser.add_argument("--only", nargs="*", help="só estes Pokémon")
     parser.add_argument("--skip-cards", action="store_true", help="só a busca (sem preço por variante)")
     parser.add_argument("--headed", action="store_true", help="mostra a janela do Chrome")
     args = parser.parse_args()
+    if args.daily:
+        args.max_age = min(args.max_age, DAILY_SEARCH_MAX_AGE_H)
+        if args.card_max_age == 72:  # o padrão fora do --daily
+            args.card_max_age = WEEKLY_CARD_MAX_AGE_H
+    collection_files = set()
+    if args.collection:
+        try:
+            collection_files = set(json.loads(Path(args.collection).read_text(encoding="utf-8")))
+        except (OSError, json.JSONDecodeError, TypeError) as err:
+            print(f"  ! coleção ilegível ({err}) — segue sem ela", flush=True)
 
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     sets = catalog.get("sets") or {}
@@ -612,6 +638,17 @@ def main():
         at = (entry or {}).get("at", 0)
         return at < args.stale_before or now - at >= max_age_h * 3600
 
+    # Detector de mudança: o mín./méd./máx. que a busca mostrava para cada
+    # impressão quando a página dela foi coletada. Páginas coletadas antes
+    # disso ganham a assinatura da busca atual (a de antes de atualizar)
+    def signatures():
+        return {e["url"]: search_signature(e) for v in searches.values() for e in v.get("entries", [])}
+
+    previous = signatures()
+    for url, page_data in card_pages.items():
+        if "sig" not in page_data and url in previous:
+            page_data["sig"] = previous[url]
+
     todo = [n for n in names if stale(searches.get(n), args.max_age)]
     print(f"{len(names)} Pokémon, {len(todo)} para buscar na Liga")
 
@@ -641,17 +678,40 @@ def main():
                 matched, matched_ja = matched_for(names)
                 urls = sorted({e["url"] for group in (matched, matched_ja) for ms in group.values() for e in ms})
                 now = time.time()
-                # Páginas coletadas antes da leitura dos anúncios contam como vencidas
-                card_todo = [u for u in urls if "listings" not in card_pages.get(u, {})
-                             or stale(card_pages[u], args.card_max_age)]
+                current = signatures()
+                collection_urls = {e["url"] for group in (matched, matched_ja)
+                                   for file, ms in group.items() if file in collection_files for e in ms}
+                reasons = {"nova": 0, "vencida": 0, "coleção": 0, "mudou": 0}
+
+                def needs_page(url):
+                    page_data = card_pages.get(url, {})
+                    # Páginas coletadas antes da leitura dos anúncios contam como vencidas
+                    if "listings" not in page_data:
+                        reasons["nova"] += 1
+                        return True
+                    if stale(page_data, args.card_max_age):
+                        reasons["vencida"] += 1
+                        return True
+                    if not args.daily:
+                        return False
+                    if url in collection_urls and now - page_data.get("at", 0) >= DAILY_SEARCH_MAX_AGE_H * 3600:
+                        reasons["coleção"] += 1
+                        return True
+                    if url in current and page_data.get("sig") != current[url]:
+                        reasons["mudou"] += 1
+                        return True
+                    return False
+
+                card_todo = [u for u in urls if needs_page(u)]
+                detail = ", ".join(f"{n} {k}" for k, n in reasons.items() if n)
                 print(f"{len(urls)} páginas de carta, {len(card_todo)} para buscar na Liga"
-                      f" (~{round(len(card_todo) * (PAUSE_S + 1.5) / 3600, 1)} h)")
+                      f" (~{round(len(card_todo) * (PAUSE_S + 1.5) / 3600, 1)} h)" + (f" — {detail}" if detail else ""))
                 if card_todo:
                     page = light_page(browser)
                     pending = [0]
 
                     def store_card(url, result):
-                        card_pages[url] = {"at": time.time(), **result}
+                        card_pages[url] = {"at": time.time(), "sig": current.get(url), **result}
                         pending[0] += 1
                         if pending[0] >= 20:
                             save_cache(cache)

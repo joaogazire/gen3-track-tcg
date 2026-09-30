@@ -1025,15 +1025,25 @@ body.plan-mode .card.revealed .card-art::after {
 
 .modal {
   width: min(94vw, 760px);
-  max-height: min(86vh, 820px);
+  /* Até quase a tela toda: o teto antigo (820px) cortava os botões ✓ ↩ ✕
+     depois que entraram raridade + qualidade */
+  max-height: 96vh;
+  max-height: 96dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Tela baixa demais para tudo: rola o modal em vez de cortar a lista de
+     variantes (que não encolhe — ver .variant-list) */
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 22px 18px 18px;
   border-radius: 22px;
   border: 3px solid var(--gold-500);
   background: linear-gradient(180deg, rgba(18, 57, 46, 0.98), rgba(10, 29, 22, 0.96));
   box-shadow: 0 20px 40px rgba(0,0,0,0.28);
+}
+
+.modal:focus {
+  outline: none;
 }
 
 .modal h2 {
@@ -1054,11 +1064,107 @@ body.plan-mode .card.revealed .card-art::after {
   border: 1px solid rgba(255,255,255,0.08);
 }
 
+/* Raridade | arte | qualidade (as setas ficam na linha das bandeiras). No
+   celular as colunas descem para baixo da arte, lado a lado. */
 .preview-shell {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  grid-template-columns: 116px minmax(0, 1fr) 116px;
+  grid-template-areas: "left stage right";
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-shell .preview-stage { grid-area: stage; }
+.option-column-left { grid-area: left; }
+.option-column-right { grid-area: right; }
+
+.option-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: center;
+}
+
+.option-square {
+  appearance: none;
+  display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 18, 18, 0.6);
+  color: var(--slate-200);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.option-square:hover:not(:disabled) {
+  border-color: rgba(244, 201, 93, 0.7);
+  color: var(--slate-50);
+}
+
+.option-square:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 1px;
+}
+
+/* O quadradinho de marcar: vazio, ou preenchido com um ponto quando escolhido */
+.option-box {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(244, 201, 93, 0.65);
+  border-radius: 3px;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-square[aria-checked="true"] {
+  border-color: var(--emerald-400);
+  background: rgba(43, 185, 119, 0.16);
+  color: var(--emerald-400);
+}
+
+/* Preço daquele acabamento, à direita da letra */
+.option-price {
+  margin-left: auto;
+  font-size: 0.6rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--gold-500);
+  white-space: nowrap;
+}
+
+/* Acabamento que a impressão não tem: apagado e sem clique */
+.option-square:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.option-square[aria-checked="true"] .option-box {
+  border-color: var(--emerald-400);
+  background: var(--emerald-400);
+  box-shadow: inset 0 0 0 2px rgba(10, 29, 22, 0.95);
+}
+
+@media (max-width: 640px) {
+  .preview-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "stage stage"
+      "left right";
+  }
+
+  .option-column {
+    align-self: start;
+  }
 }
 
 .preview-nav {
@@ -1068,13 +1174,18 @@ body.plan-mode .card.revealed .card-art::after {
   border-radius: 50%;
   background: rgba(17, 24, 39, 0.7);
   color: var(--gold-500);
-  font-size: 2rem;
-  line-height: 1;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.preview-nav svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .preview-nav:hover {
@@ -1097,7 +1208,9 @@ body.plan-mode .card.revealed .card-art::after {
 
 .preview-image {
   display: block;
-  width: min(100%, 245px);
+  /* 22vh de largura ≈ 31vh de altura: em telas baixas a arte diminui e o
+     resto do modal (variantes, raridade, qualidade) cabe sem rolar */
+  width: min(100%, 245px, 22vh);
   aspect-ratio: 2.5 / 3.5;
   object-fit: cover;
   border-radius: 16px;
@@ -1167,65 +1280,6 @@ body.plan-mode .card.revealed .card-art::after {
   font-size: 0.56rem;
 }
 
-.summary-pill.rarity-pill {
-  background: rgba(43, 185, 119, 0.16);
-  color: var(--emerald-400);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.62rem;
-}
-
-.rarity-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: 4px;
-}
-
-.rarity-field .field-label {
-  margin: 12px 0 8px;
-}
-
-.rarity-group {
-  display: flex;
-  gap: 8px;
-}
-
-.rarity-btn {
-  flex: 1;
-  appearance: none;
-  padding: 9px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(12, 18, 18, 0.6);
-  color: var(--slate-200);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.rarity-btn:hover {
-  transform: translateY(-1px);
-  border-color: rgba(244, 201, 93, 0.7);
-  color: var(--slate-50);
-}
-
-.rarity-btn.selected {
-  background: rgba(43, 185, 119, 0.16);
-  border-color: var(--emerald-400);
-  color: var(--emerald-400);
-  box-shadow: inset 0 0 12px rgba(43, 185, 119, 0.18);
-}
-
-.rarity-btn:focus-visible {
-  outline: 2px solid var(--gold-500);
-  outline-offset: 1px;
-}
-
 .field-label {
   display: block;
   margin: 12px 0 8px;
@@ -1236,6 +1290,9 @@ body.plan-mode .card.revealed .card-art::after {
 }
 
 .variant-list {
+  /* Sem isso o flex do modal espremia a lista quando entrou a linha de
+     qualidade, e as cartas saíam cortadas */
+  flex-shrink: 0;
   display: flex;
   flex-direction: row;
   gap: 10px;
@@ -1312,6 +1369,25 @@ body.plan-mode .card.revealed .card-art::after {
   word-break: break-word;
 }
 
+/* N / H / R: acabamentos que a impressão tem */
+.finish-badges {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.finish-badge {
+  min-width: 16px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(43, 185, 119, 0.55);
+  color: var(--emerald-400);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: center;
+}
+
 @media (max-width: 540px) {
   .modal {
     width: min(96vw, 540px);
@@ -1325,6 +1401,19 @@ body.plan-mode .card.revealed .card-art::after {
   gap: 10px;
   flex-wrap: wrap;
   flex-shrink: 0;
+}
+
+/* Modal da carta: ↩ ✓ ✕ grudados no pé; em tela baixa (celular) o conteúdo
+   rola por trás e os botões continuam à vista. As margens negativas cobrem o
+   padding do .modal para o conteúdo não aparecer embaixo deles. */
+#cardModal .modal-actions {
+  position: sticky;
+  bottom: -18px;
+  z-index: 2;
+  margin: 16px -18px -18px;
+  padding: 12px 18px 18px;
+  background: rgb(10, 29, 22);
+  box-shadow: 0 -10px 16px -10px rgba(0, 0, 0, 0.55);
 }
 
 .btn {
@@ -1674,13 +1763,15 @@ button.total-value[aria-pressed="true"] {
 }
 
 /* ---- Seletor de idioma da arte (modal) ------------------------------------- */
+/* ‹ nas pontas, bandeiras no meio: as setas ficam acima das colunas de
+   raridade (esquerda) e qualidade (direita) */
 .modal-title-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 14px;
-  flex-wrap: wrap;
   margin-bottom: 10px;
+  padding: 0 12px;
 }
 
 .modal-title-row h2 {
@@ -1965,7 +2056,7 @@ button.total-value[aria-pressed="true"] {
   box-shadow: 0 0 0 3px rgba(42, 185, 119, 0.18);
 }
 
-/* ---- Preço da Liga Pokemon (via extensão Emerald TCG Finder) ---------------
+/* ---- Preço da Liga Pokemon (via extensão Hoenn Hunter) ---------------
    O preço exibido vem da Liga; enquanto a busca não volta, o valor do
    TCGplayer fica pulsando. O pill "Liga ⚠" do preview só aparece quando a
    Liga pede a verificação do Cloudflare. */
