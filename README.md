@@ -42,6 +42,12 @@ com o progresso na notificação e um botão **Parar**. Pode fechar o aviso ou r
 página: a coleta continua; interrompida, o próximo clique retoma de onde parou. No fim,
 os preços novos aparecem na tela. No GitHub Pages o botão só verifica o catálogo.
 
+**Publicar os preços sozinho (opcional):** com `.venv/bin/python scripts/serve.py --publish`,
+cada coleta que termina bem faz commit só do `assets/data/liga-prices.min.json` e push para
+o branch atual — o resto do que estiver alterado fica como está. O site do Pages só muda
+se o servidor estiver rodando no `main`. Sem mudança nos preços, com merge/rebase em
+andamento ou num branch sem upstream, não publica (o motivo aparece no terminal).
+
 **Pelo terminal:**
 
 ```bash
