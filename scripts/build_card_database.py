@@ -102,6 +102,13 @@ def finish_options_from_variants(variants):
     return options or ["normal"]
 
 
+def variants_code(variants):
+    """Acabamentos que a impressão tem, compacto para o catálogo: "n" normal,
+    "h" holo, "r" reverse (ex.: "nr"). Vazio quando a TCGdex não informa."""
+    variants = variants or {}
+    return "".join(code for key, code in (("normal", "n"), ("holo", "h"), ("reverse", "r")) if variants.get(key))
+
+
 def printed_pokemon_from_file(file_path):
     """Prefixo do filename (ex.: 'kadabra' em abra/kadabra_a1-116.png)."""
     stem = Path(file_path).stem
@@ -394,6 +401,9 @@ def main():
             "stage": (detail or {}).get("stage"),
             "illustrator": (detail or {}).get("illustrator"),
         })
+        vr = variants_code((detail or {}).get("variants"))
+        if vr:
+            catalog_cards[-1]["vr"] = vr
 
         if detail and detail.get("heavy"):
             details_out.setdefault(folder, {})[file_path] = {

@@ -184,6 +184,7 @@ gen3-track-tcg/
 | Script | Função |
 | --- | --- |
 | `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Emerald TCG Finder pra casar a impressão da loja com a do Tracker |
+| `backfill_variants.py` | Grava no catálogo já gerado os acabamentos de cada impressão (`vr`, ex. `"nr"`) a partir das variantes da TCGdex no cache, sem refazer o build nem fazer requisições — o build novo já grava `vr` |
 | `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
 | `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
 | `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
