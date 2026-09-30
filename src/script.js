@@ -671,7 +671,13 @@ function setPlanMode(enabled) {
 
 // ---- Compartilhamento de coleção via link (hash na URL) --------------------
 // O estado viaja na URL comprimido com LZString (vendor) — site 100% estático,
-// sem backend. Payload v2 é uma string compacta própria (não JSON): "2:<estampa
+// sem backend. Payload v3 (atual): "3:<entradas>", separadas por vírgula; cada
+// entrada é "<delta-do-índice-na-roster em base36>~<coleção>~<número>~<código
+// do acabamento>~<código do idioma>" (campos vazios do fim são omitidos). A
+// impressão vai por coleção + número, que não mudam quando o catálogo é
+// reconstruído — o v2 guardava a posição no catálogo e perdia as variantes a
+// cada build.
+// Payload v2 (legado) é uma string compacta própria (não JSON): "2:<estampa
 // em base36>:<entradas>", entradas separadas por vírgula. Cada entrada é
 // "<delta-do-índice-na-roster em base36>[.<índice-da-variante em base36>[.<código
 // do acabamento>]]" — delta porque as cartas coletadas são varridas em ordem
@@ -683,10 +689,12 @@ function setPlanMode(enabled) {
 const SHARE_HASH_PREFIX = "c=";
 // Novos códigos só no fim (índice = código dos links já compartilhados)
 const SHARE_FINISH_CODES = ["normal", "holo", "reverse", "reverse holo", "full art", "secret", "shiny", "foil"];
-const SHARE_FORMAT_VERSION = "2";
+const SHARE_FORMAT_VERSION = "3";
+// Idioma da carta no link (índice = código)
+const SHARE_LANG_CODES = ["en", "pt", "ja"];
 
 let sharedMode = false;          // renderizando coleção de um link
-let sharedMap = null;            // índice na roster -> { asset, finish }
+let sharedMap = null;            // índice na roster -> { asset | set+number, finish, lang }
 let sharedPayloadStamp = "";     // estampa de catálogo embutida no link
 let sharedIgnored = false;       // #c= presente mas ilegível → avisar
 let catalogStamp = "";           // "generatedAt" do catálogo (impressão do build)
@@ -732,7 +740,7 @@ function parseSharedStateV1(json) {
 
 function parseSharedStateV2(payload) {
   // "2:<estampa>:<entradas>" — ver comentário no topo da seção.
-  const body = payload.slice(SHARE_FORMAT_VERSION.length + 1);
+  const body = payload.slice(2);
   const sep = body.indexOf(":");
   const stampToken = sep >= 0 ? body.slice(0, sep) : "";
   const entriesRaw = sep >= 0 ? body.slice(sep + 1) : "";
@@ -758,6 +766,32 @@ function parseSharedStateV2(payload) {
   return { map, stamp: decodeShareStamp(stampToken) };
 }
 
+function parseSharedStateV3(payload) {
+  // "3:<entradas>" — ver comentário no topo da seção.
+  const map = new Map();
+  let prevRoster = 0;
+  payload.slice(2).split(",").forEach((token) => {
+    if (!token) return;
+    const [deltaStr, set = "", number = "", finishStr = "", langStr = ""] = token.split("~");
+    const delta = parseInt(deltaStr, 36);
+    if (!Number.isFinite(delta)) return;
+    const rosterIndex = prevRoster + delta;
+    prevRoster = rosterIndex;
+
+    const finishCode = parseInt(finishStr, 36);
+    const langCode = parseInt(langStr, 36);
+    map.set(rosterIndex, {
+      asset: -1,
+      set,
+      number,
+      finish: Number.isFinite(finishCode) ? (SHARE_FINISH_CODES[finishCode] || "") : "",
+      lang: Number.isFinite(langCode) ? (SHARE_LANG_CODES[langCode] || "") : ""
+    });
+  });
+  if (!map.size) return null;
+  return { map, stamp: "" };
+}
+
 function parseSharedState() {
   const raw = (window.location.hash || "").slice(1);
   if (!raw.startsWith(SHARE_HASH_PREFIX)) return false;
@@ -775,7 +809,8 @@ function parseSharedState() {
 
   const result = !payload ? null
     : payload.startsWith("{") ? parseSharedStateV1(payload)
-    : payload.startsWith(`${SHARE_FORMAT_VERSION}:`) ? parseSharedStateV2(payload)
+    : payload.startsWith("3:") ? parseSharedStateV3(payload)
+    : payload.startsWith("2:") ? parseSharedStateV2(payload)
     : null;
 
   if (!result) {
@@ -804,20 +839,21 @@ function buildShareEntries() {
   cards.forEach((card, rosterIndex) => {
     if (!card.collected) return;
 
-    let assetIndex = -1;
+    const asset = assetForFile(cardAssetFile(card));
     let finishCode = -1;
-    const file = cardAssetFile(card);
-    const asset = file && assetIndexByFile ? assetIndexByFile.get(file) : undefined;
-    if (asset !== undefined) {
-      assetIndex = asset;
-      const assetFinish = String(cardAssets[asset].finish || "normal").toLowerCase();
+    let langCode = -1;
+    if (asset) {
+      const assetFinish = String(asset.finish || "normal").toLowerCase();
       if (card.finish && card.finish !== assetFinish) {
         // "normal" é o código 0: escolher Normal numa impressão holo também
-        // viaja no link (links antigos nunca têm ".0", então seguem iguais)
+        // viaja no link
         finishCode = SHARE_FINISH_CODES.indexOf(card.finish);
       }
+      // Idioma só quando foge do padrão da impressão (EN, ou JA nas exclusivas)
+      const lang = cardLangOf(card);
+      if (lang !== (asset.lang || "en")) langCode = SHARE_LANG_CODES.indexOf(lang);
     }
-    entries.push({ rosterIndex, assetIndex, finishCode });
+    entries.push({ rosterIndex, asset, finishCode, langCode });
   });
   return entries;
 }
@@ -827,17 +863,18 @@ function createShareUrl() {
   if (!entries.length) return null;
 
   let prevRoster = 0;
-  const parts = entries.map(({ rosterIndex, assetIndex, finishCode }) => {
-    let token = num36(rosterIndex - prevRoster);
+  const parts = entries.map(({ rosterIndex, asset, finishCode, langCode }) => {
+    const fields = [num36(rosterIndex - prevRoster)];
     prevRoster = rosterIndex;
-    if (assetIndex >= 0) {
-      token += `.${num36(assetIndex)}`;
-      if (finishCode >= 0) token += `.${num36(finishCode)}`;
+    if (asset) {
+      fields.push(String(asset.set || ""), String(asset.number || ""),
+        finishCode >= 0 ? num36(finishCode) : "", langCode >= 0 ? num36(langCode) : "");
     }
-    return token;
+    while (fields.length > 1 && !fields[fields.length - 1]) fields.pop();
+    return fields.join("~");
   });
 
-  const payload = `${SHARE_FORMAT_VERSION}:${encodeShareStamp(catalogStamp)}:${parts.join(",")}`;
+  const payload = `${SHARE_FORMAT_VERSION}:${parts.join(",")}`;
   // compressToEncodedURIComponent usa alfabeto URL-safe; sem a lib, o payload
   // percent-encoded funciona (link maior, mesma semântica).
   const encoded = typeof LZString !== "undefined"
@@ -1094,10 +1131,10 @@ const LIGA_LANG_BY_LOCALE = { pt: "PT", ja: "JP", en: "EN" };
 // Menor anúncio no idioma escolhido, na qualidade escolhida ou melhor.
 // Tenta a variante do acabamento; sem anúncio dela nesse idioma, as outras
 // (a arte rara japonesa às vezes é anunciada como "normal").
-function ligaListingPrice(snap, wanted) {
+function ligaListingPrice(snap, wanted, loc = cardLang) {
   const offers = snap.l && typeof snap.l === "object" ? snap.l : null;
   if (!offers) return null;
-  const lang = LIGA_LANG_BY_LOCALE[cardLang] || "PT";
+  const lang = LIGA_LANG_BY_LOCALE[loc] || "PT";
   const accepted = CARD_QUALITIES.slice(0, CARD_QUALITIES.indexOf(cardQuality) + 1);
   for (const extras of [...new Set([wanted, "0", "2", "3"])]) {
     const byQuality = offers[extras]?.[lang];
@@ -1116,10 +1153,10 @@ function ligaListingPrice(snap, wanted) {
 // anúncio que sirva, cai na faixa da variante (qualquer idioma/estado) e, sem
 // ela, na da busca, que mistura as variantes. Toda substituição fica marcada
 // (`approx`: "≈" na tela) e explicada no tooltip (`ligaNote`).
-function ligaSnapshotPrice(snap, finish) {
+function ligaSnapshotPrice(snap, finish, loc = cardLang) {
   const wanted = LIGA_EXTRAS_BY_FINISH[String(finish || "").toLowerCase()] || "0";
 
-  const listing = ligaListingPrice(snap, wanted);
+  const listing = ligaListingPrice(snap, wanted, loc);
   if (listing) {
     const price = {
       amount: listing.value, currency: "BRL", source: "Liga Pokemon", url: snap.u,
@@ -1134,7 +1171,7 @@ function ligaSnapshotPrice(snap, finish) {
     price.ligaNote = parts.join(" · ");
     return price;
   }
-  const noOffer = snap.l ? t("ligaNoListing", { lang: LIGA_LANG_BY_LOCALE[cardLang] || "PT", quality: cardQuality }) : "";
+  const noOffer = snap.l ? t("ligaNoListing", { lang: LIGA_LANG_BY_LOCALE[loc] || "PT", quality: cardQuality }) : "";
   const variants = snap.p && typeof snap.p === "object" ? snap.p : null;
   let range = null;
   let note = "";
@@ -1156,9 +1193,10 @@ function ligaSnapshotPrice(snap, finish) {
   return price;
 }
 
-function displayPriceFor(file, finish, pokemonName) {
+// `loc`: idioma do preço — o da carta na grade/soma, a bandeira no modal
+function displayPriceFor(file, finish, pokemonName, loc = cardLang) {
   const snap = file ? ligaSnapshot.get(file) : null;
-  const snapPrice = snap ? ligaSnapshotPrice(snap, finish) : null;
+  const snapPrice = snap ? ligaSnapshotPrice(snap, finish, loc) : null;
   // O arquivo tem o preço por variante; a busca ao vivo da extensão mistura
   // as variantes — só entra quando o arquivo não tem a carta
   if (snapPrice) return snapPrice;
@@ -1344,6 +1382,31 @@ function localizedArtFor(asset, loc) {
   return artIndex.get(asset.file)?.[loc] || "";
 }
 
+// Idioma da carta coletada ("en" | "pt" | "ja"), salvo com ela como o
+// acabamento: define a arte da grade e o preço. Carta salva antes disso não
+// tem idioma e fica EN (a arte que a grade sempre mostrou); exclusiva JP é JA.
+function cardLangOf(card) {
+  if (CARD_LOCALES.includes(card?.lang)) return card.lang;
+  return assetForFile(cardAssetFile(card))?.lang || "en";
+}
+
+// Versão pequena da arte remota, para a grade: a TCGdex tem low.webp e a
+// Limitless tem o sufixo _SM (~20-60 KB em vez de 0,3-1,8 MB)
+function smallArtUrl(url) {
+  const value = String(url || "");
+  if (value.includes("assets.tcgdex.net/") && value.endsWith("/high.png")) return value.replace(/\/high\.png$/, "/low.webp");
+  if (value.includes("limitlesstcg") && /\.png$/i.test(value) && !/_(XS|SM|LG)\.png$/i.test(value)) return value.replace(/\.png$/i, "_SM.png");
+  return value;
+}
+
+// A grade só precisa do índice de artes quando alguma carta é PT/JA
+let gridArtIndexRequested = false;
+function requestGridArtIndex() {
+  if (gridArtIndexRequested) return;
+  gridArtIndexRequested = true;
+  loadArtIndex().then(() => renderCards());
+}
+
 function setCardLang(next) {
   if (!CARD_LOCALES.includes(next) || next === cardLang) return;
   cardLang = next;
@@ -1439,7 +1502,7 @@ function updateCollectionTotal() {
   let currency = "BRL";
   let any = false;
   counted.forEach((card) => {
-    const price = displayPriceFor(cardAssetFile(card), card.finish, card.name);
+    const price = displayPriceFor(cardAssetFile(card), card.finish, card.name, cardLangOf(card));
     if (!price) return;
     // Com câmbio tudo chega em BRL e soma junto; sem câmbio, moedas diferentes
     // não se somam — a carta fica fora do total até ter uma taxa.
@@ -1497,6 +1560,7 @@ function resetAllCards() {
     card.finish = "";
     card.collection = "";
     card.file = "";
+    card.lang = "";
     card.artPath = "";
   });
   if (planMode && planSnapshot) {
@@ -1507,6 +1571,7 @@ function resetAllCards() {
       card.finish = "";
       card.collection = "";
       card.file = "";
+      card.lang = "";
       card.artPath = "";
     });
     // saveCards() não grava no Plan: o reset do salvo vai direto para o
@@ -1538,11 +1603,17 @@ function applySharedAssets() {
 
   cards.forEach((card, rosterIndex) => {
     const state = sharedMap.get(rosterIndex);
-    if (!card.collected || !state || state.asset < 0) return;
+    if (!card.collected || !state) return;
 
-    const asset = cardAssets[state.asset];
+    // v3: coleção + número (prefere a variante do próprio Pokémon); v1/v2:
+    // posição no catálogo
+    const samePrint = (item) => String(item.set) === state.set && String(item.number) === state.number;
+    const asset = state.set
+      ? getCardVariants(card.name).find(samePrint) || cardAssets.find(samePrint)
+      : cardAssets[state.asset];
     if (!asset) return;
 
+    card.lang = state.lang || "";
     card.file = asset.file;
     card.variant = asset.collection || asset.set || "";
     card.collection = asset.collection || asset.set || "";
@@ -1670,6 +1741,7 @@ function presetSnapshot() {
     collected: Boolean(card.collected),
     file: card.file || "",
     finish: card.finish || "",
+    lang: card.lang || "",
     variant: card.variant || "",
     collection: card.collection || "",
     label: card.label || ""
@@ -1761,6 +1833,7 @@ function applyPreset(index) {
     card.collected = Boolean(saved?.collected);
     card.file = saved?.collected ? saved.file || "" : "";
     card.finish = saved?.collected ? saved.finish || "" : "";
+    card.lang = saved?.collected ? saved.lang || "" : "";
     card.variant = saved?.collected ? saved.variant || "" : "";
     card.label = saved?.collected ? saved.label || "" : "";
     card.artPath = saved?.collected && card.file ? getAssetPath(card.file) : "";
@@ -1972,6 +2045,7 @@ async function loadCardAssets() {
       card.collection = "";
       card.label = "";
       card.finish = "";
+      card.lang = "";
       droppedSelections = true;
     });
     if (droppedSelections) {
@@ -1999,9 +2073,10 @@ async function loadCardAssets() {
 
 // Miniatura WebP (assets/thumbs, gerada por scripts/build_thumbs.py) para a
 // grade e a lista de variantes; o PNG original fica só no preview do modal.
-// Arte remota (exclusivas JP) não tem miniatura e segue a URL do CDN.
+// Arte remota (exclusivas JP) usa a versão pequena do CDN.
 function getThumbPath(fileName) {
-  if (!fileName || remoteImageByFile.has(fileName)) return getAssetPath(fileName);
+  if (fileName && remoteImageByFile.has(fileName)) return smallArtUrl(remoteImageByFile.get(fileName));
+  if (!fileName) return getAssetPath(fileName);
   const normalized = String(fileName).trim().replace(/^\.?\//, "").replace(/^\/+/, "");
   if (!/\.png$/i.test(normalized)) return getAssetPath(fileName);
   return `../assets/thumbs/${normalized.replace(/\.png$/i, ".webp")}`;
@@ -2179,6 +2254,7 @@ function loadCards() {
       collection: "",
       label: "",
       file: "",
+      lang: "",
       artPath: ""
     }));
     return;
@@ -2211,6 +2287,7 @@ function loadCards() {
         collection: match?.collection || "",
         label: match?.label || "",
         file: match?.file || "",
+        lang: match?.lang || "",
         artPath: match?.artPath || ""
       };
     });
@@ -2897,9 +2974,18 @@ function paintFilterTrigger() {
   }
 }
 
+// Arte da carta na grade, no idioma dela: PT/JA vêm do índice de artes (versão
+// pequena do CDN); sem arte nesse idioma, a miniatura local
 function cardThumbPath(card) {
   const file = cardAssetFile(card);
-  return file && card.artPath === getAssetPath(file) ? getThumbPath(file) : card.artPath;
+  if (!file || card.artPath !== getAssetPath(file)) return card.artPath;
+  const lang = cardLangOf(card);
+  if (lang !== "en" && !assetForFile(file)?.lang) {
+    if (!artIndex) requestGridArtIndex();
+    const remote = artIndex?.get(file)?.[lang];
+    if (remote) return smallArtUrl(remote);
+  }
+  return getThumbPath(file);
 }
 
 function createCardMarkup(card) {
@@ -2912,7 +2998,7 @@ function createCardMarkup(card) {
     ? `<img class="card-photo" loading="lazy" decoding="async" src="${thumbPath}"${thumbPath !== card.artPath ? ` data-full="${card.artPath}"` : ""} alt="${escapeHtml(card.name)}" />`
     : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
-  const price = card.collected && card.artPath ? displayPriceFor(card.file, card.finish, card.name) : null;
+  const price = card.collected && card.artPath ? displayPriceFor(card.file, card.finish, card.name, cardLangOf(card)) : null;
   // Badge com link vira âncora para a loja (TCGplayer/Cardmarket); sem URL,
   // segue sendo span (pointer-events:none) para não engolir o clique da carta.
   const priceMarkup = price
@@ -3224,6 +3310,10 @@ function openModal(cardId, mode = "collect") {
     || "normal";
   rarityPinned = Boolean(card.collected && card.finish);
 
+  // Em edição a bandeira abre no idioma salvo da carta; carta nova começa na
+  // última bandeira usada
+  if (mode === "edit" && card.collected) cardLang = cardLangOf(card);
+
   // Antes de renderizar: a carta aberta fura a fila da Liga
   requestLigaPrices(card.name, { priority: true, retry: true });
   renderVariantList(defaultAsset);
@@ -3261,6 +3351,8 @@ function markCardAsCollected(cardId, assetInfo = null) {
   card.finish = finishValue;
   card.collection = assetInfo?.collection || assetInfo?.set || "";
   card.file = assetInfo?.file || "";
+  // Idioma da bandeira do modal (exclusiva JP é sempre JA)
+  card.lang = assetInfo?.lang || cardLang;
   card.label = assetInfo
     ? `${assetInfo.collection || assetInfo.set} · ${formatCardFinish(finishValue)} · #${assetInfo.number}`
     : t("officialCard");
@@ -3293,6 +3385,7 @@ function unmarkCard(cardId) {
   card.finish = "";
   card.collection = "";
   card.file = "";
+  card.lang = "";
   card.artPath = "";
   renderCards();
   saveCards();

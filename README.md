@@ -121,12 +121,13 @@ gen3-track-tcg/
   o arquivo é gerado por `scripts/fetch_liga_prices.py`, ver abaixo). O preço é o
   **menor anúncio** na Liga para:
   - a **variante** da raridade escolhida (Normal / Holo = Foil / Reverse Foil);
-  - o **idioma** da bandeira do modal (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN; padrão PT) — em japonês, os anúncios
+  - o **idioma da carta** (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN), escolhido na bandeira do modal e salvo com
+    ela — em japonês, os anúncios
     vêm da carta japonesa correspondente na Liga (ex.: Ralts SV1 211/198 ↔ SV1S 083/078,
     ligadas pela arte JP de `art.min.json`);
   - a **qualidade** escolhida no modal (M / NM / SP / MP / HP / D, padrão NM), valendo
-    essa qualidade ou melhor. Idioma e qualidade valem para o site todo (grade e soma
-    também) e ficam salvos no navegador.
+    essa qualidade ou melhor. A qualidade vale para o site todo (grade e soma também)
+    e fica salva no navegador.
 
   Sem anúncio nesse idioma/qualidade, mostra o menor de qualquer idioma/estado; sem a
   variante pedida, o de outra. Todo preço substituto aparece com **≈** na frente, e o
@@ -161,8 +162,11 @@ gen3-track-tcg/
   compartilhar): "Salvar novo" pede confirmação com nome e o preset aparece logo
   abaixo; clicar no nome carrega aquela coleção (em Plan, carrega como rascunho sem
   salvar); cada preset pode ser excluído pelo ×; salvos em `localStorage`
-- **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
-  trocam a pré-visualização para a mesma carta naquele idioma. A correspondência vem
+- **Idioma de cada carta** — bandeirinhas Brasil / Japão / EUA no topo do modal
+  trocam a pré-visualização para a mesma carta naquele idioma, e o idioma escolhido é
+  salvo com a carta: a grade mostra a arte dele (versão pequena do CDN) e o preço usa
+  os anúncios dele. Carta salva antes disso fica EN; carta nova começa na última
+  bandeira usada. A correspondência vem
   pronta do build (`assets/data/art.min.json`, carregado na primeira abertura do
   modal): PT pelo mesmo id na TCGdex ou pelo mesmo print no CDN da Limitless; JA pelo
   vínculo "Int. Prints" da Limitless (print japonês ↔ internacional, conferindo o
@@ -187,7 +191,9 @@ gen3-track-tcg/
 - **Busca mobile** — lupa ao lado do "CHECKLIST" abre o campo de busca só em telas pequenas
 - **Link de compartilhamento** — botão de ícone (link) gera uma URL com a coleção
   codificada no hash (LZString, sem servidor); quem abre vê as cartas marcadas
-  com variante e acabamento, em modo somente-leitura
+  com variante, acabamento e idioma, em modo somente-leitura. A impressão viaja por
+  coleção + número, então o link continua valendo depois de reconstruir o catálogo
+  (links antigos, que guardavam a posição no catálogo, ainda são lidos)
 - **Verificação de sincronização** contra a API [TCGdex](https://tcgdex.dev/) com barra de
   progresso e registro de data/hora da última atualização
 - Easter egg no Rayquaza do header 👀
