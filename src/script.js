@@ -1376,8 +1376,8 @@ function loadArtIndex() {
 // undefined = índice de idiomas ainda carregando.
 function localizedArtFor(asset, loc) {
   if (!asset?.file || isNoImageVariant(asset)) return "";
-  if (asset.lang) return loc === asset.lang ? getAssetPath(asset.file) : "";
-  if (loc === "en") return getAssetPath(asset.file);
+  if (asset.lang) return loc === asset.lang ? getArtPath(asset.file) : "";
+  if (loc === "en") return getArtPath(asset.file);
   if (!artIndex) return undefined;
   return artIndex.get(asset.file)?.[loc] || "";
 }
@@ -1462,7 +1462,7 @@ function paintCardLangPicker() {
 // mostra a local e troca quando ele chega (onRemote); sem versão no idioma,
 // fica na local (a arte do próprio asset — EN, ou JA nas exclusivas).
 function localizedPreviewSrc(asset, onRemote) {
-  const localSrc = getAssetPath(asset?.file || "");
+  const localSrc = getArtPath(asset?.file || "");
   const src = localizedArtFor(asset, cardLang);
   if (src === undefined) {
     const file = asset?.file;
@@ -2082,8 +2082,19 @@ function getThumbPath(fileName) {
   return `../assets/thumbs/${normalized.replace(/\.png$/i, ".webp")}`;
 }
 
+// Arte em tamanho cheio para exibir (preview do modal): o WebP de assets/art,
+// gerado junto com as miniaturas. O PNG de assets/cards é só a fonte no
+// repositório — o Pages não o publica (_config.yml). getAssetPath continua
+// sendo o caminho "canônico" gravado em card.artPath.
+function getArtPath(fileName) {
+  if (!fileName || remoteImageByFile.has(fileName)) return getAssetPath(fileName);
+  const normalized = String(fileName).trim().replace(/^\.?\//, "").replace(/^\/+/, "");
+  if (!/\.png$/i.test(normalized)) return getAssetPath(fileName);
+  return `../assets/art/${normalized.replace(/\.png$/i, ".webp")}`;
+}
+
 // Miniatura que falhar (ex.: carta nova antes de rodar o build_thumbs.py)
-// cai no PNG original, guardado em data-full.
+// cai na arte cheia, guardada em data-full.
 document.addEventListener("error", (event) => {
   const img = event.target;
   if (!(img instanceof HTMLImageElement) || !img.dataset.full) return;
@@ -2978,7 +2989,7 @@ function paintFilterTrigger() {
 // pequena do CDN); sem arte nesse idioma, a miniatura local
 function cardThumbPath(card) {
   const file = cardAssetFile(card);
-  if (!file || card.artPath !== getAssetPath(file)) return card.artPath;
+  if (!file) return card.artPath;
   const lang = cardLangOf(card);
   if (lang !== "en" && !assetForFile(file)?.lang) {
     if (!artIndex) requestGridArtIndex();
@@ -2994,8 +3005,9 @@ function createCardMarkup(card) {
   const draftClass = planMode && card.collected && !savedCollected.get(card.id) ? " plan-draft" : "";
   const shineClass = card.collected ? finishShineClass(card.finish) : "";
   const thumbPath = card.collected && card.artPath ? cardThumbPath(card) : "";
+  const fullPath = thumbPath ? getArtPath(cardAssetFile(card)) : "";
   const photoMarkup = thumbPath
-    ? `<img class="card-photo" loading="lazy" decoding="async" src="${thumbPath}"${thumbPath !== card.artPath ? ` data-full="${card.artPath}"` : ""} alt="${escapeHtml(card.name)}" />`
+    ? `<img class="card-photo" loading="lazy" decoding="async" src="${thumbPath}"${fullPath && thumbPath !== fullPath ? ` data-full="${fullPath}"` : ""} alt="${escapeHtml(card.name)}" />`
     : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
   const price = card.collected && card.artPath ? displayPriceFor(card.file, card.finish, card.name, cardLangOf(card)) : null;
@@ -3148,7 +3160,7 @@ function renderSelectedPreview(asset) {
   paintCardLangPicker();
 
   const hasNoImage = isNoImageVariant(asset);
-  const localSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getAssetPath(asset?.file || "");
+  const localSrc = hasNoImage ? "../assets/site/pokemon-tcg-card-back.png" : getArtPath(asset?.file || "");
   // Arte no idioma escolhido no modal (BR/JP/EUA); cai para a local quando não
   // há versão, a sonda falha, ou o remoto some (onerror abaixo).
   const imageSrc = hasNoImage ? localSrc : localizedPreviewSrc(asset, (remote) => {
@@ -3274,7 +3286,7 @@ function renderVariantList(defaultAsset = null) {
       : "";
 
     button.innerHTML = `
-      <img class="variant-thumb" loading="lazy" decoding="async" src="${getThumbPath(asset.file)}" data-full="${getAssetPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
+      <img class="variant-thumb" loading="lazy" decoding="async" src="${getThumbPath(asset.file)}" data-full="${getArtPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
       <span class="variant-label">${variantText}${noImage ? `<em class="variant-no-image">· ${escapeHtml(t("noImage"))}</em>` : ""}${finishBadgesMarkup(asset)}</span>
       ${priceMarkup}
     `;

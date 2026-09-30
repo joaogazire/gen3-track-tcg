@@ -207,7 +207,7 @@ gen3-track-tcg/
 | `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
 | `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
 | `build_language_art.py` | Roda depois do `build_card_database.py`: gera `art.min.json` (arte PT/JA de cada carta) e anexa ao catálogo as exclusivas JP |
-| `build_thumbs.py` | Gera as miniaturas WebP (360 px, ~35 KB) em `assets/thumbs/` a partir dos PNGs de `assets/cards/`; a grade e a lista de variantes usam a miniatura e o preview do modal usa o PNG. Só refaz o que mudou e remove órfãs (precisa de `pillow`) |
+| `build_thumbs.py` | Gera os WebP que o site publica a partir dos PNGs de `assets/cards/`: miniaturas de 360 px em `assets/thumbs/` (grade e lista de variantes) e a arte em tamanho cheio em `assets/art/` (preview do modal). Só refaz o que mudou e remove órfãs (precisa de `pillow`) |
 | `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Hoenn Hunter pra casar a impressão da loja com a do Tracker |
 | `backfill_variants.py` | Grava no catálogo já gerado os acabamentos de cada impressão (`vr`, ex. `"nr"`) a partir das variantes da TCGdex no cache, sem refazer o build nem fazer requisições — o build novo já grava `vr` |
 | `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
@@ -222,6 +222,12 @@ Ordem para atualizar tudo: `sync_missing_cards.py --download` → `build_local_c
 → `build_card_database.py` → `build_language_art.py` → `build_thumbs.py`.
 
 Scripts antigos, fora do fluxo, ficam em `scripts/legacy/` (não rode).
+
+**O que o Pages publica:** o `_config.yml` tira do site `assets/cards/` (os PNGs,
+~1,7 GB, que só servem de fonte para os scripts), `scripts/` e `docs/`. O site exibe
+os WebP de `assets/thumbs/` e `assets/art/` (~580 MB juntos); com os PNGs, o site
+publicado passava de 1,9 GB, acima do limite de 1 GB do Pages. Depois de baixar
+cartas novas, rode o `build_thumbs.py` antes de commitar.
 
 Dependências (só para os scripts): `pip install -r requirements.txt`
 
