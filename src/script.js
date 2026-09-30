@@ -2999,6 +2999,22 @@ function cardThumbPath(card) {
   return getThumbPath(file);
 }
 
+// Miniatura de uma variante no idioma da bandeira do modal (mesma regra da
+// grade); sem o índice ainda, a local e o modal redesenha quando ele chegar
+function variantThumbPath(asset) {
+  if (!asset?.file || asset.lang || cardLang === "en") return getThumbPath(asset?.file);
+  if (!artIndex) {
+    if (!artIndexPromise) {
+      loadArtIndex().then(() => {
+        if (currentCardId !== null && selectedAsset) renderVariantList(selectedAsset);
+      });
+    }
+    return getThumbPath(asset.file);
+  }
+  const remote = artIndex.get(asset.file)?.[cardLang];
+  return remote ? smallArtUrl(remote) : getThumbPath(asset.file);
+}
+
 function createCardMarkup(card) {
   const resolvedClass = card.collected ? "revealed" : "uncollected";
   // No planejamento: "rascunho" = marcado agora mas ainda não salvo.
@@ -3286,7 +3302,7 @@ function renderVariantList(defaultAsset = null) {
       : "";
 
     button.innerHTML = `
-      <img class="variant-thumb" loading="lazy" decoding="async" src="${getThumbPath(asset.file)}" data-full="${getArtPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
+      <img class="variant-thumb" loading="lazy" decoding="async" src="${variantThumbPath(asset)}" data-full="${getArtPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
       <span class="variant-label">${variantText}${noImage ? `<em class="variant-no-image">· ${escapeHtml(t("noImage"))}</em>` : ""}${finishBadgesMarkup(asset)}</span>
       ${priceMarkup}
     `;
