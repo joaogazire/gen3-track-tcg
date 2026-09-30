@@ -26,7 +26,7 @@ https://joaogazire.github.io/gen3-track-tcg/.
 vez do `http.server`:
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install playwright   # uma vez (usa o Google Chrome instalado)
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt   # uma vez (usa o Google Chrome instalado)
 .venv/bin/python scripts/serve.py                            # http://localhost:8765/src/
 ```
 
@@ -203,24 +203,27 @@ gen3-track-tcg/
 
 | Script | Função |
 | --- | --- |
-| `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Hoenn Hunter pra casar a impressão da loja com a do Tracker |
-| `backfill_variants.py` | Grava no catálogo já gerado os acabamentos de cada impressão (`vr`, ex. `"nr"`) a partir das variantes da TCGdex no cache, sem refazer o build nem fazer requisições — o build novo já grava `vr` |
-| `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
-| `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
-| `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
-| `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |
 | `sync_missing_cards.py` | Lista (ou baixa com `--download`) cartas da TCGdex que faltam nas pastas, sem Pocket; artes ausentes na TCGdex caem nos CDNs da pokemontcg.io e da Limitless TCG |
+| `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
+| `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
 | `build_language_art.py` | Roda depois do `build_card_database.py`: gera `art.min.json` (arte PT/JA de cada carta) e anexa ao catálogo as exclusivas JP |
 | `build_thumbs.py` | Gera as miniaturas WebP (360 px, ~35 KB) em `assets/thumbs/` a partir dos PNGs de `assets/cards/`; a grade e a lista de variantes usam a miniatura e o preview do modal usa o PNG. Só refaz o que mudou e remove órfãs (precisa de `pillow`) |
+| `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Hoenn Hunter pra casar a impressão da loja com a do Tracker |
+| `backfill_variants.py` | Grava no catálogo já gerado os acabamentos de cada impressão (`vr`, ex. `"nr"`) a partir das variantes da TCGdex no cache, sem refazer o build nem fazer requisições — o build novo já grava `vr` |
+| `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
+| `fetch_liga_prices.py` | Coleta os preços da Liga Pokemon (menor anúncio por variante, idioma e qualidade) e grava `assets/data/liga-prices.min.json`; `--daily` refaz só o que mudou (ver "Atualizar os preços da Liga") |
+| `serve.py` | Servidor local do site (`http://localhost:8765/`) com a API que roda a coleta da Liga pelo botão de sincronizar e a atualização diária |
 | `limitless.py` | Módulo de leitura da Limitless TCG (sets EN/JP, cartas, prints internacionais), com cache em `scripts/.limitless_cache.json` |
+| `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
+| `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
+| `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |
 
 Ordem para atualizar tudo: `sync_missing_cards.py --download` → `build_local_card_index.py`
 → `build_card_database.py` → `build_language_art.py` → `build_thumbs.py`.
-| `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
-| `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
-| `normalize_card_catalog.py` | Normaliza metadados das entradas do catálogo |
 
-Dependência única: `pip install requests`
+Scripts antigos, fora do fluxo, ficam em `scripts/legacy/` (não rode).
+
+Dependências (só para os scripts): `pip install -r requirements.txt`
 
 ## Fonte das imagens
 
