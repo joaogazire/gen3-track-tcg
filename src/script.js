@@ -256,7 +256,7 @@ const I18N = {
     syncBase: "{n} cards in the base",
     syncChecking: "Checking {name}...",
     syncProcessing: "Processing {i} / {n}",
-    syncApiDown: "API unavailable",
+    syncApiErrors: "{n} Pokémon could not be checked (API unavailable).",
     syncDone: "Sync complete",
     syncOk: "Everything aligned with the database.",
     syncDiffs: "Differences: {extras} extras · {novas} new.",
@@ -376,7 +376,7 @@ const I18N = {
     syncBase: "{n} cartas na base",
     syncChecking: "Verificando {name}...",
     syncProcessing: "Processando {i} / {n}",
-    syncApiDown: "API indisponível",
+    syncApiErrors: "{n} Pokémon não puderam ser conferidos (API indisponível).",
     syncDone: "Sincronização concluída",
     syncOk: "Tudo alinhado com a database.",
     syncDiffs: "Divergências: {extras} extras · {novas} novas.",
@@ -784,8 +784,9 @@ function buildShareEntries() {
       assetIndex = asset;
       const assetFinish = String(cardAssets[asset].finish || "normal").toLowerCase();
       if (card.finish && card.finish !== assetFinish) {
-        const code = SHARE_FINISH_CODES.indexOf(card.finish);
-        if (code > 0) finishCode = code;
+        // "normal" é o código 0: escolher Normal numa impressão holo também
+        // viaja no link (links antigos nunca têm ".0", então seguem iguais)
+        finishCode = SHARE_FINISH_CODES.indexOf(card.finish);
       }
     }
     entries.push({ rosterIndex, assetIndex, finishCode });
@@ -803,7 +804,7 @@ function createShareUrl() {
     prevRoster = rosterIndex;
     if (assetIndex >= 0) {
       token += `.${num36(assetIndex)}`;
-      if (finishCode > 0) token += `.${num36(finishCode)}`;
+      if (finishCode >= 0) token += `.${num36(finishCode)}`;
     }
     return token;
   });
@@ -924,11 +925,10 @@ async function loadPriceData() {
 // A Liga Pokemon é a fonte do preço exibido (grade, total, modal, ordenação).
 // O site é estático e não consegue buscar na Liga (Cloudflare + CORS), então o
 // preço vem de liga-prices.min.json, gerado por scripts/fetch_liga_prices.py
-// (Chrome headless na máquina de quem mantém o site). Se o visitante tiver a
-// extensão Emerald TCG Finder, ela busca ao vivo (mesma busca por Pokémon,
-// ?view=cards/search) e o valor fresco substitui o do arquivo. Cada variante
-// é casada pelo número E total da coleção (só o número mistura coleções).
-// Sem preço na Liga para a impressão, vale o TCGplayer/Cardmarket.
+// (Chrome headless na máquina de quem mantém o site): o menor anúncio por
+// variante, idioma e qualidade. A extensão Emerald TCG Finder, se instalada,
+// busca ao vivo (?view=cards/search) só as cartas que faltam no arquivo — essa
+// busca mistura as variantes. Sem preço na Liga, vale o TCGplayer/Cardmarket.
 const LIGA_PRICES_URL = "../assets/data/liga-prices.min.json";
 let ligaSnapshot = new Map();      // file -> {u, s: [mín, méd, máx], p?: {"0"|"2"|"3": [mín, méd, máx]}}
 let ligaSnapshotDate = "";
@@ -1043,12 +1043,8 @@ function assetForFile(file) {
   return index === undefined ? null : cardAssets[index];
 }
 
-// Preço exibido no site: médio da Liga Pokemon (R$) quando a extensão achou a
-// impressão; senão o TCGplayer/Cardmarket (cardPriceFor), marcado com o
-// motivo (`ligaState`) para o tooltip e o "carregando". Pedir o preço já põe
-// o Pokémon na fila da Liga.
-// Valor exibido = menor preço da Liga para a variante (o que dá para pagar
-// agora); médio e máximo ficam no tooltip
+// Preço a partir de uma faixa da Liga (mín./méd./máx.): o valor exibido é o
+// menor (o que dá para pagar agora); médio e máximo ficam no tooltip
 function ligaDisplayPrice(liga, updated) {
   return { amount: liga.min || liga.avg, currency: "BRL", source: "Liga Pokemon", url: liga.url, updated, liga };
 }
@@ -1058,9 +1054,6 @@ function ligaDisplayPrice(liga, updated) {
 const LIGA_EXTRAS_BY_FINISH = { normal: "0", holo: "2", reverse: "3" };
 const LIGA_EXTRAS_LABEL = { "0": "Normal", "2": "Foil", "3": "Reverse Foil" };
 
-// Preço do arquivo para o acabamento: a variante pedida; sem ela, a normal
-// (ou a única que houver) — o tooltip avisa. Sem a página da carta coletada,
-// cai na faixa da busca, que mistura as variantes.
 // Idioma da Liga para a bandeira do modal
 const LIGA_LANG_BY_LOCALE = { pt: "PT", ja: "JP", en: "EN" };
 
@@ -1085,6 +1078,10 @@ function ligaListingPrice(snap, wanted) {
   return null;
 }
 
+// Preço do arquivo para o acabamento, idioma e qualidade escolhidos. Sem
+// anúncio que sirva, cai na faixa da variante (qualquer idioma/estado) e, sem
+// ela, na da busca, que mistura as variantes. Toda substituição fica marcada
+// (`approx`: "≈" na tela) e explicada no tooltip (`ligaNote`).
 function ligaSnapshotPrice(snap, finish) {
   const wanted = LIGA_EXTRAS_BY_FINISH[String(finish || "").toLowerCase()] || "0";
 
@@ -1096,6 +1093,7 @@ function ligaSnapshotPrice(snap, finish) {
     };
     const parts = [];
     if (listing.extras !== wanted) {
+      price.approx = true;
       parts.push(t("ligaOtherVariant", { wanted: LIGA_EXTRAS_LABEL[wanted] || wanted, used: LIGA_EXTRAS_LABEL[listing.extras] || listing.extras }));
     }
     if (snap.o === 0) parts.push(t("ligaIncomplete"));
@@ -1119,6 +1117,8 @@ function ligaSnapshotPrice(snap, finish) {
   if (!range) return null;
   const price = ligaDisplayPrice({ min: range[0], avg: range[1], max: range[2], url: snap.u }, ligaSnapshotDate);
   price.ligaNote = [noOffer, note].filter(Boolean).join(" · ");
+  // Sem anúncio no idioma/qualidade, outra variante ou faixa misturada
+  price.approx = Boolean(noOffer) || note !== (LIGA_EXTRAS_LABEL[wanted] || "");
   return price;
 }
 
@@ -1136,6 +1136,7 @@ function displayPriceFor(file, finish, pokemonName) {
     if (live?.status === "ok") {
       const price = ligaDisplayPrice(live, t("ligaLive"));
       price.ligaNote = t("ligaMixed");
+      price.approx = true;
       return price;
     }
   }
@@ -1158,6 +1159,12 @@ async function loadLigaSnapshot() {
   } catch (error) {
     /* sem o arquivo, vale o TCGplayer */
   }
+}
+
+// Texto do preço: "≈" quando não é exatamente a variante/idioma/qualidade
+// pedidos (o tooltip diz o que foi usado no lugar)
+function priceText(price) {
+  return `${price.approx ? "≈ " : ""}${formatMoney(price.amount, price.currency)}`;
 }
 
 function priceLoadingClass(price) {
@@ -1257,7 +1264,8 @@ async function refreshFx() {
 // Cartas exclusivas do Japão (asset.lang = "ja") só têm a arte japonesa.
 const ART_URL = "../assets/data/art.min.json";
 const CARD_LOCALES = ["en", "pt", "ja"];
-let cardLang = "en";
+// Padrão PT: o preço segue esta bandeira, e o mercado da Liga é brasileiro
+let cardLang = "pt";
 // Qualidade para o preço da Liga (escala da Liga, da melhor para a pior): o
 // preço é o menor anúncio nessa qualidade ou melhor. Vale para o site todo,
 // como o idioma.
@@ -1467,9 +1475,14 @@ function resetAllCards() {
       card.file = "";
       card.artPath = "";
     });
+    // saveCards() não grava no Plan: o reset do salvo vai direto para o
+    // storage, senão a tela zerava e a coleção antiga voltava ao recarregar
+    persistCards(planSnapshot);
+    savedCollected = new Map(planSnapshot.map((card) => [card.id, card.collected]));
+  } else {
+    saveCards();
+    refreshSavedSnapshot();
   }
-  saveCards();
-  refreshSavedSnapshot();
   if (currentCardId !== null) closeModal();
   closeResetModal();
   renderCards();
@@ -1646,6 +1659,7 @@ function renderPresetMenu() {
       <span>${escapeHtml(t("presetSaveNew"))}</span>
     </button>`;
   const items = presets.map((preset, index) => `
+    <div class="preset-row">
     <button type="button" role="menuitem" class="preset-option" data-preset="${index}">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -1654,33 +1668,24 @@ function renderPresetMenu() {
       </svg>
       <span>${escapeHtml(preset.name)}</span>
       <em>${preset.cards.filter((c) => c.collected).length} ${t("presetCardsSuffix")}</em>
-      <span class="preset-delete" role="button" tabindex="0" data-preset-del="${index}" aria-label="${escapeHtml(t("presetDelete"))}" title="${escapeHtml(t("presetDelete"))}">×</span>
-    </button>`).join("");
+    </button>
+    <button type="button" class="preset-delete" data-preset-del="${index}" aria-label="${escapeHtml(`${t("presetDelete")}: ${preset.name}`)}" title="${escapeHtml(t("presetDelete"))}">×</button>
+    </div>`).join("");
   presetMenuList.innerHTML = saveNew + (items || `<div class="preset-empty">${escapeHtml(t("presetEmpty"))}</div>`);
 
   const saveBtnEl = presetMenuList.querySelector(".preset-save-new");
   if (saveBtnEl) saveBtnEl.addEventListener("click", openPresetAskModal);
 
   presetMenuList.querySelectorAll(".preset-option[data-preset]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      if (event.target.closest(".preset-delete")) return;
-      applyPreset(Number(button.dataset.preset));
-    });
+    button.addEventListener("click", () => applyPreset(Number(button.dataset.preset)));
   });
   presetMenuList.querySelectorAll(".preset-delete").forEach((el) => {
-    const remove = (event) => {
+    el.addEventListener("click", (event) => {
       event.stopPropagation();
       const presetsNow = loadPresets();
       presetsNow.splice(Number(el.dataset.presetDel), 1);
       savePresets(presetsNow);
       renderPresetMenu();
-    };
-    el.addEventListener("click", remove);
-    el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        remove(event);
-      }
     });
   });
 }
@@ -1974,11 +1979,13 @@ function normalizeCardNumber(value) {
 }
 
 // As 4 promos ex5.5 (Pok\u00e9 Card Creator Pack) n\u00e3o t\u00eam imagem publicada em nenhuma fonte.
+// Chaves no formato normalizado (normalizePokemonKey: "ex5.5" vira "ex5-5"),
+// o mesmo de isNoImageVariant e da verificação de sincronização.
 const NO_IMAGE_VARIANTS = new Set([
-  "treecko|ex5.5|1",
-  "wurmple|ex5.5|2",
-  "torchic|ex5.5|3",
-  "mudkip|ex5.5|4"
+  "treecko|ex5-5|1",
+  "wurmple|ex5-5|2",
+  "torchic|ex5-5|3",
+  "mudkip|ex5-5|4"
 ]);
 
 function isNoImageVariant(asset) {
@@ -2066,11 +2073,17 @@ function pokemonHasFullArtVariant(cardName) {
 
 // Variantes do Pokémon restritas ao filtro ativo (mega/special/fullart);
 // com "all" ou sem nenhuma variante compatível, devolve a lista completa.
-function getFilteredCardVariants(cardName) {
+// `keepFile`: a variante salva da carta em edição entra mesmo fora do filtro —
+// senão o modal abria em outra e o ✓ gravava por cima da escolha do usuário.
+function getFilteredCardVariants(cardName, keepFile = "") {
   const variants = getCardVariants(cardName);
   if (activeFilter === "all") return variants;
   const filtered = variants.filter((asset) => assetMatchesFilter(asset, activeFilter));
-  return filtered.length ? filtered : variants;
+  if (!filtered.length) return variants;
+  const kept = keepFile && !filtered.some((asset) => asset.file === keepFile)
+    ? variants.find((asset) => asset.file === keepFile)
+    : null;
+  return kept ? [kept, ...filtered] : filtered;
 }
 
 function cardMatchesFilter(card) {
@@ -2100,7 +2113,12 @@ function loadCards() {
     return;
   }
 
-  const saved = localStorage.getItem(STORAGE_KEY);
+  let saved = null;
+  try {
+    saved = localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    saved = null;  // storage bloqueado: coleção só desta página
+  }
 
   if (!saved) {
     cards = hoennPokemon.map((card) => ({ ...card, collected: false, variant: "", label: "", artPath: "" }));
@@ -2136,8 +2154,18 @@ function saveCards() {
   // não pode ser sobrescrito por engano (visitar um link ≠ perder a coleção).
   // No modo planejamento o mesmo: marcações são rascunho, nada persiste.
   if (sharedMode || planMode) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+  persistCards(cards);
   refreshSavedSnapshot();
+}
+
+// Grava a coleção no navegador. Storage bloqueado (aba anônima restrita) ou
+// cheio não pode derrubar a marcação — a tela segue, só não persiste.
+function persistCards(list) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (error) {
+    console.warn("[Emerald TCG] Não foi possível salvar a coleção no navegador:", error);
+  }
 }
 
 function updateProgressBar() {
@@ -2328,19 +2356,25 @@ async function runCardSyncCheck() {
 
     const pokemonNames = hoennPokemon.map((pokemon) => pokemon.name);
     const issues = [];
+    const apiErrors = [];
 
     for (let index = 0; index < pokemonNames.length; index += 1) {
       const pokemonName = pokemonNames[index];
       const progress = Math.round(((index + 1) / pokemonNames.length) * 100);
       updateSyncNotification(progress, t("syncChecking", { name: pokemonName }), t("syncProcessing", { i: index + 1, n: pokemonNames.length }));
 
-      const response = await fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(pokemonName)}`);
-      if (!response.ok) {
-        issues.push({ pokemon: pokemonName, error: t("syncApiDown") });
+      // Falha de rede/API num Pokémon não derruba a verificação inteira
+      let remoteCards = null;
+      try {
+        const response = await fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(pokemonName)}`);
+        remoteCards = response.ok ? await response.json() : null;
+      } catch (error) {
+        remoteCards = null;
+      }
+      if (!remoteCards) {
+        apiErrors.push(pokemonName);
         continue;
       }
-
-      const remoteCards = await response.json();
       const remoteSet = new Set();
 
       (Array.isArray(remoteCards) ? remoteCards : []).forEach((card) => {
@@ -2362,9 +2396,11 @@ async function runCardSyncCheck() {
         return pokemon === normalizePokemonKey(pokemonName) && !remoteSet.has(key);
       });
 
+      // As 4 promos ex5.5 (Poké Card Creator Pack) não têm imagem publicada em
+      // nenhuma fonte — não são falha do catálogo local
       const missingRemote = [...remoteSet].filter((key) => {
         const [pokemon, ,] = key.split("|");
-        return pokemon === normalizePokemonKey(pokemonName) && !localMap.has(key);
+        return pokemon === normalizePokemonKey(pokemonName) && !localMap.has(key) && !NO_IMAGE_VARIANTS.has(key);
       });
 
       if (missingLocal.length || missingRemote.length) {
@@ -2382,16 +2418,7 @@ async function runCardSyncCheck() {
       }
     }
 
-    // As 4 promos ex5.5 (Poké Card Creator Pack) não têm imagem publicada em nenhuma
-    // fonte — não é falha do catálogo local, então ficam de fora da contagem de divergências.
-    const realIssues = [];
-
-    issues.forEach((issue) => {
-      if (issue.missingRemote > 0 && issue.missingLocal === 0) {
-        return;
-      }
-      realIssues.push(issue);
-    });
+    const realIssues = issues;
 
     const totalMissingLocal = realIssues.reduce((sum, issue) => sum + (issue.missingLocal || 0), 0);
     const totalMissingRemote = realIssues.reduce((sum, issue) => sum + (issue.missingRemote || 0), 0);
@@ -2406,12 +2433,15 @@ async function runCardSyncCheck() {
     });
     syncReportRows = reportDetails;
 
+    // Pokémon sem resposta da API não viram "0 divergências": o aviso diz
+    // quantos ficaram sem conferir (e a data só avança se todos foram)
+    const apiNote = apiErrors.length ? ` ${t("syncApiErrors", { n: apiErrors.length })}` : "";
+    if (apiErrors.length) console.warn("Sincronização: API sem resposta para", apiErrors);
+    if (!apiErrors.length) saveLastSync();
     if (!realIssues.length) {
-      saveLastSync();
-      updateSyncNotification(100, t("syncDone"), t("syncOk"));
+      updateSyncNotification(100, t("syncDone"), `${apiErrors.length ? "" : t("syncOk")}${apiNote}`.trim());
     } else {
-      saveLastSync();
-      updateSyncNotification(100, t("syncDone"), t("syncDiffs", { extras: totalMissingLocal, novas: totalMissingRemote }));
+      updateSyncNotification(100, t("syncDone"), `${t("syncDiffs", { extras: totalMissingLocal, novas: totalMissingRemote })}${apiNote}`);
       console.warn("Sincronização com divergências:", realIssues);
     }
     updateSyncDetailsLink();
@@ -2570,7 +2600,7 @@ function syncFinishPreview() {
   if (pricePill) {
     if (price) {
       pricePill.hidden = false;
-      pricePill.textContent = formatMoney(price.amount, price.currency);
+      pricePill.textContent = priceText(price);
       pricePill.title = priceTitle(price);
       pricePill.classList.toggle("is-loading", price.ligaState === "loading");
     } else {
@@ -2612,8 +2642,8 @@ function createCardMarkup(card) {
   // segue sendo span (pointer-events:none) para não engolir o clique da carta.
   const priceMarkup = price
     ? (price.url
-      ? `<a class="card-price card-price-link${priceLoadingClass(price)}" href="${escapeHtml(price.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</a>`
-      : `<span class="card-price${priceLoadingClass(price)}" title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`)
+      ? `<a class="card-price card-price-link${priceLoadingClass(price)}" href="${escapeHtml(price.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(priceTitle(price))}">${priceText(price)}</a>`
+      : `<span class="card-price${priceLoadingClass(price)}" title="${escapeHtml(priceTitle(price))}">${priceText(price)}</span>`)
     : "";
 
   return `
@@ -2724,7 +2754,7 @@ function renderSelectedPreview(asset) {
   // <a> sem href = não clicável (mesma aparência); com URL vira link da loja.
   const priceHref = previewPrice?.url ? ` href="${escapeHtml(previewPrice.url)}" target="_blank" rel="noopener noreferrer"` : "";
   const pricePill = previewPrice
-    ? `<a class="summary-pill price-pill${priceLoadingClass(previewPrice)}"${priceHref} title="${escapeHtml(priceTitle(previewPrice))}">${formatMoney(previewPrice.amount, previewPrice.currency)}</a>`
+    ? `<a class="summary-pill price-pill${priceLoadingClass(previewPrice)}"${priceHref} title="${escapeHtml(priceTitle(previewPrice))}">${priceText(previewPrice)}</a>`
     : "";
 
   modalSummary.innerHTML = `
@@ -2791,7 +2821,7 @@ function renderVariantList(defaultAsset = null) {
   const card = cards.find((item) => item.id === currentCardId);
   if (!card) return;
 
-  const variants = getFilteredCardVariants(card.name);
+  const variants = getFilteredCardVariants(card.name, card.collected ? card.file : "");
   const options = variants.length ? [...variants] : [{ name: card.name, set: "base", number: card.number, file: "" }];
   // Mais barato → mais caro (preço exibido, já convertido p/ R$ quando há
   // câmbio). Sem preço conhecido vai para o fim, em ordem original.
@@ -2849,12 +2879,12 @@ function renderVariantList(defaultAsset = null) {
     // <a> dentro de <button> é HTML inválido — o preço da linha é span com
     // listener próprio que abre a loja sem deixar o clique selecionar a variante.
     const priceMarkup = price
-      ? `<span class="variant-price${price.url ? " variant-price-link" : ""}${priceLoadingClass(price)}"${price.url ? ` data-store="${escapeHtml(price.url)}"` : ""} title="${escapeHtml(priceTitle(price))}">${formatMoney(price.amount, price.currency)}</span>`
+      ? `<span class="variant-price${price.url ? " variant-price-link" : ""}${priceLoadingClass(price)}"${price.url ? ` data-store="${escapeHtml(price.url)}"` : ""} title="${escapeHtml(priceTitle(price))}">${priceText(price)}</span>`
       : "";
 
     button.innerHTML = `
-      <img class="variant-thumb" loading="lazy" decoding="async" src="${getAssetPath(asset.file)}" alt="${escapeHtml(asset.name)}" />
-      <span class="variant-label">${variantText}${noImage ? '<em class="variant-no-image">· sem imagem</em>' : ""}</span>
+      <img class="variant-thumb" loading="lazy" decoding="async" src="${getAssetPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
+      <span class="variant-label">${variantText}${noImage ? `<em class="variant-no-image">· ${escapeHtml(t("noImage"))}</em>` : ""}</span>
       ${priceMarkup}
     `;
 
@@ -2893,7 +2923,7 @@ function openModal(cardId, mode = "collect") {
   currentCardId = cardId;
   modalTitle.textContent = mode === "collect" ? t("addCard") : t("editCard");
 
-  const variants = getFilteredCardVariants(card.name);
+  const variants = getFilteredCardVariants(card.name, mode === "edit" ? card.file : "");
   // Na edição, reabrir na variante que a carta mostra hoje (fallback: primeira).
   const savedAsset = mode === "edit" && card.file
     ? variants.find((asset) => asset.file === card.file)
@@ -2945,7 +2975,7 @@ function markCardAsCollected(cardId, assetInfo = null) {
   card.file = assetInfo?.file || "";
   card.label = assetInfo
     ? `${assetInfo.collection || assetInfo.set} · ${formatCardFinish(finishValue)} · #${assetInfo.number}`
-    : "Carta oficial";
+    : t("officialCard");
   card.artPath = assetInfo && assetInfo.file ? getAssetPath(assetInfo.file) : "";
 
   const cardElement = document.querySelector(`.card[data-id="${cardId}"]`);

@@ -11,7 +11,6 @@ Para cada entrada EX do catálogo:
 Mantém cache em scripts/.tcgdex_cache.json para permitir re-execuções baratas.
 """
 import json
-import sys
 import time
 from pathlib import Path
 

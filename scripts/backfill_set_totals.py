@@ -10,7 +10,7 @@ coleção sem total, com pausa entre elas.
 import json
 import time
 
-from build_card_database import CACHE_PATH, CATALOG_PATH, fetch_set_total, load_cache, save_cache
+from build_card_database import CATALOG_PATH, fetch_set_total, load_cache, save_cache
 
 
 def main():

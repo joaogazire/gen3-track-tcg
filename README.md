@@ -94,15 +94,16 @@ gen3-track-tcg/
   o arquivo é gerado por `scripts/fetch_liga_prices.py`, ver abaixo). O preço é o
   **menor anúncio** na Liga para:
   - a **variante** da raridade escolhida (Normal / Holo = Foil / Reverse Foil);
-  - o **idioma** da bandeira do modal (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN) — em japonês, os anúncios
+  - o **idioma** da bandeira do modal (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN; padrão PT) — em japonês, os anúncios
     vêm da carta japonesa correspondente na Liga (ex.: Ralts SV1 211/198 ↔ SV1S 083/078,
     ligadas pela arte JP de `art.min.json`);
   - a **qualidade** escolhida no modal (M / NM / SP / MP / HP / D, padrão NM), valendo
     essa qualidade ou melhor. Idioma e qualidade valem para o site todo (grade e soma
     também) e ficam salvos no navegador.
 
-  Sem anúncio nesse idioma/qualidade, mostra o menor de qualquer idioma/estado (o
-  tooltip avisa). A impressão é casada pelo número **e** total da coleção; números com
+  Sem anúncio nesse idioma/qualidade, mostra o menor de qualquer idioma/estado; sem a
+  variante pedida, o de outra. Todo preço substituto aparece com **≈** na frente, e o
+  tooltip diz o que foi usado. A impressão é casada pelo número **e** total da coleção; números com
   prefixo (`XY66`, `SWSH029`, `TG20`) casam pelo número quando ele é único. Tooltip com
   o detalhe e a data da coleta; clique abre a carta na Liga.
   - **Extensão (opcional):** com a Emerald TCG Finder instalada, ela busca na Liga ao vivo

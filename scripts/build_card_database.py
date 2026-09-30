@@ -14,7 +14,6 @@ Cache de API: scripts/.tcgdex_cache.json (idempotente; re-execuções não re-hi
 """
 import json
 import re
-import sys
 import time
 from pathlib import Path
 from urllib.parse import quote

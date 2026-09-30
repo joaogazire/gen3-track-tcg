@@ -1853,7 +1853,7 @@ button.total-value[aria-pressed="true"] {
   color: var(--gold-500);
 }
 
-.preset-option span:not(.preset-delete) {
+.preset-option span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1868,8 +1868,37 @@ button.total-value[aria-pressed="true"] {
   white-space: nowrap;
 }
 
+/* Linha do preset: o botão que carrega e o "×" que apaga são irmãos (um
+   botão dentro do outro é HTML inválido e confunde leitor de tela). */
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.preset-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preset-row .preset-option {
+  flex: 1;
+  min-width: 0;
+}
+
+.preset-row .preset-option:hover {
+  background: transparent;
+}
+
 .preset-delete {
   flex: 0 0 auto;
+  margin-right: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
