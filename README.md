@@ -28,6 +28,12 @@ python3 -m venv .venv && .venv/bin/pip install playwright   # uma vez (usa o Goo
 .venv/bin/python scripts/serve.py                            # http://localhost:8765/src/
 ```
 
+**Todo dia, sozinho:** a primeira vez que o site abre no dia (em localhost), o servidor
+roda a atualização diária (`fetch_liga_prices.py --daily`): refaz as 202 buscas (~15 min)
+e só abre de novo as páginas das cartas cujo mín./méd./máx. mudou na busca desde a
+última coleta, mais as cartas da sua coleção (todo dia); o resto do catálogo se renova
+a cada 7 dias. Num teste, ~17% das páginas do Ralts mudaram em 8 h — algo como 1 h por dia.
+
 Em localhost, o botão faz a verificação do catálogo e em seguida busca **todas as
 cartas de novo** na Liga (`scripts/serve.py` roda `fetch_liga_prices.py` na máquina),
 com o progresso na notificação e um botão **Parar**. Pode fechar o aviso ou recarregar a
@@ -125,11 +131,17 @@ gen3-track-tcg/
   tooltip diz o que foi usado. A impressão é casada pelo número **e** total da coleção; números com
   prefixo (`XY66`, `SWSH029`, `TG20`) casam pelo número quando ele é único. Tooltip com
   o detalhe e a data da coleta; clique abre a carta na Liga.
-  - **Extensão (opcional):** com a Emerald TCG Finder instalada, ela busca na Liga ao vivo
+  - **Extensão (opcional):** com a Hoenn Hunter instalada, ela busca na Liga ao vivo
     e o valor fresco substitui o do arquivo (tooltip "ao vivo")
   - **Fallback:** impressão sem preço na Liga usa o TCGplayer (US$)/Cardmarket (€) via
     TCGdex, convertido para R$ com o câmbio do dia (AwesomeAPI, cache de 12h); o tooltip
     diz a fonte
+- **Acabamento no modal** — botões **N / F / R / H** (Normal, Foil, Reverse, Holo), cada um
+  com o preço daquele acabamento; os que a impressão não tem ficam apagados. A lista vem
+  das variantes da TCGdex (`vr` no catálogo) somadas às variantes com preço na Liga e no
+  TCGplayer (a TCGdex às vezes omite o reverse). A lista de variantes mostra os mesmos
+  selos (N / H / R) em cada impressão. Atalhos com o modal aberto: **N/F/R/H** escolhem
+  o acabamento, **Enter** salva, **← →** trocam de variante
 - **Modo planejamento** — botão de lápis no header (à esquerda do dropdown "Todas"):
   marque/solte cartas à vontade sem salvar (nada toca o `localStorage`, a porcentagem
   continua mostrando
@@ -183,7 +195,7 @@ gen3-track-tcg/
 
 | Script | Função |
 | --- | --- |
-| `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Emerald TCG Finder pra casar a impressão da loja com a do Tracker |
+| `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Hoenn Hunter pra casar a impressão da loja com a do Tracker |
 | `backfill_variants.py` | Grava no catálogo já gerado os acabamentos de cada impressão (`vr`, ex. `"nr"`) a partir das variantes da TCGdex no cache, sem refazer o build nem fazer requisições — o build novo já grava `vr` |
 | `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
 | `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |

@@ -17,3 +17,4 @@ Thumbs.db
 .limitless_cache.json
 .liga_cache.json
 .liga_sync_state.json
+.liga_sync_collection.json

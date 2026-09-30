@@ -258,6 +258,8 @@ const I18N = {
     syncProcessing: "Processing {i} / {n}",
     syncApiErrors: "{n} Pokémon could not be checked (API unavailable).",
     ligaSyncStarting: "Starting the Liga Pokemon price collection…",
+    ligaDailyStarting: "Daily Liga update: checking which prices changed…",
+    ligaDailyDone: "Today's Liga prices updated",
     ligaSyncResumed: "Resuming the Liga Pokemon collection where it stopped…",
     ligaSyncSearch: "Liga: searching Pokémon {i}/{n}",
     ligaSyncCards: "Liga: card pages {i}/{n}",
@@ -314,6 +316,7 @@ const I18N = {
     ligaNoListing: "no {lang} listing in {quality} or better — lowest of any language/condition",
     ligaIncomplete: "some hidden Liga prices could not be read",
     qualityField: "Card condition (price)",
+    finishUnavailable: "{finish} — this print doesn't come in this finish",
     qualityM: "Mint (M)",
     qualityNM: "Near Mint (NM)",
     qualitySP: "Slightly Played (SP)",
@@ -388,6 +391,8 @@ const I18N = {
     syncProcessing: "Processando {i} / {n}",
     syncApiErrors: "{n} Pokémon não puderam ser conferidos (API indisponível).",
     ligaSyncStarting: "Iniciando a coleta de preços na Liga Pokemon…",
+    ligaDailyStarting: "Atualização diária da Liga: vendo quais preços mudaram…",
+    ligaDailyDone: "Preços da Liga do dia atualizados",
     ligaSyncResumed: "Retomando a coleta da Liga Pokemon de onde parou…",
     ligaSyncSearch: "Liga: buscando Pokémon {i}/{n}",
     ligaSyncCards: "Liga: páginas de carta {i}/{n}",
@@ -444,6 +449,7 @@ const I18N = {
     ligaNoListing: "sem anúncio {lang} {quality} ou melhor — menor de qualquer idioma/estado",
     ligaIncomplete: "alguns preços ocultos da Liga não foram lidos",
     qualityField: "Qualidade da carta (preço)",
+    finishUnavailable: "{finish} — essa impressão não tem esse acabamento",
     qualityM: "Nova (M)",
     qualityNM: "Praticamente Nova (NM)",
     qualitySP: "Usada Levemente (SP)",
@@ -675,7 +681,8 @@ function setPlanMode(enabled) {
 // (roster é código), mas sem variante. Links v1 (formato antigo, JSON completo)
 // continuam sendo lidos para não quebrar links já compartilhados.
 const SHARE_HASH_PREFIX = "c=";
-const SHARE_FINISH_CODES = ["normal", "holo", "reverse", "reverse holo", "full art", "secret", "shiny"];
+// Novos códigos só no fim (índice = código dos links já compartilhados)
+const SHARE_FINISH_CODES = ["normal", "holo", "reverse", "reverse holo", "full art", "secret", "shiny", "foil"];
 const SHARE_FORMAT_VERSION = "2";
 
 let sharedMode = false;          // renderizando coleção de um link
@@ -882,7 +889,7 @@ function cardPriceFor(file, finish) {
   const value = String(finish || "").toLowerCase();
   let amount = null;
   if (value === "reverse") amount = entry.p.r ?? entry.p.h ?? entry.p.n;
-  else if (value === "holo") amount = entry.p.h ?? entry.p.n;
+  else if (value === "holo" || value === "foil") amount = entry.p.h ?? entry.p.n;
   else amount = entry.p.n ?? entry.p.h ?? entry.p.r;
   if (amount == null) return null;
 
@@ -947,7 +954,7 @@ async function loadPriceData() {
 // O site é estático e não consegue buscar na Liga (Cloudflare + CORS), então o
 // preço vem de liga-prices.min.json, gerado por scripts/fetch_liga_prices.py
 // (Chrome headless na máquina de quem mantém o site): o menor anúncio por
-// variante, idioma e qualidade. A extensão Emerald TCG Finder, se instalada,
+// variante, idioma e qualidade. A extensão Hoenn Hunter, se instalada,
 // busca ao vivo (?view=cards/search) só as cartas que faltam no arquivo — essa
 // busca mistura as variantes. Sem preço na Liga, vale o TCGplayer/Cardmarket.
 const LIGA_PRICES_URL = "../assets/data/liga-prices.min.json";
@@ -1077,7 +1084,8 @@ function ligaDisplayPrice(liga, updated) {
 
 // Variante da Liga para o acabamento escolhido: "0" normal, "2" Foil,
 // "3" Reverse Foil (ids de extras da Liga)
-const LIGA_EXTRAS_BY_FINISH = { normal: "0", holo: "2", reverse: "3" };
+// Holo e Foil são o mesmo "Foil" na Liga
+const LIGA_EXTRAS_BY_FINISH = { normal: "0", foil: "2", holo: "2", reverse: "3" };
 const LIGA_EXTRAS_LABEL = { "0": "Normal", "2": "Foil", "3": "Reverse Foil" };
 
 // Idioma da Liga para a bandeira do modal
@@ -2533,7 +2541,10 @@ async function runCardSyncCheck() {
 // ---- Coleta de preços da Liga pelo botão de sincronizar ---------------------
 // Só com o site servido por scripts/serve.py (localhost): o servidor roda
 // scripts/fetch_liga_prices.py na máquina (o navegador não alcança a Liga) e
-// informa o progresso em /api/liga-sync. Uma coleta completa leva horas; ela
+// informa o progresso em /api/liga-sync. Ao abrir o site pela primeira vez
+// no dia, roda sozinha a atualização diária (refaz as buscas e só abre as
+// cartas cujo preço mudou + as da coleção; ~30-60 min). O botão faz a coleta
+// completa de todas as cartas. Uma coleta completa leva horas; ela
 // continua com o aviso fechado ou a página recarregada, e se for interrompida
 // o próximo clique retoma de onde parou. No GitHub Pages não há API: o botão
 // só faz a verificação do catálogo, como antes.
@@ -2578,14 +2589,16 @@ function paintLigaSync(state) {
     const minutes = !searching && state.total
       ? Math.max(1, Math.round(((state.total - state.done) * LIGA_SYNC_SECONDS_PER_PAGE) / 60))
       : null;
+    const daily = state.mode === "daily";
     const status = state.phase === "parando" ? t("ligaSyncStopping")
       : minutes ? t("ligaSyncEta", { min: minutes })
+      : daily ? t("ligaDailyStarting")
       : (state.resumed ? t("ligaSyncResumed") : t("ligaSyncStarting"));
     updateSyncNotification(progress, label, status);
     return;
   }
   if (state.exitCode === 0) {
-    updateSyncNotification(100, t("ligaSyncDone"), `${state.summary || ""} ${t("ligaSyncPublish")}`.trim());
+    updateSyncNotification(100, t(state.mode === "daily" ? "ligaDailyDone" : "ligaSyncDone"), `${state.summary || ""} ${t("ligaSyncPublish")}`.trim());
   } else if (state.exitCode != null) {
     updateSyncNotification(100, t("ligaSyncStopped"), state.lastLine || "");
   }
@@ -2606,18 +2619,30 @@ async function pollLigaSync() {
 
 // Inicia (ou retoma) a coleta completa; se já estiver rodando, só acompanha
 async function startLigaSync() {
-  const state = await ligaSyncRequest("", "POST", { full: true });
+  const state = await ligaSyncRequest("", "POST", { mode: "full" });
   if (!state) return false;
   if (syncCloseBtn) syncCloseBtn.hidden = false;
   pollLigaSync();
   return true;
 }
 
-// Página aberta (ou recarregada) no meio de uma coleta: volta a mostrar o
-// progresso
+// Ao abrir o site: uma coleta em andamento volta a aparecer; sem ela, se a
+// atualização do dia ainda não rodou, dispara (com a coleção salva, que é
+// refeita todo dia; num link compartilhado a coleção é de outra pessoa)
 async function resumeLigaSyncDisplay() {
   const state = await ligaSyncRequest();
-  if (state?.running) pollLigaSync();
+  if (!state) return;
+  if (state.running) {
+    pollLigaSync();
+    return;
+  }
+  if (!state.dailyDue || sharedMode) return;
+  const files = cards.filter((card) => card.collected).map(cardAssetFile).filter(Boolean);
+  const started = await ligaSyncRequest("", "POST", { mode: "daily", files });
+  if (started) {
+    if (syncCloseBtn) syncCloseBtn.hidden = false;
+    pollLigaSync();
+  }
 }
 
 if (syncStopBtn) {
@@ -2680,20 +2705,65 @@ function localizedCollectionName(asset) {
 
 function formatVariantLabel(asset) {
   const collectionLabel = localizedCollectionName(asset);
-  const finishLabel = formatCardFinish(asset?.finish || "normal");
   const numberLabel = asset?.number ? ` · #${asset.number}` : "";
 
-  return `${collectionLabel} · ${finishLabel}${numberLabel}`;
+  return `${collectionLabel}${numberLabel}`;
+}
+
+// Selos dos acabamentos que a impressão tem, na linha da lista de variantes.
+// Foil e Holo são a mesma variante nos dados, então aparece um "H" só.
+function finishBadgesMarkup(asset) {
+  const available = availableFinishes(asset);
+  if (!available) return "";
+  const badges = [["normal", "N"], ["holo", "H"], ["reverse", "R"]]
+    .filter(([value]) => available.has(value))
+    .map(([value, letter]) => `<span class="finish-badge" title="${escapeHtml(formatCardFinish(value))}">${letter}</span>`)
+    .join("");
+  return badges ? `<span class="finish-badges">${badges}</span>` : "";
 }
 
 // Opções de raridade dos botões do modal — seleção única. Os três valores
 // cobrem o que o catálogo imprime (normal/holo/reverse); acabamento de links
 // antigos (SHARE_FINISH_CODES) continua legível, só não é mais oferecido.
 const RARITY_OPTIONS = [
-  { value: "normal", label: "Normal" },
-  { value: "holo", label: "Holo" },
-  { value: "reverse", label: "Reverse" }
+  { value: "normal", label: "N", title: "Normal" },
+  { value: "foil", label: "F", title: "Foil" },
+  { value: "reverse", label: "R", title: "Reverse" },
+  { value: "holo", label: "H", title: "Holo" }
 ];
+
+// Acabamentos que a impressão tem: as variantes da TCGdex no catálogo (`vr`,
+// ex. "nr") somadas às dos preços — a TCGdex às vezes omite o reverse que a
+// Liga anuncia —, variantes da Liga ("0" normal, "2" foil/holo, "3" reverse)
+// e do TCGplayer (n/h/r), mais o acabamento do catálogo e o salvo na carta.
+// Sem nenhum dado, null = tudo liberado (não dá para saber).
+function availableFinishes(asset, savedFinish = "") {
+  const file = asset?.file || "";
+  const found = new Set();
+  const vr = String(asset?.vr || "");
+  if (vr.includes("n")) found.add("normal");
+  if (vr.includes("h")) { found.add("foil"); found.add("holo"); }
+  if (vr.includes("r")) found.add("reverse");
+  const snap = file ? ligaSnapshot.get(file) : null;
+  const ligaKeys = new Set([...Object.keys(snap?.p || {}), ...Object.keys(snap?.l || {})]);
+  const tcg = file ? priceIndex.get(file)?.p : null;
+  if (ligaKeys.has("0") || tcg?.n != null) found.add("normal");
+  if (ligaKeys.has("2") || tcg?.h != null) { found.add("foil"); found.add("holo"); }
+  if (ligaKeys.has("3") || tcg?.r != null) found.add("reverse");
+  if (!found.size) return null;
+  [asset?.finish, savedFinish].forEach((finish) => {
+    const choice = normalizeFinishChoice(finish);
+    if (choice) found.add(choice);
+  });
+  return found;
+}
+
+// Acabamento em edição, trocado pelo primeiro disponível quando a impressão
+// não tem o escolhido.
+function ensureAvailableFinish(available) {
+  if (!available || available.has(pendingFinish)) return;
+  pendingFinish = RARITY_OPTIONS.map((option) => option.value).find((value) => available.has(value)) || "normal";
+}
 
 // Raridade em edição no modal. `rarityPinned` marca escolha explícita do
 // usuário: trocar de variante não pisa nela; sem escolha, a variante manda.
@@ -2708,8 +2778,9 @@ function getCurrentFinish() {
 function normalizeFinishChoice(value) {
   const normalized = String(value || "").trim().toLowerCase();
   if (normalized === "holo") return "holo";
+  if (normalized === "foil") return "foil";
   if (normalized === "reverse") return "reverse";
-  if (normalized === "reverse holo" || normalized === "reverse foil" || normalized === "foil") return "holo";
+  if (normalized === "reverse holo" || normalized === "reverse foil") return "holo";
   if (normalized === "normal") return "normal";
   return "";
 }
@@ -2719,48 +2790,74 @@ function normalizeFinishChoice(value) {
 function finishShineClass(finish) {
   const value = String(finish || "").toLowerCase();
   if (value === "reverse") return "finish-reverse";
-  if (value === "holo" || value === "reverse holo" || value === "reverse foil") return "finish-holo";
+  if (value === "holo" || value === "foil" || value === "reverse holo" || value === "reverse foil") return "finish-holo";
   return "";
 }
 
-function createRarityButtonsMarkup(currentFinish) {
-  const buttons = RARITY_OPTIONS.map((option) => `
-    <button type="button" class="rarity-btn${option.value === currentFinish ? " selected" : ""}"
-      role="radio" aria-checked="${option.value === currentFinish}"
-      data-finish="${option.value}">${option.label}</button>
+// Coluna de opções ao lado da arte do preview: um quadradinho por opção
+// (seleção única). Raridade à esquerda, qualidade (preço) à direita.
+function optionColumnMarkup(side, ariaLabel, options) {
+  const buttons = options.map((option) => `
+    <button type="button" class="option-square" role="radio" aria-checked="${option.selected}"
+      ${option.attr}${option.title ? ` title="${escapeHtml(option.title)}"` : ""}${option.disabled ? " disabled" : ""}>
+      <span class="option-box" aria-hidden="true"></span>
+      <span class="option-text">${escapeHtml(option.label)}</span>
+      ${option.price ? `<span class="option-price">${escapeHtml(option.price)}</span>` : ""}
+    </button>
   `).join("");
-
-  const rarityFieldLabel = escapeHtml(t("rarityField"));
   return `
-    <div class="rarity-field">
-      <span class="field-label">${rarityFieldLabel}</span>
-      <div class="rarity-group" role="radiogroup" aria-label="${rarityFieldLabel}">${buttons}</div>
+    <div class="option-column option-column-${side}" role="radiogroup" aria-label="${escapeHtml(ariaLabel)}">
+      ${buttons}
     </div>
   `;
+}
+
+// Cada botão mostra o preço daquele acabamento (idioma e qualidade atuais),
+// para comparar sem clicar; "≈" quando o preço é de substituto.
+function createRarityButtonsMarkup(currentFinish, available, asset, pokemonName) {
+  return optionColumnMarkup("left", t("rarityField"), RARITY_OPTIONS.map((option) => {
+    const disabled = Boolean(available && !available.has(option.value));
+    const price = !disabled && asset?.file ? displayPriceFor(asset.file, option.value, pokemonName) : null;
+    return {
+      label: option.label,
+      price: price ? priceText(price) : "",
+      title: disabled ? t("finishUnavailable", { finish: option.title }) : (price ? `${option.title} · ${priceTitle(price)}` : option.title),
+      selected: option.value === currentFinish,
+      disabled,
+      attr: `data-finish="${option.value}"`
+    };
+  }));
 }
 
 function createQualityButtonsMarkup() {
-  const label = escapeHtml(t("qualityField"));
-  const buttons = CARD_QUALITIES.map((quality) => `
-    <button type="button" class="rarity-btn quality-btn${quality === cardQuality ? " selected" : ""}"
-      role="radio" aria-checked="${quality === cardQuality}" data-quality="${quality}"
-      title="${escapeHtml(t(`quality${quality}`))}">${quality}</button>
-  `).join("");
-  return `
-    <div class="rarity-field quality-field">
-      <span class="field-label">${label}</span>
-      <div class="rarity-group" role="radiogroup" aria-label="${label}">${buttons}</div>
-    </div>
-  `;
+  return optionColumnMarkup("right", t("qualityField"), CARD_QUALITIES.map((quality) => ({
+    label: quality,
+    title: t(`quality${quality}`),
+    selected: quality === cardQuality,
+    attr: `data-quality="${quality}"`
+  })));
 }
 
-// Repinta pílula de raridade e o estado do shine no preview sem re-criar a
+// Liga os cliques das colunas recém-renderizadas no preview
+function bindOptionColumns(root) {
+  root.querySelectorAll(".option-square[data-quality]").forEach((button) => {
+    button.addEventListener("click", () => setCardQuality(button.dataset.quality));
+  });
+  const finishButtons = root.querySelectorAll(".option-square[data-finish]");
+  finishButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingFinish = button.dataset.finish;
+      rarityPinned = true;
+      finishButtons.forEach((item) => item.setAttribute("aria-checked", String(item === button)));
+      syncFinishPreview();
+    });
+  });
+}
+
+// Repinta o preço e o estado do shine no preview sem re-criar a
 // imagem (evita flicker de reload da arte ao clicar num botão).
 function syncFinishPreview() {
   if (!modalSummary) return;
-
-  const pill = modalSummary.querySelector(".rarity-pill");
-  if (pill) pill.textContent = formatCardFinish(pendingFinish);
 
   // O preço do preview segue o acabamento escolhido (normal/holo/reverse têm
   // preços próprios no TCGplayer quando a carta possui as duas faces).
@@ -2780,7 +2877,7 @@ function syncFinishPreview() {
 
   const stage = modalSummary.querySelector(".preview-stage");
   if (stage) {
-    stage.classList.toggle("finish-holo", pendingFinish === "holo");
+    stage.classList.toggle("finish-holo", pendingFinish === "holo" || pendingFinish === "foil");
     stage.classList.toggle("finish-reverse", pendingFinish === "reverse");
   }
 }
@@ -2959,7 +3056,8 @@ function renderSelectedPreview(asset) {
   const card = cards.find((item) => item.id === currentCardId) || { name: asset?.name || "Carta", number: asset?.number || "" };
   const collectionLabel = localizedCollectionName(asset);
   const variantLabel = asset?.number ? `#${asset.number}` : t("versionFallback");
-  const rarityLabel = formatCardFinish(getCurrentFinish());
+  const finishes = availableFinishes(asset, card.file && card.file === asset?.file ? card.finish : "");
+  ensureAvailableFinish(finishes);
   const shineClass = finishShineClass(getCurrentFinish());
   const previewPrice = displayPriceFor(asset?.file || "", getCurrentFinish(), card.name);
   // A Liga pediu a verificação do Cloudflare: link para passar por ela
@@ -2975,17 +3073,16 @@ function renderSelectedPreview(asset) {
 
   modalSummary.innerHTML = `
     <div class="preview-shell">
-      <button type="button" class="preview-nav prev" data-nav="prev" aria-label="${escapeHtml(t("prevCard"))}">&#8249;</button>
+      ${createRarityButtonsMarkup(getCurrentFinish(), finishes, asset, card.name)}
       <div class="preview-stage${hasNoImage ? " no-image" : ""}${shineClass ? ` ${shineClass}` : ""}" aria-label="${escapeHtml(t("previewAria"))}">
         <img class="preview-image" src="${imageSrc}" data-src="${imageSrc}" data-local="${escapeHtml(localSrc)}" alt="${escapeHtml(card.name)}" />
         ${hasNoImage ? `<span class="no-image-badge">${escapeHtml(t("noImage"))}</span>` : ""}
       </div>
-      <button type="button" class="preview-nav next" data-nav="next" aria-label="${escapeHtml(t("nextCard"))}">&#8250;</button>
+      ${createQualityButtonsMarkup()}
     </div>
     <div class="summary-meta">
       <span class="summary-pill">${variantLabel}</span>
       <strong>${escapeHtml(collectionLabel)}</strong>
-      <span class="summary-pill rarity-pill">${escapeHtml(rarityLabel)}</span>
       ${pricePill}
       ${ligaBlockedPill}
       ${hasNoImage ? '<span class="summary-pill no-image-pill">promo ex5.5</span>' : ""}
@@ -3005,13 +3102,7 @@ function renderSelectedPreview(asset) {
     }, { once: true });
   }
 
-  const navButtons = modalSummary.querySelectorAll(".preview-nav");
-  navButtons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      changeSelectedVariant(button.dataset.nav === "next" ? 1 : -1);
-    });
-  });
+  bindOptionColumns(modalSummary);
 
   const previewStage = modalSummary.querySelector(".preview-stage");
   if (previewStage) {
@@ -3064,27 +3155,6 @@ function renderVariantList(defaultAsset = null) {
   }
   renderSelectedPreview(selectedAsset);
 
-  // Botões de raridade (seleção única) — persistem na carta ao confirmar.
-  const finishHost = document.getElementById("finishFieldHost");
-  if (finishHost) {
-    finishHost.innerHTML = createRarityButtonsMarkup(getCurrentFinish()) + createQualityButtonsMarkup();
-    finishHost.querySelectorAll(".quality-btn").forEach((button) => {
-      button.addEventListener("click", () => setCardQuality(button.dataset.quality));
-    });
-    finishHost.querySelectorAll(".rarity-btn[data-finish]").forEach((button) => {
-      button.addEventListener("click", () => {
-        pendingFinish = button.dataset.finish;
-        rarityPinned = true;
-        finishHost.querySelectorAll(".rarity-btn[data-finish]").forEach((item) => {
-          const active = item === button;
-          item.classList.toggle("selected", active);
-          item.setAttribute("aria-checked", String(active));
-        });
-        syncFinishPreview();
-      });
-    });
-  }
-
   options.forEach((asset) => {
     const button = document.createElement("button");
     const noImage = isNoImageVariant(asset);
@@ -3100,7 +3170,7 @@ function renderVariantList(defaultAsset = null) {
 
     button.innerHTML = `
       <img class="variant-thumb" loading="lazy" decoding="async" src="${getThumbPath(asset.file)}" data-full="${getAssetPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
-      <span class="variant-label">${variantText}${noImage ? `<em class="variant-no-image">· ${escapeHtml(t("noImage"))}</em>` : ""}</span>
+      <span class="variant-label">${variantText}${noImage ? `<em class="variant-no-image">· ${escapeHtml(t("noImage"))}</em>` : ""}${finishBadgesMarkup(asset)}</span>
       ${priceMarkup}
     `;
 
@@ -3168,6 +3238,8 @@ function openModal(cardId, mode = "collect") {
 
   modal.classList.remove("hidden");
   modal.setAttribute("aria-hidden", "false");
+  // Foco no diálogo: os atalhos (N/F/R/H, Enter) valem na hora, sem clicar
+  modal.querySelector(".modal")?.focus({ preventScroll: true });
 }
 
 function closeModal() {
@@ -3293,6 +3365,15 @@ if (planToggle) {
   planToggle.addEventListener("click", () => setPlanMode(!planMode));
 }
 
+// Setas de trocar a variante: na linha das bandeiras, acima das colunas de
+// raridade (‹) e qualidade (›)
+document.querySelectorAll("#prevCardBtn, #nextCardBtn").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    changeSelectedVariant(button.dataset.nav === "next" ? 1 : -1);
+  });
+});
+
 // Seletor de idioma da arte (bandeirinhas no lugar do título do modal).
 if (cardLangPicker) {
   cardLangPicker.querySelectorAll(".card-lang-flag").forEach((button) => {
@@ -3407,6 +3488,30 @@ document.addEventListener("keydown", (event) => {
   }
 
   if (!modal || modal.classList.contains("hidden")) return;
+
+  // N/F/R/H escolhem o acabamento (se a impressão tiver) e Enter salva —
+  // fora de campos de texto e sem modificadores, para não roubar atalhos.
+  // Só com o foco no modal ou solto: o Enter que abriu a carta na grade
+  // chega aqui já com o modal aberto e não pode salvar de cara.
+  const fromModal = event.target === document.body || modal.contains(event.target);
+  const typing = event.target.closest?.("input, textarea, select, [contenteditable]");
+  if (fromModal && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    const finish = { n: "normal", f: "foil", r: "reverse", h: "holo" }[event.key.toLowerCase()];
+    if (finish) {
+      const button = modalSummary?.querySelector(`.option-square[data-finish="${finish}"]`);
+      if (button && !button.disabled) {
+        event.preventDefault();
+        button.click();
+      }
+      return;
+    }
+    // Enter num botão focado já o aciona; só salva quando o foco está solto
+    if (event.key === "Enter" && !event.target.closest?.("button, a")) {
+      event.preventDefault();
+      confirmBtn.click();
+      return;
+    }
+  }
 
   if (event.key === "ArrowLeft") {
     changeSelectedVariant(-1);

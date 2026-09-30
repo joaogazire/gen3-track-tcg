@@ -5,8 +5,11 @@ Serve o projeto como `python3 -m http.server` (abra http://localhost:8765/src/)
 e expõe uma API só para a máquina local, usada pelo botão de sincronizar:
 
     GET  /api/liga-sync        estado da coleta (rodando, etapa, progresso)
-    POST /api/liga-sync        inicia scripts/fetch_liga_prices.py
-                               (body JSON opcional: {"full": false} = só o vencido)
+    POST /api/liga-sync        inicia scripts/fetch_liga_prices.py. Body JSON:
+                               {"mode": "full"}  (padrão) busca todas as cartas de novo
+                               {"mode": "daily", "files": [...]}  atualização do dia:
+                               refaz as buscas e só abre as cartas cujo preço mudou na
+                               busca + as da coleção (`files`); o resto, semanal
     POST /api/liga-sync/stop   interrompe a coleta (o progresso fica no cache)
 
 A coleta roda com o mesmo Python deste servidor, que precisa do Playwright:
@@ -35,6 +38,7 @@ FETCH_SCRIPT = ROOT / "scripts" / "fetch_liga_prices.py"
 # fechar o servidor, queda), o próximo clique retoma pelo mesmo instante —
 # refaz só o que é anterior a ele — em vez de recomeçar do zero
 RUN_STATE = ROOT / "scripts" / ".liga_sync_state.json"
+COLLECTION_FILE = ROOT / "scripts" / ".liga_sync_collection.json"
 API = "/api/liga-sync"
 TOKEN_HEADER = "X-Emerald-Tracker"
 MAX_LOG_LINES = 200
@@ -63,35 +67,54 @@ class SyncJob:
         with self.lock:
             state = dict(self.state)
             state["log"] = state["log"][-20:]
-            return state
+        saved = self._saved()
+        today = time.strftime("%Y-%m-%d")
+        state["lastDaily"] = saved.get("lastDaily")
+        state["dailyDue"] = saved.get("lastDaily") != today and not state["running"]
+        return state
 
-    def start(self, full=True):
+    @staticmethod
+    def _saved():
+        try:
+            return json.loads(RUN_STATE.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+
+    def _save(self, **changes):
+        try:
+            RUN_STATE.write_text(json.dumps({**self._saved(), **changes}), encoding="utf-8")
+        except OSError:
+            pass
+
+    def start(self, mode="full", files=None):
         with self.lock:
             if self.process and self.process.poll() is None:
                 return False
             args = [sys.executable, "-u", str(FETCH_SCRIPT)]
             resumed = False
-            if full:
+            if mode == "daily":
+                args.append("--daily")
+                if isinstance(files, list):
+                    COLLECTION_FILE.write_text(json.dumps([f for f in files if isinstance(f, str)]), encoding="utf-8")
+                    args += ["--collection", str(COLLECTION_FILE)]
+            else:
+                mode = "full"
                 since = self._pending_run()
                 resumed = since is not None
                 since = since or time.time()
-                RUN_STATE.write_text(json.dumps({"staleBefore": since, "done": False}), encoding="utf-8")
+                self._save(staleBefore=since, done=False)
                 args += ["--stale-before", str(since)]
             self.state = self._idle()
-            self.state.update(running=True, phase="busca", startedAt=time.time(), resumed=resumed)
+            self.state.update(running=True, phase="busca", startedAt=time.time(), resumed=resumed, mode=mode)
             self.process = subprocess.Popen(args, cwd=ROOT, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT, text=True, bufsize=1)
             threading.Thread(target=self._read, args=(self.process,), daemon=True).start()
             return True
 
-    @staticmethod
-    def _pending_run():
+    def _pending_run(self):
         """Início da coleta completa que não terminou, ou None."""
-        try:
-            saved = json.loads(RUN_STATE.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return None
-        return None if saved.get("done") else saved.get("staleBefore")
+        saved = self._saved()
+        return None if saved.get("done", True) else saved.get("staleBefore")
 
     def stop(self):
         with self.lock:
@@ -121,12 +144,12 @@ class SyncJob:
                 elif DONE_RE.search(line):
                     state["summary"] = line
         code = process.wait()
-        if code == 0 and RUN_STATE.exists():
-            try:
-                saved = json.loads(RUN_STATE.read_text(encoding="utf-8"))
-                RUN_STATE.write_text(json.dumps({**saved, "done": True}), encoding="utf-8")
-            except (OSError, json.JSONDecodeError):
-                pass
+        if code == 0:
+            # Completa ou diária, as duas deixam os preços do dia em dia
+            if self.state.get("mode") == "full":
+                self._save(done=True, lastDaily=time.strftime("%Y-%m-%d"))
+            else:
+                self._save(lastDaily=time.strftime("%Y-%m-%d"))
         with self.lock:
             self.state.update(running=False, exitCode=code, finishedAt=time.time(),
                               phase="concluído" if code == 0 else "interrompido")
@@ -177,7 +200,8 @@ class Handler(SimpleHTTPRequestHandler):
             options = json.loads(self.rfile.read(length) or b"{}") if length else {}
         except json.JSONDecodeError:
             options = {}
-        started = JOB.start(full=options.get("full", True) is not False)
+        mode = "daily" if options.get("mode") == "daily" else "full"
+        started = JOB.start(mode=mode, files=options.get("files"))
         return self._json(202 if started else 409, {"started": started, **JOB.status()})
 
 
