@@ -52,7 +52,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Error as PlaywrightError, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_JS = ROOT / "src" / "script.js"
@@ -84,7 +84,7 @@ RESULT_WAIT_S = 30
 COOLDOWN_START_S = 60
 COOLDOWN_MAX_S = 600
 RESULTS_PER_PAGE = 40
-MAX_EXTRA_PAGES = 15
+MAX_EXTRA_PAGES = 50  # Pikachu passa de 16 páginas (cartas + produtos lacrados)
 
 PREFIXED_NUMBER_RE = re.compile(r"^[A-Za-z]+\d+$")
 CODE_RE = re.compile(r"\(\s*(#?[A-Z]{0,4}\d{1,4}[A-Za-z]{0,3})\s*/\s*([A-Z]{0,4}\d{1,4}|∞)\s*\)", re.I)
@@ -265,6 +265,10 @@ def match_prices(pokemon, prints, sets, entries):
             candidates = by_number.get(number_key(asset["number"]), [])
             if len({total for total, _ in candidates}) == 1:
                 matches = [entry for _, entry in candidates]
+        # Coleção de promos (svp, swshp, smp, xyp, bwp...): o catálogo dá um
+        # total ("106/225"), a Liga cadastra como promo ("Pikachu ex (106/∞)")
+        if not matches and str(asset.get("set", "")).endswith("p"):
+            matches = [entry for total, entry in by_number.get(number_key(asset["number"]), []) if total == "∞"]
         # Exclusiva japonesa (set "jp-<código>", sem total): a edição da Liga
         # tem o mesmo código
         if not matches and str(asset.get("set", "")).startswith("jp-"):
@@ -387,6 +391,15 @@ class Blocked(Exception):
     pass
 
 
+def page_html(page):
+    """HTML atual; "" enquanto a página ainda navega (o desafio do Cloudflare
+    recarrega a página, e ler no meio disso dá erro)."""
+    try:
+        return page.content()
+    except PlaywrightError:
+        return ""
+
+
 def check_rate_limit(html):
     if re.search(r"Error 1015|You are being rate limited|Too Many Requests", html, re.I):
         raise Blocked("erro 1015 (limite de requisições)")
@@ -397,7 +410,7 @@ def search(page, query):
     page.goto(LIGA_SEARCH.format(quote(query)), timeout=PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
     deadline = time.time() + RESULT_WAIT_S
     while time.time() < deadline:
-        html = page.content()
+        html = page_html(page)
         check_rate_limit(html)
         # "Itens encontrados" = a página de resultados (mesmo com zero itens)
         if "Itens encontrados" in html or 'id="mtg-cards"' in html:
@@ -478,7 +491,7 @@ def card_page(page, url):
     page.goto(url, timeout=PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
     deadline = time.time() + RESULT_WAIT_S
     while time.time() < deadline:
-        html = page.content()
+        html = page_html(page)
         check_rate_limit(html)
         if "var cards_stock" in html or "var cards_editions" in html:
             data = page.evaluate(READ_CARD_JS)
@@ -558,6 +571,9 @@ def main():
     parser.add_argument("--max-age", type=float, default=20, help="refaz buscas por Pokémon com mais de N horas (padrão 20)")
     parser.add_argument("--card-max-age", type=float, default=72,
                         help="refaz páginas de carta (preço por variante) com mais de N horas (padrão 72)")
+    parser.add_argument("--stale-before", type=float, default=0,
+                        help="refaz também o que foi coletado antes deste instante (epoch em segundos) —"
+                             " uma coleta completa interrompida retoma de onde parou passando o início dela")
     parser.add_argument("--only", nargs="*", help="só estes Pokémon")
     parser.add_argument("--skip-cards", action="store_true", help="só a busca (sem preço por variante)")
     parser.add_argument("--headed", action="store_true", help="mostra a janela do Chrome")
@@ -592,7 +608,11 @@ def main():
         return matched, matched_ja
 
     now = time.time()
-    todo = [n for n in names if now - searches.get(n, {}).get("at", 0) >= args.max_age * 3600]
+    def stale(entry, max_age_h):
+        at = (entry or {}).get("at", 0)
+        return at < args.stale_before or now - at >= max_age_h * 3600
+
+    todo = [n for n in names if stale(searches.get(n), args.max_age)]
     print(f"{len(names)} Pokémon, {len(todo)} para buscar na Liga")
 
     with sync_playwright() as p:
@@ -623,7 +643,7 @@ def main():
                 now = time.time()
                 # Páginas coletadas antes da leitura dos anúncios contam como vencidas
                 card_todo = [u for u in urls if "listings" not in card_pages.get(u, {})
-                             or now - card_pages[u].get("at", 0) >= args.card_max_age * 3600]
+                             or stale(card_pages[u], args.card_max_age)]
                 print(f"{len(urls)} páginas de carta, {len(card_todo)} para buscar na Liga"
                       f" (~{round(len(card_todo) * (PAUSE_S + 1.5) / 3600, 1)} h)")
                 if card_todo:

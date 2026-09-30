@@ -257,6 +257,16 @@ const I18N = {
     syncChecking: "Checking {name}...",
     syncProcessing: "Processing {i} / {n}",
     syncApiErrors: "{n} Pokémon could not be checked (API unavailable).",
+    ligaSyncStarting: "Starting the Liga Pokemon price collection…",
+    ligaSyncResumed: "Resuming the Liga Pokemon collection where it stopped…",
+    ligaSyncSearch: "Liga: searching Pokémon {i}/{n}",
+    ligaSyncCards: "Liga: card pages {i}/{n}",
+    ligaSyncEta: "~{min} min left · you can close this notice, it keeps running",
+    ligaSyncStopping: "Stopping…",
+    ligaSyncStop: "Stop",
+    ligaSyncDone: "Liga prices updated",
+    ligaSyncPublish: "To publish: commit and push assets/data/liga-prices.min.json.",
+    ligaSyncStopped: "Liga collection interrupted — click sync to resume",
     syncDone: "Sync complete",
     syncOk: "Everything aligned with the database.",
     syncDiffs: "Differences: {extras} extras · {novas} new.",
@@ -377,6 +387,16 @@ const I18N = {
     syncChecking: "Verificando {name}...",
     syncProcessing: "Processando {i} / {n}",
     syncApiErrors: "{n} Pokémon não puderam ser conferidos (API indisponível).",
+    ligaSyncStarting: "Iniciando a coleta de preços na Liga Pokemon…",
+    ligaSyncResumed: "Retomando a coleta da Liga Pokemon de onde parou…",
+    ligaSyncSearch: "Liga: buscando Pokémon {i}/{n}",
+    ligaSyncCards: "Liga: páginas de carta {i}/{n}",
+    ligaSyncEta: "~{min} min restantes · pode fechar este aviso, a coleta continua",
+    ligaSyncStopping: "Parando…",
+    ligaSyncStop: "Parar",
+    ligaSyncDone: "Preços da Liga atualizados",
+    ligaSyncPublish: "Para publicar: commit e push de assets/data/liga-prices.min.json.",
+    ligaSyncStopped: "Coleta da Liga interrompida — clique em sincronizar para retomar",
     syncDone: "Sincronização concluída",
     syncOk: "Tudo alinhado com a database.",
     syncDiffs: "Divergências: {extras} extras · {novas} novas.",
@@ -536,6 +556,7 @@ const syncStatusText = document.getElementById("syncStatusText");
 const syncCloseBtn = document.getElementById("syncCloseBtn");
 const syncLastUpdatedStatus = document.getElementById("syncLastUpdatedStatus");
 const syncDetailsLink = document.getElementById("syncDetailsLink");
+const syncStopBtn = document.getElementById("syncStopBtn");
 const modal = document.getElementById("cardModal");
 const modalTitle = document.getElementById("modalTitle");
 const modalSummary = document.getElementById("modalSummary");
@@ -1021,6 +1042,11 @@ function ligaPriceFor(asset, pokemonName) {
     const byNumber = candidates.filter((c) => c.number === ligaNumberKey(asset.number));
     if (new Set(byNumber.map((c) => c.total)).size === 1) matches = byNumber;
   }
+  // Coleção de promos (svp, swshp...): o catálogo dá um total, a Liga cadastra
+  // como promo ("106/∞") — mesma regra do fetch_liga_prices.py
+  if (!matches.length && String(asset.set || "").endsWith("p")) {
+    matches = candidates.filter((c) => c.number === ligaNumberKey(asset.number) && c.total === "∞");
+  }
   matches = matches.map((c) => c.entry);
   if (!matches.length) return null;
 
@@ -1146,9 +1172,9 @@ function displayPriceFor(file, finish, pokemonName) {
   return { ...fallback, ligaState: live?.status === "loading" ? "loading" : "missing" };
 }
 
-async function loadLigaSnapshot() {
+async function loadLigaSnapshot(fresh = false) {
   try {
-    const response = await fetch(LIGA_PRICES_URL);
+    const response = await fetch(fresh ? `${LIGA_PRICES_URL}?t=${Date.now()}` : LIGA_PRICES_URL, fresh ? { cache: "no-store" } : undefined);
     if (!response.ok) return;
     const data = await response.json();
     if (!data?.prices || typeof data.prices !== "object") return;
@@ -2323,6 +2349,13 @@ function saveLastSync() {
 async function runCardSyncCheck() {
   if (!syncCheckBtn) return;
 
+  // Coleta da Liga já rodando (servidor local): o clique só mostra o progresso
+  const running = await ligaSyncRequest();
+  if (running?.running) {
+    pollLigaSync();
+    return;
+  }
+
   syncCheckBtn.disabled = true;
   syncCheckBtn.setAttribute("aria-busy", "true");
   syncCloseBtn.hidden = true;
@@ -2447,6 +2480,9 @@ async function runCardSyncCheck() {
     updateSyncDetailsLink();
 
     syncCloseBtn.hidden = false;
+    // Servidor local (scripts/serve.py): em seguida, busca todas as cartas de
+    // novo na Liga Pokemon
+    await startLigaSync();
   } catch (error) {
     console.error(error);
     updateSyncNotification(100, t("syncFail"), t("syncFailMsg"));
@@ -2455,6 +2491,103 @@ async function runCardSyncCheck() {
     syncCheckBtn.disabled = false;
     syncCheckBtn.setAttribute("aria-busy", "false");
   }
+}
+
+// ---- Coleta de preços da Liga pelo botão de sincronizar ---------------------
+// Só com o site servido por scripts/serve.py (localhost): o servidor roda
+// scripts/fetch_liga_prices.py na máquina (o navegador não alcança a Liga) e
+// informa o progresso em /api/liga-sync. Uma coleta completa leva horas; ela
+// continua com o aviso fechado ou a página recarregada, e se for interrompida
+// o próximo clique retoma de onde parou. No GitHub Pages não há API: o botão
+// só faz a verificação do catálogo, como antes.
+const LIGA_SYNC_API = "../api/liga-sync";
+const LIGA_SYNC_POLL_MS = 3000;
+const LIGA_SYNC_SECONDS_PER_PAGE = 2.4;
+let ligaSyncTimer = null;
+
+function isLocalSite() {
+  return ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+}
+
+async function ligaSyncRequest(path = "", method = "GET", body = null) {
+  if (!isLocalSite()) return null;
+  try {
+    const response = await fetch(`${LIGA_SYNC_API}${path}`, {
+      method,
+      cache: "no-store",
+      headers: method === "POST" ? { "X-Emerald-Tracker": "1", "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (response.status === 404) return null;  // servidor comum, sem a API
+    const data = await response.json();
+    return data && typeof data.running === "boolean" ? data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function paintLigaSync(state) {
+  if (!state) return;
+  const busy = state.running;
+  if (syncStopBtn) syncStopBtn.classList.toggle("hidden", !busy);
+  if (busy) {
+    const searching = state.phase === "busca";
+    const ratio = state.total ? state.done / state.total : 0;
+    // Busca por Pokémon ~10% do tempo, páginas de carta o resto
+    const progress = Math.round(searching ? ratio * 10 : 10 + ratio * 90);
+    const label = searching
+      ? t("ligaSyncSearch", { i: state.done, n: state.total || "…" })
+      : t("ligaSyncCards", { i: state.done, n: state.total || "…" });
+    const minutes = !searching && state.total
+      ? Math.max(1, Math.round(((state.total - state.done) * LIGA_SYNC_SECONDS_PER_PAGE) / 60))
+      : null;
+    const status = state.phase === "parando" ? t("ligaSyncStopping")
+      : minutes ? t("ligaSyncEta", { min: minutes })
+      : (state.resumed ? t("ligaSyncResumed") : t("ligaSyncStarting"));
+    updateSyncNotification(progress, label, status);
+    return;
+  }
+  if (state.exitCode === 0) {
+    updateSyncNotification(100, t("ligaSyncDone"), `${state.summary || ""} ${t("ligaSyncPublish")}`.trim());
+  } else if (state.exitCode != null) {
+    updateSyncNotification(100, t("ligaSyncStopped"), state.lastLine || "");
+  }
+  if (syncCloseBtn) syncCloseBtn.hidden = false;
+}
+
+async function pollLigaSync() {
+  clearTimeout(ligaSyncTimer);
+  const state = await ligaSyncRequest();
+  if (!state) return;
+  paintLigaSync(state);
+  if (state.running) {
+    ligaSyncTimer = setTimeout(pollLigaSync, LIGA_SYNC_POLL_MS);
+  } else if (state.exitCode === 0) {
+    loadLigaSnapshot(true);  // preços novos na tela sem recarregar
+  }
+}
+
+// Inicia (ou retoma) a coleta completa; se já estiver rodando, só acompanha
+async function startLigaSync() {
+  const state = await ligaSyncRequest("", "POST", { full: true });
+  if (!state) return false;
+  if (syncCloseBtn) syncCloseBtn.hidden = false;
+  pollLigaSync();
+  return true;
+}
+
+// Página aberta (ou recarregada) no meio de uma coleta: volta a mostrar o
+// progresso
+async function resumeLigaSyncDisplay() {
+  const state = await ligaSyncRequest();
+  if (state?.running) pollLigaSync();
+}
+
+if (syncStopBtn) {
+  syncStopBtn.addEventListener("click", async () => {
+    await ligaSyncRequest("/stop", "POST");
+    pollLigaSync();
+  });
 }
 
 function escapeHtml(value) {
@@ -3339,4 +3472,5 @@ if (searchToggleBtn) {
   loadPriceData();
   loadLigaSnapshot();
   refreshFx();
+  resumeLigaSyncDisplay();
 })();

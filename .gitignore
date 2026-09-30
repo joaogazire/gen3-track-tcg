@@ -16,3 +16,4 @@ Thumbs.db
 .tcgdex_cache.json
 .limitless_cache.json
 .liga_cache.json
+.liga_sync_state.json

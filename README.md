@@ -5,7 +5,9 @@ Aplicação 100% estática (HTML + CSS + Vanilla JS) — sem build, sem framewor
 
 ## Como rodar
 
-Qualquer servidor estático serve. A partir da raiz do projeto:
+Qualquer servidor estático serve (para o botão de sincronizar buscar os preços da Liga,
+use `.venv/bin/python scripts/serve.py` — ver "Atualizar os preços da Liga"). A partir da
+raiz do projeto:
 
 ```bash
 python3 -m http.server 8765
@@ -18,11 +20,28 @@ E abra `http://localhost:8765/src/`.
 
 ## Atualizar os preços da Liga
 
+**Pelo botão de sincronizar** (↻ no header): rode o site com o servidor do projeto em
+vez do `http.server`:
+
 ```bash
-pip install playwright          # uma vez (usa o Google Chrome instalado)
-python3 scripts/fetch_liga_prices.py
-git add assets/data/liga-prices.min.json && git commit -m "Update Liga prices" && git push
+python3 -m venv .venv && .venv/bin/pip install playwright   # uma vez (usa o Google Chrome instalado)
+.venv/bin/python scripts/serve.py                            # http://localhost:8765/src/
 ```
+
+Em localhost, o botão faz a verificação do catálogo e em seguida busca **todas as
+cartas de novo** na Liga (`scripts/serve.py` roda `fetch_liga_prices.py` na máquina),
+com o progresso na notificação e um botão **Parar**. Pode fechar o aviso ou recarregar a
+página: a coleta continua; interrompida, o próximo clique retoma de onde parou. No fim,
+os preços novos aparecem na tela. No GitHub Pages o botão só verifica o catálogo.
+
+**Pelo terminal:**
+
+```bash
+.venv/bin/python scripts/fetch_liga_prices.py
+```
+
+Nos dois casos, para publicar:
+`git add assets/data/liga-prices.min.json && git commit -m "Update Liga prices" && git push`.
 
 O script abre a Liga num Chrome headless (passa pelo desafio do Cloudflare como um
 navegador normal) em duas etapas, ~1 página a cada 2 s (a Liga bloqueia com erro 1015 se
