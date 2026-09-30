@@ -13,7 +13,9 @@ raiz do projeto:
 python3 -m http.server 8765
 ```
 
-E abra `http://localhost:8765/src/`.
+E abra `http://localhost:8765/` (o `index.html` da raiz redireciona para `src/`,
+mantendo o `#` dos links de compartilhamento). Publicado em
+https://joaogazire.github.io/gen3-track-tcg/.
 
 > Abrir o `index.html` diretamente via `file://` não funciona: o app busca a base de
 > dados `assets/data/catalog.min.json` via `fetch`, que exige HTTP.
