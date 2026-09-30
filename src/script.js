@@ -1849,10 +1849,29 @@ async function copyHeaderShareLink() {
   document.body.removeChild(temp);
 }
 
-function setupCardTilt(cardElement) {
-  if (!cardElement) return;
+// Tilt + shine num listener só na grade (delegação): sobrevive a qualquer
+// troca de <article> no renderCards sem religar nada por carta.
+let tiltedCard = null;
 
-  cardElement.addEventListener("pointermove", (event) => {
+function resetCardTilt(cardElement) {
+  if (!cardElement) return;
+  cardElement.style.setProperty("--card-rotate-x", "0deg");
+  cardElement.style.setProperty("--card-rotate-y", "0deg");
+  cardElement.style.setProperty("--card-mx", "50%");
+  cardElement.style.setProperty("--card-my", "50%");
+}
+
+function initCardTilt() {
+  if (!cardGrid) return;
+
+  cardGrid.addEventListener("pointermove", (event) => {
+    const cardElement = event.target.closest(".card");
+    if (cardElement !== tiltedCard) {
+      resetCardTilt(tiltedCard);
+      tiltedCard = cardElement;
+    }
+    if (!cardElement) return;
+
     const rect = cardElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -1867,11 +1886,9 @@ function setupCardTilt(cardElement) {
     cardElement.style.setProperty("--card-my", `${(y / rect.height) * 100}%`);
   });
 
-  cardElement.addEventListener("pointerleave", () => {
-    cardElement.style.setProperty("--card-rotate-x", "0deg");
-    cardElement.style.setProperty("--card-rotate-y", "0deg");
-    cardElement.style.setProperty("--card-mx", "50%");
-    cardElement.style.setProperty("--card-my", "50%");
+  cardGrid.addEventListener("pointerleave", () => {
+    resetCardTilt(tiltedCard);
+    tiltedCard = null;
   });
 }
 
@@ -1971,6 +1988,26 @@ async function loadCardAssets() {
     if (card) renderVariantList(selectedAsset);
   }
 }
+
+// Miniatura WebP (assets/thumbs, gerada por scripts/build_thumbs.py) para a
+// grade e a lista de variantes; o PNG original fica só no preview do modal.
+// Arte remota (exclusivas JP) não tem miniatura e segue a URL do CDN.
+function getThumbPath(fileName) {
+  if (!fileName || remoteImageByFile.has(fileName)) return getAssetPath(fileName);
+  const normalized = String(fileName).trim().replace(/^\.?\//, "").replace(/^\/+/, "");
+  if (!/\.png$/i.test(normalized)) return getAssetPath(fileName);
+  return `../assets/thumbs/${normalized.replace(/\.png$/i, ".webp")}`;
+}
+
+// Miniatura que falhar (ex.: carta nova antes de rodar o build_thumbs.py)
+// cai no PNG original, guardado em data-full.
+document.addEventListener("error", (event) => {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement) || !img.dataset.full) return;
+  const full = img.dataset.full;
+  delete img.dataset.full;
+  img.src = full;
+}, true);
 
 function getAssetPath(fileName) {
   if (!fileName) return "../assets/site/pokemon-tcg-card-back.png";
@@ -2763,12 +2800,20 @@ function paintFilterTrigger() {
   }
 }
 
+function cardThumbPath(card) {
+  const file = cardAssetFile(card);
+  return file && card.artPath === getAssetPath(file) ? getThumbPath(file) : card.artPath;
+}
+
 function createCardMarkup(card) {
   const resolvedClass = card.collected ? "revealed" : "uncollected";
   // No planejamento: "rascunho" = marcado agora mas ainda não salvo.
   const draftClass = planMode && card.collected && !savedCollected.get(card.id) ? " plan-draft" : "";
   const shineClass = card.collected ? finishShineClass(card.finish) : "";
-  const photoMarkup = card.collected && card.artPath ? `<img class="card-photo" src="${card.artPath}" alt="${escapeHtml(card.name)}" />` : "";
+  const thumbPath = card.collected && card.artPath ? cardThumbPath(card) : "";
+  const photoMarkup = thumbPath
+    ? `<img class="card-photo" loading="lazy" decoding="async" src="${thumbPath}"${thumbPath !== card.artPath ? ` data-full="${card.artPath}"` : ""} alt="${escapeHtml(card.name)}" />`
+    : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
   const price = card.collected && card.artPath ? displayPriceFor(card.file, card.finish, card.name) : null;
   // Badge com link vira âncora para a loja (TCGplayer/Cardmarket); sem URL,
@@ -2795,9 +2840,47 @@ function createCardMarkup(card) {
   `;
 }
 
+// Markup de cada <article> na tela, por id: o renderCards só troca as
+// cartas cujo HTML mudou, sem refazer a grade inteira (e sem recarregar e
+// decodificar de novo as imagens das outras).
+const renderedCardMarkup = new Map();
+const cardMarkupTemplate = document.createElement("template");
+
 function renderCards() {
-  cardGrid.innerHTML = cards.filter(cardMatchesFilter).map(createCardMarkup).join("");
-  document.querySelectorAll(".card").forEach(setupCardTilt);
+  const visible = cards.filter(cardMatchesFilter);
+  const visibleIds = new Set(visible.map((card) => String(card.id)));
+  const existing = new Map();
+  Array.from(cardGrid.children).forEach((element) => {
+    const id = element.dataset?.id;
+    if (id !== undefined && visibleIds.has(id) && !existing.has(id)) {
+      existing.set(id, element);
+    } else {
+      if (element === tiltedCard) tiltedCard = null;
+      element.remove();
+      renderedCardMarkup.delete(id);
+    }
+  });
+
+  let cursor = cardGrid.firstElementChild;
+  visible.forEach((card) => {
+    const id = String(card.id);
+    const markup = createCardMarkup(card).trim();
+    let element = existing.get(id);
+    if (!element || renderedCardMarkup.get(id) !== markup) {
+      cardMarkupTemplate.innerHTML = markup;
+      const fresh = cardMarkupTemplate.content.firstElementChild;
+      if (element) {
+        if (element === tiltedCard) tiltedCard = fresh;
+        element.replaceWith(fresh);
+        if (cursor === element) cursor = fresh;
+      }
+      element = fresh;
+      renderedCardMarkup.set(id, markup);
+    }
+    if (element !== cursor) cardGrid.insertBefore(element, cursor);
+    else cursor = cursor.nextElementSibling;
+  });
+
   updateProgressBar();
   updateCollectionTotal();
 }
@@ -3016,7 +3099,7 @@ function renderVariantList(defaultAsset = null) {
       : "";
 
     button.innerHTML = `
-      <img class="variant-thumb" loading="lazy" decoding="async" src="${getAssetPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
+      <img class="variant-thumb" loading="lazy" decoding="async" src="${getThumbPath(asset.file)}" data-full="${getAssetPath(asset.file)}" alt="${escapeHtml(`${asset.pokemon || card.name} · ${variantText}`)}" />
       <span class="variant-label">${variantText}${noImage ? `<em class="variant-no-image">· ${escapeHtml(t("noImage"))}</em>` : ""}</span>
       ${priceMarkup}
     `;
@@ -3454,6 +3537,7 @@ if (searchToggleBtn) {
     /* storage indisponível — segue no padrão EN */
   }
 
+  initCardTilt();
   loadCards();
   refreshSavedSnapshot();
   // Link compartilhado é vitrine: nada de reset nem carregar/salvar presets
