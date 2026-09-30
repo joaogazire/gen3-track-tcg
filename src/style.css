@@ -1502,6 +1502,23 @@ body.plan-mode .card.revealed .card-art::after {
   color: var(--gold-700);
 }
 
+/* "Parar" da coleta da Liga: mesmo visual do link "Detalhes", em vermelho */
+.sync-stop-btn {
+  margin-left: auto;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  color: #e08a82;
+  border-bottom-color: rgba(224, 138, 130, 0.5);
+}
+
+.sync-stop-btn:hover {
+  color: #f2b0a9;
+}
+
 .hidden {
   display: none !important;
 }
@@ -1853,7 +1870,7 @@ button.total-value[aria-pressed="true"] {
   color: var(--gold-500);
 }
 
-.preset-option span:not(.preset-delete) {
+.preset-option span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1868,8 +1885,37 @@ button.total-value[aria-pressed="true"] {
   white-space: nowrap;
 }
 
+/* Linha do preset: o botão que carrega e o "×" que apaga são irmãos (um
+   botão dentro do outro é HTML inválido e confunde leitor de tela). */
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.preset-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preset-row .preset-option {
+  flex: 1;
+  min-width: 0;
+}
+
+.preset-row .preset-option:hover {
+  background: transparent;
+}
+
 .preset-delete {
   flex: 0 0 auto;
+  margin-right: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1917,4 +1963,34 @@ button.total-value[aria-pressed="true"] {
   pointer-events: auto;
   border-color: var(--emerald-600);
   box-shadow: 0 0 0 3px rgba(42, 185, 119, 0.18);
+}
+
+/* ---- Preço da Liga Pokemon (via extensão Emerald TCG Finder) ---------------
+   O preço exibido vem da Liga; enquanto a busca não volta, o valor do
+   TCGplayer fica pulsando. O pill "Liga ⚠" do preview só aparece quando a
+   Liga pede a verificação do Cloudflare. */
+.summary-pill.liga-pill {
+  border: 1px solid rgba(217, 87, 87, 0.55);
+  background: rgba(217, 87, 87, 0.16);
+  color: var(--danger);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card-price.is-loading,
+.price-pill.is-loading,
+.variant-price.is-loading {
+  animation: liga-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes liga-pulse {
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-price.is-loading,
+  .price-pill.is-loading,
+  .variant-price.is-loading {
+    animation: none;
+  }
 }

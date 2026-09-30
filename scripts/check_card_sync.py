@@ -142,7 +142,6 @@ def main():
     remote_other = 0
     unknown = 0
     detail_cache = {}    # card_id -> dex_ids (evita re-fetch de variantes do mesmo Pokémon)
-    last_name = None
     for set_id in set_ids:
         try:
             cards = fetch_set_cards(set_id)
