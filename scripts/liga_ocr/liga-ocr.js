@@ -1,4 +1,4 @@
-/* Emerald TCG Finder - leitura dos preços ocultos da Liga Pokemon
+/* Hoenn Hunter - leitura dos preços ocultos da Liga Pokemon
  *
  * A Liga não manda em texto o preço da maioria dos anúncios (cards_stock):
  * cada dígito é um <div> cujas classes CSS apontam pra uma célula de uma

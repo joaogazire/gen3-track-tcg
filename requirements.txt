@@ -1,0 +1,4 @@
+# Ferramentas de manutenção em scripts/ (o site em si não tem dependências).
+requests          # TCGdex, Limitless, downloads
+playwright        # fetch_liga_prices.py / serve.py (usa o Google Chrome instalado)
+pillow            # build_thumbs.py, build_language_art.py

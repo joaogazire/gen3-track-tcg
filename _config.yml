@@ -1,0 +1,17 @@
+# GitHub Pages (Jekyll): o que NÃO é publicado.
+# O site usa src/ + assets/ (menos os PNGs). assets/cards (~1,7 GB de PNGs) é só
+# a fonte dos scripts: o site exibe os WebP de assets/thumbs e assets/art
+# (scripts/build_thumbs.py). Com os PNGs, o site publicado passava de 1,9 GB,
+# acima do limite de 1 GB do Pages.
+exclude:
+  - assets/cards/
+  - scripts/
+  - docs/
+  - requirements.txt
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/

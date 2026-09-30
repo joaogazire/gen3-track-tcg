@@ -26,7 +26,7 @@ https://joaogazire.github.io/gen3-track-tcg/.
 vez do `http.server`:
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install playwright   # uma vez (usa o Google Chrome instalado)
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt   # uma vez (usa o Google Chrome instalado)
 .venv/bin/python scripts/serve.py                            # http://localhost:8765/src/
 ```
 
@@ -41,6 +41,12 @@ cartas de novo** na Liga (`scripts/serve.py` roda `fetch_liga_prices.py` na máq
 com o progresso na notificação e um botão **Parar**. Pode fechar o aviso ou recarregar a
 página: a coleta continua; interrompida, o próximo clique retoma de onde parou. No fim,
 os preços novos aparecem na tela. No GitHub Pages o botão só verifica o catálogo.
+
+**Publicar os preços sozinho (opcional):** com `.venv/bin/python scripts/serve.py --publish`,
+cada coleta que termina bem faz commit só do `assets/data/liga-prices.min.json` e push para
+o branch atual — o resto do que estiver alterado fica como está. O site do Pages só muda
+se o servidor estiver rodando no `main`. Sem mudança nos preços, com merge/rebase em
+andamento ou num branch sem upstream, não publica (o motivo aparece no terminal).
 
 **Pelo terminal:**
 
@@ -121,12 +127,13 @@ gen3-track-tcg/
   o arquivo é gerado por `scripts/fetch_liga_prices.py`, ver abaixo). O preço é o
   **menor anúncio** na Liga para:
   - a **variante** da raridade escolhida (Normal / Holo = Foil / Reverse Foil);
-  - o **idioma** da bandeira do modal (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN; padrão PT) — em japonês, os anúncios
+  - o **idioma da carta** (🇧🇷 PT, 🇯🇵 JP, 🇺🇸 EN), escolhido na bandeira do modal e salvo com
+    ela — em japonês, os anúncios
     vêm da carta japonesa correspondente na Liga (ex.: Ralts SV1 211/198 ↔ SV1S 083/078,
     ligadas pela arte JP de `art.min.json`);
   - a **qualidade** escolhida no modal (M / NM / SP / MP / HP / D, padrão NM), valendo
-    essa qualidade ou melhor. Idioma e qualidade valem para o site todo (grade e soma
-    também) e ficam salvos no navegador.
+    essa qualidade ou melhor. A qualidade vale para o site todo (grade e soma também)
+    e fica salva no navegador.
 
   Sem anúncio nesse idioma/qualidade, mostra o menor de qualquer idioma/estado; sem a
   variante pedida, o de outra. Todo preço substituto aparece com **≈** na frente, e o
@@ -161,8 +168,11 @@ gen3-track-tcg/
   compartilhar): "Salvar novo" pede confirmação com nome e o preset aparece logo
   abaixo; clicar no nome carrega aquela coleção (em Plan, carrega como rascunho sem
   salvar); cada preset pode ser excluído pelo ×; salvos em `localStorage`
-- **Idioma da arte no modal** — bandeirinhas Brasil / Japão / EUA no topo do modal
-  trocam a pré-visualização para a mesma carta naquele idioma. A correspondência vem
+- **Idioma de cada carta** — bandeirinhas Brasil / Japão / EUA no topo do modal
+  trocam a pré-visualização para a mesma carta naquele idioma, e o idioma escolhido é
+  salvo com a carta: a grade mostra a arte dele (versão pequena do CDN) e o preço usa
+  os anúncios dele. Carta salva antes disso fica EN; carta nova começa na última
+  bandeira usada. A correspondência vem
   pronta do build (`assets/data/art.min.json`, carregado na primeira abertura do
   modal): PT pelo mesmo id na TCGdex ou pelo mesmo print no CDN da Limitless; JA pelo
   vínculo "Int. Prints" da Limitless (print japonês ↔ internacional, conferindo o
@@ -187,7 +197,9 @@ gen3-track-tcg/
 - **Busca mobile** — lupa ao lado do "CHECKLIST" abre o campo de busca só em telas pequenas
 - **Link de compartilhamento** — botão de ícone (link) gera uma URL com a coleção
   codificada no hash (LZString, sem servidor); quem abre vê as cartas marcadas
-  com variante e acabamento, em modo somente-leitura
+  com variante, acabamento e idioma, em modo somente-leitura. A impressão viaja por
+  coleção + número, então o link continua valendo depois de reconstruir o catálogo
+  (links antigos, que guardavam a posição no catálogo, ainda são lidos)
 - **Verificação de sincronização** contra a API [TCGdex](https://tcgdex.dev/) com barra de
   progresso e registro de data/hora da última atualização
 - Easter egg no Rayquaza do header 👀
@@ -197,24 +209,33 @@ gen3-track-tcg/
 
 | Script | Função |
 | --- | --- |
+| `sync_missing_cards.py` | Lista (ou baixa com `--download`) cartas da TCGdex que faltam nas pastas, sem Pocket; artes ausentes na TCGdex caem nos CDNs da pokemontcg.io e da Limitless TCG |
+| `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
+| `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
+| `build_language_art.py` | Roda depois do `build_card_database.py`: gera `art.min.json` (arte PT/JA de cada carta) e anexa ao catálogo as exclusivas JP |
+| `build_thumbs.py` | Gera os WebP que o site publica a partir dos PNGs de `assets/cards/`: miniaturas de 360 px em `assets/thumbs/` (grade e lista de variantes) e a arte em tamanho cheio em `assets/art/` (preview do modal). Só refaz o que mudou e remove órfãs (precisa de `pillow`) |
 | `backfill_set_totals.py` | Preenche o total impresso de cada coleção (`sets[id].total`, o "106" de "57/106") no catálogo já gerado, sem refazer o build — usado pela extensão Hoenn Hunter pra casar a impressão da loja com a do Tracker |
 | `backfill_variants.py` | Grava no catálogo já gerado os acabamentos de cada impressão (`vr`, ex. `"nr"`) a partir das variantes da TCGdex no cache, sem refazer o build nem fazer requisições — o build novo já grava `vr` |
-| `build_card_database.py` | Gera a base do app (`assets/data/` — catálogo, detalhes e `prices.min.json`) a partir do catálogo local + TCGdex |
-| `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
-| `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
-| `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |
-| `sync_missing_cards.py` | Lista (ou baixa com `--download`) cartas da TCGdex que faltam nas pastas, sem Pocket; artes ausentes na TCGdex caem nos CDNs da pokemontcg.io e da Limitless TCG |
-| `build_language_art.py` | Roda depois do `build_card_database.py`: gera `art.min.json` (arte PT/JA de cada carta) e anexa ao catálogo as exclusivas JP |
-| `build_thumbs.py` | Gera as miniaturas WebP (360 px, ~35 KB) em `assets/thumbs/` a partir dos PNGs de `assets/cards/`; a grade e a lista de variantes usam a miniatura e o preview do modal usa o PNG. Só refaz o que mudou e remove órfãs (precisa de `pillow`) |
+| `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
+| `fetch_liga_prices.py` | Coleta os preços da Liga Pokemon (menor anúncio por variante, idioma e qualidade) e grava `assets/data/liga-prices.min.json`; `--daily` refaz só o que mudou (ver "Atualizar os preços da Liga") |
+| `serve.py` | Servidor local do site (`http://localhost:8765/`) com a API que roda a coleta da Liga pelo botão de sincronizar e a atualização diária |
 | `limitless.py` | Módulo de leitura da Limitless TCG (sets EN/JP, cartas, prints internacionais), com cache em `scripts/.limitless_cache.json` |
+| `download_full_pokemon_cards.py` | Baixa todas as cartas de cada Pokémon do roster |
+| `download_gen3_tcgdex.py` | Baixa as cartas da série EX (Geração 3) da TCGdex |
+| `rebuild_full_card_set.py` | Reconcilia pastas locais com a API e baixa faltantes |
 
 Ordem para atualizar tudo: `sync_missing_cards.py --download` → `build_local_card_index.py`
 → `build_card_database.py` → `build_language_art.py` → `build_thumbs.py`.
-| `build_local_card_index.py` | Reconstrói `assets/cards/index.json` a partir dos arquivos |
-| `check_card_sync.py` | Valida o catálogo local contra a API (reporta divergências) |
-| `normalize_card_catalog.py` | Normaliza metadados das entradas do catálogo |
 
-Dependência única: `pip install requests`
+Scripts antigos, fora do fluxo, ficam em `scripts/legacy/` (não rode).
+
+**O que o Pages publica:** o `_config.yml` tira do site `assets/cards/` (os PNGs,
+~1,7 GB, que só servem de fonte para os scripts), `scripts/` e `docs/`. O site exibe
+os WebP de `assets/thumbs/` e `assets/art/` (~580 MB juntos); com os PNGs, o site
+publicado passava de 1,9 GB, acima do limite de 1 GB do Pages. Depois de baixar
+cartas novas, rode o `build_thumbs.py` antes de commitar.
+
+Dependências (só para os scripts): `pip install -r requirements.txt`
 
 ## Fonte das imagens
 

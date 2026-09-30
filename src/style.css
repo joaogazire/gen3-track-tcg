@@ -612,6 +612,13 @@ h1 {
   perspective: 1500px;
 }
 
+/* Foco pelo teclado (Tab): mesmo destaque do hover + contorno dourado */
+.card:focus-visible {
+  outline: 3px solid var(--gold-500);
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+
 .card:hover {
   /* Sem rotate aqui: o rodapé (# número) fica estático; só a imagem inclina. */
   transform: translateY(-7px) scale(1.012);

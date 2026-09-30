@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Servidor local do site + sincronização de preços da Liga pelo botão.
 
-Serve o projeto como `python3 -m http.server` (abra http://localhost:8765/src/)
+Serve o projeto como `python3 -m http.server` (abra http://localhost:8765/)
 e expõe uma API só para a máquina local, usada pelo botão de sincronizar:
 
     GET  /api/liga-sync        estado da coleta (rodando, etapa, progresso)
@@ -14,14 +14,22 @@ e expõe uma API só para a máquina local, usada pelo botão de sincronizar:
 
 A coleta roda com o mesmo Python deste servidor, que precisa do Playwright:
 
-    python3 -m venv .venv && .venv/bin/pip install playwright
+    python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
     .venv/bin/python scripts/serve.py            # porta 8765
     .venv/bin/python scripts/serve.py 9000       # outra porta
+    .venv/bin/python scripts/serve.py --publish  # publica os preços no GitHub
+
+Com --publish, cada coleta que termina bem faz commit só do
+assets/data/liga-prices.min.json e push para o branch atual (o que mais estiver
+alterado ou no stage fica como está). O site do Pages só muda se o branch for
+o main. Não publica se os preços não mudaram, com merge/rebase em andamento ou
+num branch sem upstream.
 
 Só escuta em 127.0.0.1. Os POST exigem o cabeçalho X-Emerald-Tracker: um site
 de fora não consegue mandá-lo sem uma pré-verificação CORS, que aqui nunca é
 aceita — então outra página aberta no navegador não dispara a coleta.
 """
+import argparse
 import importlib.util
 import json
 import re
@@ -38,6 +46,7 @@ FETCH_SCRIPT = ROOT / "scripts" / "fetch_liga_prices.py"
 # fechar o servidor, queda), o próximo clique retoma pelo mesmo instante —
 # refaz só o que é anterior a ele — em vez de recomeçar do zero
 RUN_STATE = ROOT / "scripts" / ".liga_sync_state.json"
+PRICES_FILE = ROOT / "assets" / "data" / "liga-prices.min.json"
 COLLECTION_FILE = ROOT / "scripts" / ".liga_sync_collection.json"
 API = "/api/liga-sync"
 TOKEN_HEADER = "X-Emerald-Tracker"
@@ -49,10 +58,39 @@ PLAN_RE = re.compile(r"(\d+) páginas de carta, (\d+) para buscar")
 DONE_RE = re.compile(r"(\d+) de (\d+) cartas com preço da Liga")
 
 
+def git(*args):
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+
+
+def publish_prices():
+    """Commit + push só do liga-prices.min.json; devolve o que aconteceu."""
+    rel = PRICES_FILE.relative_to(ROOT).as_posix()
+    if not git("status", "--porcelain", "--", rel).stdout.strip():
+        return "preços iguais aos do último commit — nada a publicar"
+    git_dir = Path(git("rev-parse", "--git-dir").stdout.strip() or ".git")
+    git_dir = git_dir if git_dir.is_absolute() else ROOT / git_dir
+    if any((git_dir / name).exists() for name in ("MERGE_HEAD", "CHERRY_PICK_HEAD", "rebase-merge", "rebase-apply")):
+        return "merge/rebase em andamento — não publiquei"
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    upstream = git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+    if branch in ("", "HEAD") or upstream.returncode:
+        return f"branch {branch or '?'} sem upstream — não publiquei"
+    # Com o caminho no comando, o commit leva só esse arquivo (o resto do stage fica)
+    commit = git("commit", "-m", f"Update Liga prices ({time.strftime('%Y-%m-%d')})", "--", rel)
+    if commit.returncode:
+        return "commit falhou: " + (commit.stderr or commit.stdout).strip().splitlines()[-1]
+    push = git("push")
+    head = git("rev-parse", "--short", "HEAD").stdout.strip()
+    if push.returncode:
+        return f"commit {head} feito, mas o push falhou: " + push.stderr.strip().splitlines()[-1]
+    return f"publicado: {head} em {upstream.stdout.strip()}"
+
+
 class SyncJob:
     """Uma coleta por vez; o estado é lido do stdout do script."""
 
     def __init__(self):
+        self.publish = False
         self.lock = threading.Lock()
         self.process = None
         self.state = self._idle()
@@ -150,9 +188,13 @@ class SyncJob:
                 self._save(done=True, lastDaily=time.strftime("%Y-%m-%d"))
             else:
                 self._save(lastDaily=time.strftime("%Y-%m-%d"))
+        published = publish_prices() if code == 0 and self.publish else None
+        if published:
+            print(f"[liga] {published}", flush=True)
         with self.lock:
             self.state.update(running=False, exitCode=code, finishedAt=time.time(),
-                              phase="concluído" if code == 0 else "interrompido")
+                              phase="concluído" if code == 0 else "interrompido",
+                              published=published)
 
 
 JOB = SyncJob()
@@ -206,12 +248,22 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+    parser = argparse.ArgumentParser(description="Servidor local do Emerald TCG")
+    parser.add_argument("port", nargs="?", type=int, default=8765)
+    parser.add_argument("--publish", action="store_true",
+                        help="depois de cada coleta, commit + push do liga-prices.min.json")
+    args = parser.parse_args()
+    port = args.port
+    JOB.publish = args.publish
     if importlib.util.find_spec("playwright") is None:
         print("Aviso: este Python não tem o Playwright — o site abre, mas o botão não "
               "consegue buscar na Liga. Use .venv/bin/python scripts/serve.py")
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Emerald TCG em http://localhost:{port}/src/  (Ctrl+C para sair)")
+    print(f"Emerald TCG em http://localhost:{port}/  (Ctrl+C para sair)")
+    if args.publish:
+        branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+        print(f"--publish: os preços de cada coleta vão para o GitHub (branch {branch})"
+              + ("" if branch == "main" else " — o site do Pages só muda pelo main"))
     try:
         server.serve_forever()
     except KeyboardInterrupt:
