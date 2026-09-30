@@ -3008,7 +3008,7 @@ function createCardMarkup(card) {
     : "";
 
   return `
-    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}${draftClass}" data-id="${card.id}" tabindex="0" aria-label="${escapeHtml(card.name)}">
+    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}${draftClass}" data-id="${card.id}" tabindex="0" role="button" aria-label="${escapeHtml(card.name)}">
       ${priceMarkup}
       <div class="card-visual">
         <div class="card-art">
@@ -3022,6 +3022,23 @@ function createCardMarkup(card) {
     </article>
   `;
 }
+
+// Enter/Espaço na carta focada (Tab) abrem o modal, como o clique. O Enter
+// não salva de cara: o atalho do modal ignora eventos vindos da grade.
+function initCardKeyboard() {
+  if (!cardGrid) return;
+  cardGrid.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const cardElement = event.target.closest?.(".card");
+    if (!cardElement || event.target !== cardElement) return;
+    event.preventDefault();
+    modalOpenerId = cardElement.dataset.id;
+    cardElement.click();
+  });
+}
+
+// Carta que abriu o modal pelo teclado: o foco volta para ela ao fechar
+let modalOpenerId = null;
 
 // Markup de cada <article> na tela, por id: o renderCards só troca as
 // cartas cujo HTML mudou, sem refazer a grade inteira (e sem recarregar e
@@ -3054,7 +3071,9 @@ function renderCards() {
       const fresh = cardMarkupTemplate.content.firstElementChild;
       if (element) {
         if (element === tiltedCard) tiltedCard = fresh;
+        const hadFocus = element === document.activeElement;
         element.replaceWith(fresh);
+        if (hadFocus) fresh.focus({ preventScroll: true });
         if (cursor === element) cursor = fresh;
       }
       element = fresh;
@@ -3337,6 +3356,10 @@ function closeModal() {
   modal.setAttribute("aria-hidden", "true");
   currentCardId = null;
   selectedAsset = null;
+  if (modalOpenerId !== null) {
+    cardGrid.querySelector(`.card[data-id="${modalOpenerId}"]`)?.focus({ preventScroll: true });
+    modalOpenerId = null;
+  }
 }
 
 function markCardAsCollected(cardId, assetInfo = null) {
@@ -3736,6 +3759,7 @@ if (searchToggleBtn) {
   }
 
   initCardTilt();
+  initCardKeyboard();
   loadCards();
   refreshSavedSnapshot();
   // Link compartilhado é vitrine: nada de reset nem carregar/salvar presets
