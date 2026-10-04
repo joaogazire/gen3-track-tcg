@@ -308,6 +308,12 @@ const I18N = {
     understood: "Got it",
     sharedViewing: "You are viewing a collection shared by a link — editing is blocked.",
     sharedMine: "View my collection",
+    sharedImport: "Save as my collection",
+    importConfirmTitle: "Replace your collection?",
+    importConfirmMsg: "You already have {count} cards marked on this site. Saving this link replaces them with the {shared} cards in the link (variant, finish, language and placeholder). Presets are kept.",
+    importYes: "Yes, replace",
+    importNo: "Cancel",
+    importWaitCatalog: "Loading the catalog — try again in a second.",
     priceLinkSuffix: " · click to open the store",
     ligaLoadingSuffix: " · looking up the Liga Pokemon price…",
     ligaMissingSuffix: " · no price on Liga Pokemon for this print",
@@ -444,6 +450,12 @@ const I18N = {
     understood: "Entendi",
     sharedViewing: "Você está vendo a coleção compartilhada por um link — edição bloqueada.",
     sharedMine: "Ver minha coleção",
+    sharedImport: "Salvar como minha coleção",
+    importConfirmTitle: "Substituir sua coleção?",
+    importConfirmMsg: "Você já tem {count} cartas marcadas neste site. Salvar este link troca por {shared} cartas do link (variante, acabamento, idioma e placeholder). Os presets ficam.",
+    importYes: "Sim, substituir",
+    importNo: "Cancelar",
+    importWaitCatalog: "Carregando o catálogo — tente de novo em um instante.",
     priceLinkSuffix: " · clique para abrir na loja",
     ligaLoadingSuffix: " · buscando o preço na Liga Pokemon…",
     ligaMissingSuffix: " · a Liga Pokemon não tem preço desta impressão",
@@ -602,6 +614,7 @@ const cardLangPicker = document.getElementById("cardLangPicker");
 const backTopBtn = document.getElementById("backTopBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
 const resetModal = document.getElementById("resetModal");
+const importModal = document.getElementById("importModal");
 const resetConfirmYes = document.getElementById("resetConfirmYes");
 const resetConfirmNo = document.getElementById("resetConfirmNo");
 const fabActions = document.querySelector(".fab-actions");
@@ -1885,13 +1898,67 @@ function renderSharedBanner() {
   } else {
     banner.innerHTML = `
       <span>${t("sharedViewing")}</span>
-      <button type="button" class="shared-banner-clear">${t("sharedMine")}</button>
+      <span class="shared-banner-actions">
+        <button type="button" class="shared-banner-clear">${t("sharedMine")}</button>
+        <button type="button" class="shared-banner-import">${t("sharedImport")}</button>
+      </span>
     `;
     banner.querySelector(".shared-banner-clear").addEventListener("click", clearSharedHash);
+    banner.querySelector(".shared-banner-import").addEventListener("click", requestImportShared);
   }
 
   panel.prepend(banner);
 }
+
+// ---- Salvar a coleção do link como a minha ---------------------------------
+// Leva a coleção de um link (#s=/#c=) para o localStorage deste endereço — é
+// como passar a coleção do Pages para o Render, ou para outro navegador. As
+// variantes do link só existem depois do catálogo (applySharedAssets).
+
+function savedCollectedCount() {
+  try {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(list) ? list.filter((card) => card.collected || card.placeholder).length : 0;
+  } catch (error) {
+    return 0;
+  }
+}
+
+function requestImportShared() {
+  if (!sharedMode) return;
+  if (!catalogAssetsPrepared) {
+    showToast(t("importWaitCatalog"));
+    return;
+  }
+  const count = savedCollectedCount();
+  if (!count || !importModal) {
+    importSharedCollection();
+    return;
+  }
+  const shared = cards.filter((card) => card.collected).length;
+  const message = document.getElementById("importModalMsg");
+  if (message) message.textContent = t("importConfirmMsg", { count, shared });
+  importModal.classList.remove("hidden");
+  importModal.setAttribute("aria-hidden", "false");
+}
+
+function closeImportModal() {
+  if (!importModal) return;
+  importModal.classList.add("hidden");
+  importModal.setAttribute("aria-hidden", "true");
+}
+
+function importSharedCollection() {
+  persistCards(cards);
+  clearSharedHash();
+}
+
+// Colar um link de coleção na aba do site só troca o #, sem recarregar: o
+// estado é montado no load, então recarrega para abrir a coleção do link
+window.addEventListener("hashchange", () => {
+  const hash = window.location.hash.slice(1);
+  if (hash.startsWith(SHARE_BITS_PREFIX) || hash.startsWith(SHARE_HASH_PREFIX)) window.location.reload();
+});
 
 function clearSharedHash() {
   // replaceState limpa a URL; o reload reconstrói o estado a partir do
@@ -3836,6 +3903,14 @@ if (resetConfirmNo) {
   resetConfirmNo.addEventListener("click", closeResetModal);
 }
 
+if (importModal) {
+  document.getElementById("importConfirmYes")?.addEventListener("click", importSharedCollection);
+  document.getElementById("importConfirmNo")?.addEventListener("click", closeImportModal);
+  importModal.addEventListener("click", (event) => {
+    if (event.target === importModal) closeImportModal();
+  });
+}
+
 if (resetModal) {
   resetModal.addEventListener("click", (event) => {
     if (event.target === resetModal) closeResetModal();
@@ -3908,6 +3983,10 @@ document.addEventListener("keydown", (event) => {
     }
     if (resetModal && !resetModal.classList.contains("hidden")) {
       closeResetModal();
+      return;
+    }
+    if (importModal && !importModal.classList.contains("hidden")) {
+      closeImportModal();
       return;
     }
     if (shareModal && !shareModal.classList.contains("hidden")) {

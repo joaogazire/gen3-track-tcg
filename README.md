@@ -218,6 +218,10 @@ gen3-track-tcg/
   entra no fim da lista, então o link continua valendo depois de reconstruir o
   catálogo; se a ordem mudar, um checksum detecta e as variantes caem (as cartas
   marcadas ficam). Links antigos (`#c=`) continuam sendo lidos
+- **Salvar como minha coleção** — no aviso de link compartilhado, o botão dourado grava
+  a coleção do link neste navegador/endereço (com confirmação se já houver cartas
+  marcadas) e abre a página editável. É como passar a coleção do Pages para o Render
+  ou para outro navegador; presets e preferências não vão no link
 - **Placeholder** — interruptor no canto inferior esquerdo do modal (atalho **P**):
   a carta entra na coleção só segurando o lugar até chegar a que você quer de
   verdade. Na grade ganha o selo de esmeralda no canto superior esquerdo; conta no

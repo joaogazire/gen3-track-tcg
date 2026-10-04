@@ -274,6 +274,17 @@
       </div>
     </div>
 
+    <div class="modal-backdrop hidden" id="importModal" aria-hidden="true">
+      <div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+        <h2 id="importModalTitle" data-i18n="importConfirmTitle">Substituir sua coleção?</h2>
+        <p class="share-hint" id="importModalMsg"></p>
+        <div class="modal-actions">
+          <button id="importConfirmNo" class="btn btn-secondary" type="button" data-i18n="importNo">Cancelar</button>
+          <button id="importConfirmYes" class="btn btn-primary" type="button" data-i18n="importYes">Sim, substituir</button>
+        </div>
+      </div>
+    </div>
+
     <div id="syncNotification" class="sync-notification hidden" role="status" aria-live="polite" aria-atomic="true">
       <div class="sync-notification-header">
         <strong data-i18n="syncHeader">Sincronização de cartas</strong>
