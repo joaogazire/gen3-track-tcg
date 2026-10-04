@@ -2146,9 +2146,29 @@ function flashShareCopied() {
 // Botão de link do header: copia direto (sem abrir o modal) e mostra o mesmo
 // certinho do botão de copiar do modal. Sem textarea visível pra selecionar,
 // então o fallback (clipboard API bloqueada) usa um textarea temporário.
+// Aviso curto no topo da tela (some sozinho)
+function showToast(message) {
+  let toast = document.getElementById("toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    toast.setAttribute("role", "status");
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("visible");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove("visible"), 2600);
+}
+
 async function copyHeaderShareLink() {
   const url = createShareUrl();
-  if (!url) return;
+  // Coleção vazia não gera link: avisa em vez de não fazer nada
+  if (!url) {
+    showToast(t("sharePlaceholder"));
+    return;
+  }
 
   try {
     await navigator.clipboard.writeText(url);
