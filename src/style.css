@@ -361,6 +361,30 @@ h1 {
   background: rgba(255,255,255,0.18);
 }
 
+.shared-banner-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shared-banner-import {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #0b1010;
+  background: linear-gradient(180deg, var(--gold-500), var(--gold-700));
+  transition: filter 0.15s ease;
+}
+
+.shared-banner-import:hover {
+  filter: brightness(1.08);
+}
+
 .share-hint {
   margin: 0 0 14px;
   text-align: center;
