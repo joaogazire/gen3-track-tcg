@@ -2234,3 +2234,30 @@ button.total-value[aria-pressed="true"] {
     animation: none;
   }
 }
+
+/* Aviso curto (ex.: compartilhar sem nenhuma carta marcada) */
+.toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 1000;
+  max-width: min(92vw, 420px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--slate-50);
+  background: rgba(10, 29, 22, 0.96);
+  border: 1px solid rgba(244, 201, 93, 0.55);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -12px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
