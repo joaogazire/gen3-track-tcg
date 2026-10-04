@@ -20,6 +20,19 @@ https://joaogazire.github.io/gen3-track-tcg/.
 > Abrir o `index.html` diretamente via `file://` não funciona: o app busca a base de
 > dados `assets/data/catalog.min.json` via `fetch`, que exige HTTP.
 
+## Publicar no Render
+
+O site também pode ir para o Render como **Static Site** (grátis, sem hibernar, com
+CDN), descrito em `render.yaml`. O build (`scripts/build_static.sh`) monta em
+`public/` só o que o site carrega — `index.html`, `src/` e `assets/{art,thumbs,data,site}`
+(~610 MB); `assets/cards` (PNGs), `scripts/` e `docs/` ficam de fora, como no Pages.
+
+Uma vez: no Render, **New → Blueprint**, conecte o repositório e confirme. Depois disso
+cada push no `main` publica sozinho — inclusive os preços que o
+`scripts/serve.py --publish` empurra do PC (a coleta da Liga continua local: o
+Cloudflare da Liga e o plano grátis do Render, que hiberna e tem 512 MB, não
+aguentam as horas de Chrome headless).
+
 ## Atualizar os preços da Liga
 
 **Pelo botão de sincronizar** (↻ no header): rode o site com o servidor do projeto em

@@ -18,3 +18,6 @@ Thumbs.db
 .liga_cache.json
 .liga_sync_state.json
 .liga_sync_collection.json
+
+# Build do Static Site (scripts/build_static.sh)
+public/

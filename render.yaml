@@ -1,0 +1,26 @@
+# Blueprint do Render: o site como Static Site (grátis, sem hibernar, CDN).
+# Deploy automático a cada push no branch configurado no Render. Os preços da
+# Liga seguem vindo do PC (scripts/serve.py --publish faz o push do JSON).
+services:
+  - type: web
+    name: emerald-tcg
+    runtime: static
+    branch: main
+    buildCommand: sh scripts/build_static.sh
+    staticPublishPath: ./public
+    pullRequestPreviewsEnabled: false
+    headers:
+      # Artes e miniaturas mudam pouco: 1 semana de cache no navegador
+      - path: /assets/art/*
+        name: Cache-Control
+        value: public, max-age=604800
+      - path: /assets/thumbs/*
+        name: Cache-Control
+        value: public, max-age=604800
+      # Catálogo e preços mudam todo dia: sempre revalida
+      - path: /assets/data/*
+        name: Cache-Control
+        value: no-cache
+      - path: /src/*
+        name: Cache-Control
+        value: no-cache
