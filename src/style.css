@@ -1423,6 +1423,148 @@ body.plan-mode .card.revealed .card-art::after {
   box-shadow: 0 -10px 16px -10px rgba(0, 0, 0, 0.55);
 }
 
+/* Interruptor do placeholder (canto inferior esquerdo do modal): o slider do
+   iPhone antigo (iOS 6) — trilho com sombra interna, faixa que desliza com
+   "I" verde / "O" cinza e botão branco brilhante — no verde do site. */
+.ph-switch {
+  position: absolute;
+  left: 18px;
+  top: 19px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ph-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.ph-switch-track {
+  position: relative;
+  width: 64px;
+  height: 27px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.12);
+  /* isola o filtro de máscara do Safari com overflow + border-radius */
+  transform: translateZ(0);
+}
+
+.ph-switch-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 101px;          /* 2 × trilho − botão */
+  height: 100%;
+  transform: translateX(-37px);
+  transition: transform 0.22s cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+
+.ph-switch input:checked + .ph-switch-track .ph-switch-slide {
+  transform: translateX(0);
+}
+
+.ph-switch-on,
+.ph-switch-off {
+  flex: 0 0 37px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 800 0.8rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.ph-switch-on {
+  /* metade sob o botão: o "I" fica no meio da parte verde visível */
+  padding-right: 13px;
+  margin-right: -13px;
+  flex-basis: 50px;
+  color: #f2fff6;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, #0f4b3c 0%, var(--emerald-600) 45%, var(--emerald-500) 100%);
+}
+
+.ph-switch-off {
+  padding-left: 13px;
+  margin-left: -13px;
+  flex-basis: 50px;
+  color: #8a948e;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+  background: linear-gradient(180deg, #c9cfcb 0%, #eef1ef 55%, #fdfdfd 100%);
+}
+
+.ph-switch-knob {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 27px;
+  height: 27px;
+  margin-top: -1px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.95) 0 38%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, #ffffff 0%, #e2e6e3 55%, #c4cbc6 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.12);
+}
+
+.ph-switch-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate-400);
+  transition: color 0.2s ease;
+}
+
+.ph-switch input:checked ~ .ph-switch-label {
+  color: var(--emerald-400);
+}
+
+.ph-switch input:focus-visible + .ph-switch-track {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 2px;
+}
+
+@media (max-width: 460px) {
+  .ph-switch-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ph-switch-slide {
+    transition: none;
+  }
+}
+
+/* Selo do placeholder na carta (canto superior esquerdo), à frente do tilt
+   como o badge de preço */
+.card-placeholder {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  transform: translateZ(64px);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+}
+
+.card-placeholder svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .btn {
   border: none;
   border-radius: 999px;

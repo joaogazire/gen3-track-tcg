@@ -300,6 +300,9 @@ const I18N = {
     update: "Update",
     cancel: "Cancel",
     unmark: "Unmark",
+    placeholder: "Placeholder",
+    placeholderHint: "Placeholder: a stand-in until the card you really want arrives. The Hoenn Hunter extension counts it as missing.",
+    placeholderBadge: "Placeholder",
     officialCard: "Official card",
     sharedUnreadable: "This link could not be read (older site version?) — showing your collection.",
     understood: "Got it",
@@ -433,6 +436,9 @@ const I18N = {
     update: "Atualizar",
     cancel: "Cancelar",
     unmark: "Desmarcar",
+    placeholder: "Placeholder",
+    placeholderHint: "Placeholder: segura o lugar até chegar a carta que você quer de verdade. A extensão Hoenn Hunter conta como faltante.",
+    placeholderBadge: "Placeholder",
     officialCard: "Carta oficial",
     sharedUnreadable: "Este link não pôde ser lido (versão antiga do site?) — mostrando a sua coleção.",
     understood: "Entendi",
@@ -599,6 +605,7 @@ const resetModal = document.getElementById("resetModal");
 const resetConfirmYes = document.getElementById("resetConfirmYes");
 const resetConfirmNo = document.getElementById("resetConfirmNo");
 const fabActions = document.querySelector(".fab-actions");
+const placeholderToggle = document.getElementById("placeholderToggle");
 const mobileMenuBtn = document.getElementById("mobileMenuBtn");
 
 let cards = [];
@@ -686,6 +693,18 @@ function setPlanMode(enabled) {
 // links antigos após um rebuild do catálogo — aí as coletadas ainda aparecem
 // (roster é código), mas sem variante. Links v1 (formato antigo, JSON completo)
 // continuam sendo lidos para não quebrar links já compartilhados.
+// v4 (atual, "#s="): bits empacotados em base64url, ~3× menor que o v3. Cabeçalho
+// (versão 2b, idioma mais comum do link 2b, parâmetro k do código de Rice 3b,
+// "tem placeholder" 1b, checksum 12b), depois 1 bit por carta da roster
+// (coletada?) e, para cada coletada, em ordem: posição da impressão na lista
+// do Pokémon ordenada por lançamento da coleção (Rice-k; 0 = sem impressão,
+// senão posição+1), acabamento (0 = o da impressão | 1 + código 3b), idioma
+// (0 = o do link | 1 + código 2b) e, se o link tiver algum, o bit de
+// placeholder. Coleção nova entra no fim da lista, então os links antigos
+// continuam valendo; quando a ordem muda (impressão antiga adicionada), o
+// checksum das impressões não bate e as variantes caem (as coletadas ficam).
+// Zeros do fim do link são omitidos (leitura além do fim devolve 0).
+const SHARE_BITS_PREFIX = "s=";
 const SHARE_HASH_PREFIX = "c=";
 // Novos códigos só no fim (índice = código dos links já compartilhados)
 const SHARE_FINISH_CODES = ["normal", "holo", "reverse", "reverse holo", "full art", "secret", "shiny", "foil"];
@@ -794,6 +813,21 @@ function parseSharedStateV3(payload) {
 
 function parseSharedState() {
   const raw = (window.location.hash || "").slice(1);
+  if (raw.startsWith(SHARE_BITS_PREFIX)) {
+    let bitsResult = null;
+    try {
+      bitsResult = parseSharedStateV4(raw.slice(SHARE_BITS_PREFIX.length));
+    } catch (error) {
+      bitsResult = null;
+    }
+    if (!bitsResult) {
+      sharedIgnored = true;
+      return false;
+    }
+    sharedMap = bitsResult.map;
+    sharedPayloadStamp = "";
+    return true;
+  }
   if (!raw.startsWith(SHARE_HASH_PREFIX)) return false;
 
   const compact = raw.slice(SHARE_HASH_PREFIX.length);
@@ -821,6 +855,177 @@ function parseSharedState() {
   sharedMap = result.map;
   sharedPayloadStamp = result.stamp;
   return true;
+}
+
+const SHARE_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+let sharedChecksum = -1;         // checksum das impressões de um link v4
+
+class ShareBitWriter {
+  constructor() { this.bits = []; }
+  write(value, width) {
+    for (let i = width - 1; i >= 0; i -= 1) this.bits.push((value >> i) & 1);
+  }
+  rice(value, k) {
+    for (let q = value >> k; q > 0; q -= 1) this.bits.push(1);
+    this.bits.push(0);
+    this.write(value & ((1 << k) - 1), k);
+  }
+  toString() {
+    let out = "";
+    for (let i = 0; i < this.bits.length; i += 6) {
+      let sextet = 0;
+      for (let j = 0; j < 6; j += 1) sextet = (sextet << 1) | (this.bits[i + j] || 0);
+      out += SHARE_B64[sextet];
+    }
+    return out.replace(/A+$/, "");
+  }
+}
+
+class ShareBitReader {
+  constructor(text) {
+    this.text = text;
+    this.pos = 0;
+  }
+  bit() {
+    const sextet = SHARE_B64.indexOf(this.text[Math.floor(this.pos / 6)] || "A");
+    if (sextet < 0) throw new Error("caractere inválido no link");
+    const value = (sextet >> (5 - (this.pos % 6))) & 1;
+    this.pos += 1;
+    return value;
+  }
+  read(width) {
+    let value = 0;
+    for (let i = 0; i < width; i += 1) value = (value << 1) | this.bit();
+    return value;
+  }
+  rice(k) {
+    let q = 0;
+    while (this.bit()) {
+      q += 1;
+      if (q > 512) throw new Error("link corrompido");
+    }
+    return (q << k) | this.read(k);
+  }
+}
+
+function riceLength(value, k) {
+  return (value >> k) + 1 + k;
+}
+
+// Impressões do Pokémon na ordem do link v4: lançamento da coleção, depois
+// coleção, número e arquivo — determinística e estável entre builds
+const shareVariantOrderCache = new Map();
+function shareVariantOrder(cardName) {
+  if (shareVariantOrderCache.has(cardName)) return shareVariantOrderCache.get(cardName);
+  const release = (asset) => String(setsIndex?.[String(asset.set || "").toLowerCase()]?.release || "9999");
+  const list = getCardVariants(cardName).slice().sort((a, b) =>
+    release(a).localeCompare(release(b))
+    || String(a.set).localeCompare(String(b.set))
+    || String(a.number).localeCompare(String(b.number), "en", { numeric: true })
+    || String(a.file).localeCompare(String(b.file)));
+  if (catalogAssetsPrepared) shareVariantOrderCache.set(cardName, list);
+  return list;
+}
+
+// FNV-1a de 12 bits sobre coleção+número das impressões do link
+function shareChecksum(assets) {
+  let hash = 0x811c9dc5;
+  const text = assets.map((asset) => `${asset.set}~${asset.number}`).join("|");
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return (hash ^ (hash >>> 12) ^ (hash >>> 24)) & 0xfff;
+}
+
+function createShareHashV4() {
+  const entries = [];
+  const langCount = new Map();
+  cards.forEach((card, rosterIndex) => {
+    if (!card.collected) return;
+    const asset = assetForFile(cardAssetFile(card));
+    const position = asset ? shareVariantOrder(card.name).indexOf(asset) : -1;
+    const entry = { rosterIndex, asset: position >= 0 ? asset : null, index: position + 1, finishCode: -1, langCode: 0, placeholder: Boolean(card.placeholder) };
+    if (entry.asset) {
+      const assetFinish = String(asset.finish || "normal").toLowerCase();
+      if (card.finish && card.finish !== assetFinish) entry.finishCode = SHARE_FINISH_CODES.indexOf(card.finish);
+      entry.langCode = Math.max(0, SHARE_LANG_CODES.indexOf(cardLangOf(card)));
+      langCount.set(entry.langCode, (langCount.get(entry.langCode) || 0) + 1);
+    }
+    entries.push(entry);
+  });
+  if (!entries.length) return null;
+
+  let linkLang = 0;
+  langCount.forEach((count, code) => {
+    if (count > (langCount.get(linkLang) || 0)) linkLang = code;
+  });
+  const hasPlaceholder = entries.some((entry) => entry.placeholder);
+  let bestK = 0;
+  let bestLength = Infinity;
+  for (let k = 0; k < 8; k += 1) {
+    const length = entries.reduce((sum, entry) => sum + riceLength(entry.index, k), 0);
+    if (length < bestLength) {
+      bestLength = length;
+      bestK = k;
+    }
+  }
+
+  const writer = new ShareBitWriter();
+  writer.write(0, 2);  // versão do formato de bits
+  writer.write(linkLang, 2);
+  writer.write(bestK, 3);
+  writer.write(hasPlaceholder ? 1 : 0, 1);
+  writer.write(shareChecksum(entries.filter((entry) => entry.asset).map((entry) => entry.asset)), 12);
+  const collectedIndexes = new Set(entries.map((entry) => entry.rosterIndex));
+  for (let i = 0; i < cards.length; i += 1) writer.write(collectedIndexes.has(i) ? 1 : 0, 1);
+  entries.forEach((entry) => {
+    writer.rice(entry.index, bestK);
+    if (entry.asset) {
+      if (entry.finishCode >= 0 && entry.finishCode < 8) {
+        writer.write(1, 1);
+        writer.write(entry.finishCode, 3);
+      } else {
+        writer.write(0, 1);
+      }
+      if (entry.langCode === linkLang) {
+        writer.write(0, 1);
+      } else {
+        writer.write(1, 1);
+        writer.write(entry.langCode, 2);
+      }
+    }
+    if (hasPlaceholder) writer.write(entry.placeholder ? 1 : 0, 1);
+  });
+  return writer.toString();
+}
+
+function parseSharedStateV4(text) {
+  if (!/^[A-Za-z0-9_-]+$/.test(text)) return null;
+  const reader = new ShareBitReader(text);
+  if (reader.read(2) !== 0) return null;
+  const linkLang = SHARE_LANG_CODES[reader.read(2)] || "";
+  const k = reader.read(3);
+  const hasPlaceholder = reader.read(1) === 1;
+  const checksum = reader.read(12);
+  const collected = [];
+  for (let i = 0; i < TOTAL_CARDS; i += 1) if (reader.bit()) collected.push(i);
+
+  const map = new Map();
+  collected.forEach((rosterIndex) => {
+    const index = reader.rice(k);
+    let finish = "";
+    let lang = "";
+    if (index > 0) {
+      if (reader.bit()) finish = SHARE_FINISH_CODES[reader.read(3)] || "";
+      lang = reader.bit() ? (SHARE_LANG_CODES[reader.read(2)] || "") : linkLang;
+    }
+    const placeholder = hasPlaceholder ? reader.bit() === 1 : false;
+    map.set(rosterIndex, { asset: -1, index, finish, lang, placeholder });
+  });
+  if (!map.size) return null;
+  sharedChecksum = checksum;
+  return { map, stamp: "" };
 }
 
 function cardAssetFile(card) {
@@ -859,6 +1064,15 @@ function buildShareEntries() {
 }
 
 function createShareUrl() {
+  const bits = createShareHashV4();
+  if (!bits) return null;
+  const url = new URL(window.location.href);
+  url.hash = `${SHARE_BITS_PREFIX}${bits}`;
+  return url.toString();
+}
+
+// Link v3 (texto + LZString): não é mais gerado, fica para comparação/testes
+function createShareUrlV3() {
   const entries = buildShareEntries();
   if (!entries.length) return null;
 
@@ -1555,6 +1769,7 @@ function closeResetModal() {
 function resetAllCards() {
   cards.forEach((card) => {
     card.collected = false;
+    card.placeholder = false;
     card.variant = "";
     card.label = "";
     card.finish = "";
@@ -1566,6 +1781,7 @@ function resetAllCards() {
   if (planMode && planSnapshot) {
     planSnapshot.forEach((card) => {
       card.collected = false;
+      card.placeholder = false;
       card.variant = "";
       card.label = "";
       card.finish = "";
@@ -1597,6 +1813,34 @@ function applySharedAssets() {
     sharedMap.forEach((state) => {
       state.asset = -1;
       state.finish = "";
+    });
+    return;
+  }
+
+  // v4: posição na lista do Pokémon; o checksum confere se a ordem é a mesma
+  // de quando o link nasceu
+  if (sharedChecksum >= 0) {
+    const resolved = [];
+    cards.forEach((card, rosterIndex) => {
+      const state = sharedMap.get(rosterIndex);
+      if (!card.collected || !state || !state.index) return;
+      const asset = shareVariantOrder(card.name)[state.index - 1];
+      resolved.push({ card, state, asset });
+    });
+    if (resolved.some((item) => !item.asset)
+      || shareChecksum(resolved.map((item) => item.asset)) !== sharedChecksum) {
+      console.warn("[Emerald TCG] Link de outra versão do catálogo: variantes ignoradas");
+      return;
+    }
+    resolved.forEach(({ card, state, asset }) => {
+      // Idioma padrão da impressão fica vazio, como no estado salvo
+      card.lang = state.lang && state.lang !== (asset.lang || "en") ? state.lang : "";
+      card.file = asset.file;
+      card.variant = asset.collection || asset.set || "";
+      card.collection = asset.collection || asset.set || "";
+      card.finish = state.finish || asset.finish || "normal";
+      card.label = `${card.collection} · ${formatCardFinish(card.finish)} · #${asset.number}`;
+      card.artPath = getAssetPath(asset.file);
     });
     return;
   }
@@ -1739,6 +1983,7 @@ function presetSnapshot() {
   return cards.map((card) => ({
     id: card.id,
     collected: Boolean(card.collected),
+    placeholder: Boolean(card.collected && card.placeholder),
     file: card.file || "",
     finish: card.finish || "",
     lang: card.lang || "",
@@ -1831,6 +2076,7 @@ function applyPreset(index) {
   cards.forEach((card) => {
     const saved = byId.get(card.id);
     card.collected = Boolean(saved?.collected);
+    card.placeholder = Boolean(saved?.collected && saved.placeholder);
     card.file = saved?.collected ? saved.file || "" : "";
     card.finish = saved?.collected ? saved.finish || "" : "";
     card.lang = saved?.collected ? saved.lang || "" : "";
@@ -2260,6 +2506,7 @@ function loadCards() {
     cards = hoennPokemon.map((card, index) => ({
       ...card,
       collected: sharedMap.has(index),
+      placeholder: Boolean(sharedMap.get(index)?.placeholder),
       variant: "",
       finish: "",
       collection: "",
@@ -2292,7 +2539,8 @@ function loadCards() {
       const match = savedMap.get(card.id);
       return {
         ...card,
-        collected: Boolean(match?.collected),
+        collected: Boolean(match?.collected || match?.placeholder),
+        placeholder: Boolean(match?.placeholder),
         variant: match?.variant || "",
         finish: match?.finish || "",
         collection: match?.collection || "",
@@ -2319,9 +2567,19 @@ function saveCards() {
 
 // Grava a coleção no navegador. Storage bloqueado (aba anônima restrita) ou
 // cheio não pode derrubar a marcação — a tela segue, só não persiste.
+// Placeholder (carta marcada só para segurar o lugar) vai com
+// `collected: false`: a extensão Hoenn Hunter lê esta chave e só conta
+// `collected === true`, então nas lojas ela aparece como faltante. A carta
+// escolhida segue salva (file/finish/lang) e o loadCards a traz de volta.
+function serializeCards(list) {
+  return list.map((card) => (card.placeholder && card.collected
+    ? { ...card, collected: false, placeholder: true }
+    : { ...card, placeholder: false }));
+}
+
 function persistCards(list) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeCards(list)));
   } catch (error) {
     console.warn("[Emerald TCG] Não foi possível salvar a coleção no navegador:", error);
   }
@@ -3026,6 +3284,11 @@ function createCardMarkup(card) {
     ? `<img class="card-photo" loading="lazy" decoding="async" src="${thumbPath}"${fullPath && thumbPath !== fullPath ? ` data-full="${fullPath}"` : ""} alt="${escapeHtml(card.name)}" />`
     : "";
   const nameLabel = !card.collected ? `<span class="card-name">${card.name}</span>` : "";
+  // Selo do placeholder: <use> do símbolo único em index.html (ids de
+  // gradiente não se repetem nas 202 cartas)
+  const placeholderMarkup = card.collected && card.placeholder
+    ? `<span class="card-placeholder" title="${escapeHtml(t("placeholderHint"))}"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#placeholderBadge" /></svg><span class="sr-only">${escapeHtml(t("placeholderBadge"))}</span></span>`
+    : "";
   const price = card.collected && card.artPath ? displayPriceFor(card.file, card.finish, card.name, cardLangOf(card)) : null;
   // Badge com link vira âncora para a loja (TCGplayer/Cardmarket); sem URL,
   // segue sendo span (pointer-events:none) para não engolir o clique da carta.
@@ -3036,8 +3299,9 @@ function createCardMarkup(card) {
     : "";
 
   return `
-    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}${draftClass}" data-id="${card.id}" tabindex="0" role="button" aria-label="${escapeHtml(card.name)}">
+    <article class="card ${resolvedClass}${shineClass ? ` ${shineClass}` : ""}${draftClass}${placeholderMarkup ? " is-placeholder" : ""}" data-id="${card.id}" tabindex="0" role="button" aria-label="${escapeHtml(card.name)}">
       ${priceMarkup}
+      ${placeholderMarkup}
       <div class="card-visual">
         <div class="card-art">
           ${photoMarkup}
@@ -3360,6 +3624,7 @@ function openModal(cardId, mode = "collect") {
   // Em edição a bandeira abre no idioma salvo da carta; carta nova começa na
   // última bandeira usada
   if (mode === "edit" && card.collected) cardLang = cardLangOf(card);
+  if (placeholderToggle) placeholderToggle.checked = Boolean(mode === "edit" && card.collected && card.placeholder);
 
   // Antes de renderizar: a carta aberta fura a fila da Liga
   requestLigaPrices(card.name, { priority: true, retry: true });
@@ -3398,6 +3663,7 @@ function markCardAsCollected(cardId, assetInfo = null) {
   const finishValue = getCurrentFinish() || assetInfo?.finish || "normal";
 
   card.collected = true;
+  card.placeholder = Boolean(placeholderToggle?.checked);
   card.variant = assetInfo ? `${assetInfo.set}` : "";
   card.finish = finishValue;
   card.collection = assetInfo?.collection || assetInfo?.set || "";
@@ -3431,6 +3697,7 @@ function unmarkCard(cardId) {
   if (!card) return;
 
   card.collected = false;
+  card.placeholder = false;
   card.variant = "";
   card.label = "";
   card.finish = "";
@@ -3638,7 +3905,7 @@ document.addEventListener("keydown", (event) => {
   // Só com o foco no modal ou solto: o Enter que abriu a carta na grade
   // chega aqui já com o modal aberto e não pode salvar de cara.
   const fromModal = event.target === document.body || modal.contains(event.target);
-  const typing = event.target.closest?.("input, textarea, select, [contenteditable]");
+  const typing = event.target.closest?.('input:not([type="checkbox"]), textarea, select, [contenteditable]');
   if (fromModal && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
     const finish = { n: "normal", f: "foil", r: "reverse", h: "holo" }[event.key.toLowerCase()];
     if (finish) {
@@ -3647,6 +3914,11 @@ document.addEventListener("keydown", (event) => {
         event.preventDefault();
         button.click();
       }
+      return;
+    }
+    if (event.key.toLowerCase() === "p" && placeholderToggle) {
+      event.preventDefault();
+      placeholderToggle.checked = !placeholderToggle.checked;
       return;
     }
     // Enter num botão focado já o aciona; só salva quando o foco está solto

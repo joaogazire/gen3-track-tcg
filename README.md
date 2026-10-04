@@ -196,10 +196,22 @@ gen3-track-tcg/
   (name_pt da TCGdex); escolha persiste
 - **Busca mobile** — lupa ao lado do "CHECKLIST" abre o campo de busca só em telas pequenas
 - **Link de compartilhamento** — botão de ícone (link) gera uma URL com a coleção
-  codificada no hash (LZString, sem servidor); quem abre vê as cartas marcadas
-  com variante, acabamento e idioma, em modo somente-leitura. A impressão viaja por
-  coleção + número, então o link continua valendo depois de reconstruir o catálogo
-  (links antigos, que guardavam a posição no catálogo, ainda são lidos)
+  codificada no hash (`#s=`, sem servidor); quem abre vê as cartas marcadas
+  com variante, acabamento, idioma e placeholder, em modo somente-leitura. O hash é
+  binário em base64url (~200 caracteres para 100 cartas, contra ~740 do formato
+  anterior em texto + LZString): 1 bit por Pokémon da roster e, por carta marcada, a
+  posição da impressão na lista daquele Pokémon ordenada por lançamento da coleção
+  (código de Rice), com acabamento e idioma só quando fogem do padrão. Coleção nova
+  entra no fim da lista, então o link continua valendo depois de reconstruir o
+  catálogo; se a ordem mudar, um checksum detecta e as variantes caem (as cartas
+  marcadas ficam). Links antigos (`#c=`) continuam sendo lidos
+- **Placeholder** — interruptor no canto inferior esquerdo do modal (atalho **P**):
+  a carta entra na coleção só segurando o lugar até chegar a que você quer de
+  verdade. Na grade ganha o selo de esmeralda no canto superior esquerdo; conta no
+  progresso e na soma. No `localStorage` ela vai com `collected: false` +
+  `placeholder: true`, então a extensão Hoenn Hunter (que só conta
+  `collected === true`) a trata como **faltante** e segue buscando nas lojas — sem
+  mudar nada na extensão
 - **Verificação de sincronização** contra a API [TCGdex](https://tcgdex.dev/) com barra de
   progresso e registro de data/hora da última atualização
 - Easter egg no Rayquaza do header 👀
