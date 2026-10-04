@@ -314,6 +314,7 @@ const I18N = {
     importYes: "Yes, replace",
     importNo: "Cancel",
     importWaitCatalog: "Loading the catalog — try again in a second.",
+    importNoVariants: "This link didn't bring the card prints (it may be cut). Copy a new link with the site's link button.",
     priceLinkSuffix: " · click to open the store",
     ligaLoadingSuffix: " · looking up the Liga Pokemon price…",
     ligaMissingSuffix: " · no price on Liga Pokemon for this print",
@@ -456,6 +457,7 @@ const I18N = {
     importYes: "Sim, substituir",
     importNo: "Cancelar",
     importWaitCatalog: "Carregando o catálogo — tente de novo em um instante.",
+    importNoVariants: "Este link não trouxe as impressões das cartas (pode estar cortado). Copie um link novo pelo botão de link do site.",
     priceLinkSuffix: " · clique para abrir na loja",
     ligaLoadingSuffix: " · buscando o preço na Liga Pokemon…",
     ligaMissingSuffix: " · a Liga Pokemon não tem preço desta impressão",
@@ -716,7 +718,10 @@ function setPlanMode(enabled) {
 // placeholder. Coleção nova entra no fim da lista, então os links antigos
 // continuam valendo; quando a ordem muda (impressão antiga adicionada), o
 // checksum das impressões não bate e as variantes caem (as coletadas ficam).
-// Zeros do fim do link são omitidos (leitura além do fim devolve 0).
+// Zeros do fim do link são omitidos (leitura além do fim devolve 0), então o
+// formato 1 termina com um bit 1: link cortado (ex.: copiado de um texto que
+// quebrou a linha) fica sem ele e é recusado em vez de virar cartas sem
+// impressão. No formato 0 (sem o bit), o corte só é detectado no mapa da roster.
 const SHARE_BITS_PREFIX = "s=";
 const SHARE_HASH_PREFIX = "c=";
 // Novos códigos só no fim (índice = código dos links já compartilhados)
@@ -872,6 +877,7 @@ function parseSharedState() {
 
 const SHARE_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 let sharedChecksum = -1;         // checksum das impressões de um link v4
+let sharedVariantsLost = false;  // link v4 cujas impressões não deu para resolver
 
 class ShareBitWriter {
   constructor() { this.bits = []; }
@@ -985,7 +991,7 @@ function createShareHashV4() {
   }
 
   const writer = new ShareBitWriter();
-  writer.write(0, 2);  // versão do formato de bits
+  writer.write(1, 2);  // versão do formato de bits (1 = com bit de fim)
   writer.write(linkLang, 2);
   writer.write(bestK, 3);
   writer.write(hasPlaceholder ? 1 : 0, 1);
@@ -1010,19 +1016,25 @@ function createShareHashV4() {
     }
     if (hasPlaceholder) writer.write(entry.placeholder ? 1 : 0, 1);
   });
+  writer.write(1, 1);  // fim
   return writer.toString();
 }
 
 function parseSharedStateV4(text) {
   if (!/^[A-Za-z0-9_-]+$/.test(text)) return null;
   const reader = new ShareBitReader(text);
-  if (reader.read(2) !== 0) return null;
+  const totalBits = text.length * 6;
+  const format = reader.read(2);
+  if (format > 1) return null;
   const linkLang = SHARE_LANG_CODES[reader.read(2)] || "";
   const k = reader.read(3);
   const hasPlaceholder = reader.read(1) === 1;
   const checksum = reader.read(12);
   const collected = [];
   for (let i = 0; i < TOTAL_CARDS; i += 1) if (reader.bit()) collected.push(i);
+  // Link cortado: o mapa da roster passa do fim do texto (um link inteiro só
+  // termina antes disso se nenhuma carta marcada tiver impressão)
+  if (reader.pos > totalBits && format === 0) return null;
 
   const map = new Map();
   collected.forEach((rosterIndex) => {
@@ -1036,6 +1048,7 @@ function parseSharedStateV4(text) {
     const placeholder = hasPlaceholder ? reader.bit() === 1 : false;
     map.set(rosterIndex, { asset: -1, index, finish, lang, placeholder });
   });
+  if (format === 1 && (reader.bit() !== 1 || reader.pos > totalBits)) return null;
   if (!map.size) return null;
   sharedChecksum = checksum;
   return { map, stamp: "" };
@@ -1843,6 +1856,7 @@ function applySharedAssets() {
     if (resolved.some((item) => !item.asset)
       || shareChecksum(resolved.map((item) => item.asset)) !== sharedChecksum) {
       console.warn("[Emerald TCG] Link de outra versão do catálogo: variantes ignoradas");
+      sharedVariantsLost = true;
       return;
     }
     resolved.forEach(({ card, state, asset }) => {
@@ -1928,6 +1942,11 @@ function requestImportShared() {
   if (!sharedMode) return;
   if (!catalogAssetsPrepared) {
     showToast(t("importWaitCatalog"));
+    return;
+  }
+  // Sem as impressões, salvar viraria cartas pretas e sem preço
+  if (sharedVariantsLost) {
+    showToast(t("importNoVariants"));
     return;
   }
   const count = savedCollectedCount();
