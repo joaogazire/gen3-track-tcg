@@ -10,6 +10,20 @@ services:
     staticPublishPath: ./public
     pullRequestPreviewsEnabled: false
     headers:
+      # Segurança em todas as páginas (a CSP de scripts fica numa <meta> no src/index.html, que também
+      # vale no GitHub Pages; frame-ancestors só funciona em cabeçalho, por isso está aqui).
+      - path: /*
+        name: Content-Security-Policy
+        value: frame-ancestors 'none'
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
       # Artes e miniaturas mudam pouco: 1 semana de cache no navegador
       - path: /assets/art/*
         name: Cache-Control
