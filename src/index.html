@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Emerald TCG</title>
     <meta name="description" content="Tracker pessoal de coleção de cartas Pokémon TCG da geração 3, inspirada em Pokémon Emerald." />
+    <!-- Só scripts do próprio site rodam (texto que vier de fora não vira código). Vale também no GitHub
+         Pages, que não deixa configurar cabeçalhos. Fora daqui: só as APIs de cartas e de câmbio. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.tcgdex.net https://economia.awesomeapi.com.br; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <link rel="stylesheet" href="style.css" />
-    <script>
-      // Early fetch da base de dados: começa no parse do head, antes do script.js.
-      // O init() pinta a grade sem esperar; o catálogo chega em background.
-      window.__catalogPromise = fetch("../assets/data/catalog.min.json")
-        .then(function (response) { return response.ok ? response.json() : null; })
-        .catch(function () { return null; });
-    </script>
+    <!-- Começa a baixar o catálogo no parse do head, antes do script.js (fora do HTML por causa da CSP). -->
+    <script src="early.js"></script>
   </head>
   <body>
     <!-- Selo do placeholder (canto superior esquerdo da carta): esmeralda
