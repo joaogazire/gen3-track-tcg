@@ -615,6 +615,7 @@ const collectionTotalEl = document.getElementById("collectionTotal");
 const cardLangPicker = document.getElementById("cardLangPicker");
 const backTopBtn = document.getElementById("backTopBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
+const resetAllMenuBtn = document.getElementById("resetAllMenuBtn");
 const resetModal = document.getElementById("resetModal");
 const importModal = document.getElementById("importModal");
 const resetConfirmYes = document.getElementById("resetConfirmYes");
@@ -3914,6 +3915,10 @@ if (resetAllBtn) {
   resetAllBtn.addEventListener("click", openResetModal);
 }
 
+if (resetAllMenuBtn) {
+  resetAllMenuBtn.addEventListener("click", openResetModal);
+}
+
 if (resetConfirmYes) {
   resetConfirmYes.addEventListener("click", resetAllCards);
 }
@@ -4189,6 +4194,7 @@ if (searchToggleBtn) {
   if (sharedMode) {
     if (planToggle) planToggle.hidden = true;
     if (resetAllBtn) resetAllBtn.hidden = true;
+    if (resetAllMenuBtn) resetAllMenuBtn.hidden = true;
     if (presetBtn) presetBtn.hidden = true;
   }
   renderSharedBanner();
