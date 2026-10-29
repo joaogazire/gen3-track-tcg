@@ -2285,3 +2285,80 @@ button.total-value[aria-pressed="true"] {
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ---- Otimização mobile -----------------------------------------------------
+   Header mais baixo (o sticky roubava ~120px de uma tela de ~850), selo de
+   preço proporcional à carta de ~120px, e menos custo de pintura em celular:
+   sem blur de tela cheia nem camadas 3D (o tilt só existe com ponteiro). */
+@media (max-width: 760px) {
+  body::before,
+  .topbar {
+    backdrop-filter: none;
+  }
+
+  .topbar {
+    background: rgb(245, 244, 239);
+    border-bottom-width: 2px;
+  }
+
+  .header-inner {
+    padding: 8px 12px 4px;
+  }
+
+  .brand-group {
+    gap: 10px;
+  }
+
+  .brand-badge {
+    width: 40px;
+    height: 40px;
+  }
+
+  h1 {
+    font-size: 1rem;
+  }
+
+  .progress-band {
+    padding: 0 12px 8px;
+  }
+
+  .progress-band {
+    align-items: stretch;
+  }
+
+  .progress-wrap {
+    width: 100%;
+  }
+
+  .progress-bar {
+    height: 14px;
+    border-width: 1.5px;
+  }
+
+  .progress-percent-center {
+    font-size: 0.5rem;
+  }
+
+  .card-price {
+    top: 4px;
+    right: 4px;
+    padding: 2px 5px;
+    font-size: 0.5rem;
+  }
+}
+
+@media (hover: none) {
+  .card,
+  .card-visual {
+    perspective: none;
+    transform: none;
+    transform-style: flat;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
