@@ -2362,3 +2362,102 @@ button.total-value[aria-pressed="true"] {
     box-shadow: none;
   }
 }
+
+/* Menu ⋮ aberto: filtro e presets empilham (antes ficavam em linha e o
+   width:100% esticava o botão numa pílula), com a lista fechada até tocar. */
+@media (max-width: 760px) {
+  body.menu-open .header-right {
+    width: min(260px, calc(100vw - 24px));
+    min-width: 0;
+    gap: 6px;
+  }
+
+  body.menu-open .header-right .filter-menu,
+  body.menu-open .header-right .preset-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  body.menu-open .header-right .pill-btn,
+  body.menu-open .header-right .plan-toggle,
+  body.menu-open .header-right .lang-flag,
+  body.menu-open .header-right .header-refresh-btn {
+    width: 100%;
+    height: 40px;
+    border-radius: 12px;
+    justify-content: center;
+  }
+
+  body.menu-open .header-right .lang-flag {
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  body.menu-open .header-right .header-refresh-btn {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  body.menu-open .header-right .header-refresh-btn img {
+    width: 22px;
+    height: 22px;
+    filter: invert(1);
+  }
+
+  body.menu-open .filter-menu-list,
+  body.menu-open .preset-menu-list {
+    display: none;
+    max-height: 40vh;
+    padding: 4px;
+  }
+
+  body.menu-open .filter-menu.open .filter-menu-list,
+  body.menu-open .preset-menu.open .preset-menu-list {
+    display: flex;
+  }
+}
+
+/* Dentro do menu ⋮ os botões só-ícone ganham o nome (vem do aria-label, que o
+   i18n já traduz); a bandeira fica centralizada na caixa. */
+@media (max-width: 760px) {
+  body.menu-open .header-right .lang-flag {
+    align-items: center;
+  }
+
+  body.menu-open .header-right .plan-toggle,
+  body.menu-open .header-right .preset-icon-btn,
+  body.menu-open .header-right .share-icon-btn,
+  body.menu-open .header-right .header-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 14px;
+    text-align: left;
+  }
+
+  body.menu-open .header-right .plan-toggle::after,
+  body.menu-open .header-right .preset-icon-btn::after,
+  body.menu-open .header-right .share-icon-btn::after,
+  body.menu-open .header-right .header-refresh-btn::after {
+    content: attr(aria-label);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  body.menu-open .header-right .header-refresh-btn::after {
+    color: #f7faf7;
+    font-size: 0.6rem;
+    letter-spacing: 0.03em;
+  }
+
+  body.menu-open .header-right .share-icon-btn {
+    justify-content: flex-start;
+  }
+}

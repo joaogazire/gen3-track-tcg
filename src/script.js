@@ -4109,9 +4109,13 @@ if (syncDetailsLink) {
     const isOpen = filterMenu.classList.toggle("open");
     filterTrigger.setAttribute("aria-expanded", String(isOpen));
   });
-  filterMenu.addEventListener("mouseenter", open);
-  filterMenu.addEventListener("mouseleave", close);
-  filterTrigger.addEventListener("focus", open);
+  // Em toque o navegador dispara mouseenter antes do click: abria e o toggle
+  // fechava na hora. Hover só onde existe mouse.
+  if (window.matchMedia("(hover: hover)").matches) {
+    filterMenu.addEventListener("mouseenter", open);
+    filterMenu.addEventListener("mouseleave", close);
+    filterTrigger.addEventListener("focus", open);
+  }
 
   options.forEach((option) => {
     option.addEventListener("click", () => {
