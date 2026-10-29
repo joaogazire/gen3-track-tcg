@@ -615,6 +615,7 @@ const collectionTotalEl = document.getElementById("collectionTotal");
 const cardLangPicker = document.getElementById("cardLangPicker");
 const backTopBtn = document.getElementById("backTopBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
+const resetAllMenuBtn = document.getElementById("resetAllMenuBtn");
 const resetModal = document.getElementById("resetModal");
 const importModal = document.getElementById("importModal");
 const resetConfirmYes = document.getElementById("resetConfirmYes");
@@ -3914,6 +3915,10 @@ if (resetAllBtn) {
   resetAllBtn.addEventListener("click", openResetModal);
 }
 
+if (resetAllMenuBtn) {
+  resetAllMenuBtn.addEventListener("click", openResetModal);
+}
+
 if (resetConfirmYes) {
   resetConfirmYes.addEventListener("click", resetAllCards);
 }
@@ -4109,9 +4114,13 @@ if (syncDetailsLink) {
     const isOpen = filterMenu.classList.toggle("open");
     filterTrigger.setAttribute("aria-expanded", String(isOpen));
   });
-  filterMenu.addEventListener("mouseenter", open);
-  filterMenu.addEventListener("mouseleave", close);
-  filterTrigger.addEventListener("focus", open);
+  // Em toque o navegador dispara mouseenter antes do click: abria e o toggle
+  // fechava na hora. Hover só onde existe mouse.
+  if (window.matchMedia("(hover: hover)").matches) {
+    filterMenu.addEventListener("mouseenter", open);
+    filterMenu.addEventListener("mouseleave", close);
+    filterTrigger.addEventListener("focus", open);
+  }
 
   options.forEach((option) => {
     option.addEventListener("click", () => {
@@ -4185,6 +4194,7 @@ if (searchToggleBtn) {
   if (sharedMode) {
     if (planToggle) planToggle.hidden = true;
     if (resetAllBtn) resetAllBtn.hidden = true;
+    if (resetAllMenuBtn) resetAllMenuBtn.hidden = true;
     if (presetBtn) presetBtn.hidden = true;
   }
   renderSharedBanner();
